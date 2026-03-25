@@ -1,5 +1,5 @@
 
-import { apiError, asyncHandler, apiResponse , UserModel , uploadVideoToCloudinary , sendEmail} from "@packages";
+import { apiError, asyncHandler, apiResponse , UserModel , uploadToCloudinary , sendEmail} from "@packages";
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 
