@@ -3,21 +3,21 @@ WORKDIR /app
 
 
 # first install the packages in the root directory
-COPY server/Packages/package.json server/Packages/package-lock.json /app/Packages/
+COPY Travallee-Backend/Packages/package.json Travallee-Backend/Packages/package-lock.json /app/Packages/
 WORKDIR /app/Packages
 RUN npm install
 
 
-COPY server/Packages/ /app/Packages/
+COPY Travallee-Backend/Packages/ /app/Packages/
 
 
 # then install the packages in the Hotel service
 WORKDIR /app
-COPY server/Services/Hotel/package.json server/Services/Hotel/package-lock.json /app/
+COPY Travallee-Backend/Services/Hotel/package.json Travallee-Backend/Services/Hotel/package-lock.json /app/
 RUN npm install
 
 
-COPY server/Services/Hotel/ /app/
+COPY Travallee-Backend/Services/Hotel/ /app/
 
 
 EXPOSE 3001

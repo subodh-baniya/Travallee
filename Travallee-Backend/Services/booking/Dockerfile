@@ -3,21 +3,21 @@ WORKDIR /app
 
 
 # first install the packages in the root directory
-COPY server/Packages/package.json server/Packages/package-lock.json /app/Packages/
+COPY Travallee-Backend/Packages/package.json Travallee-Backend/Packages/package-lock.json /app/Packages/
 WORKDIR /app/Packages
 RUN npm install
 
 
-COPY server/Packages/ /app/Packages/
+COPY Travallee-Backend/Packages/ /app/Packages/
 
 
 # then install the packages in the Booking service
 WORKDIR /app
-COPY server/Services/booking/package.json server/Services/booking/package-lock.json /app/
+COPY Travallee-Backend/Services/booking/package.json Travallee-Backend/Services/booking/package-lock.json /app/
 RUN npm install
 
 
-COPY server/Services/booking/ /app/
+COPY Travallee-Backend/Services/booking/ /app/
 
 
 EXPOSE 5002

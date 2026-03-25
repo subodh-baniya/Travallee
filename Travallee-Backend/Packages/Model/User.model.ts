@@ -77,7 +77,7 @@ UserSchema.methods.generateJWT = function () {
   const secret: string = process.env.JWT_SECRET as string;
   const data = process.env.JWT_EXPIRES_IN as string;
 
-  return jwt.sign(payload, secret, { expiresIn: "1D" });
+  return jwt.sign(payload, secret, { expiresIn: "7D" });
 };
 
 // problem of ts cannnolt give expires in as process.env.JWT_EXPIRES_IN as string so we have to hardcode it here

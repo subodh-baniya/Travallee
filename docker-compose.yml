@@ -60,6 +60,7 @@ services:
       - db
     restart: unless-stopped
 
+
   notifications:
     build:
       context: .

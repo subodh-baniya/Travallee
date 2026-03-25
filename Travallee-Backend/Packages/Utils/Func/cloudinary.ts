@@ -11,18 +11,17 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET as string,
 });
 
-const uploadVideoToCloudinary = async (data: any) => {
+const uploadToCloudinary = async (data: any) => {
   try {
     const result = await cloudinary.uploader.upload(data.filePath, {
       resource_type: "auto",
-      notification_url: "https://mysite.com/notify_endpoint",
       use_filename: true,
       unique_filename: false,
     });
     return result.url;
   } catch (error: any) {
-    console.log("Error uploading video to Cloudinary:", error);
+    console.log("Error uploading file to Cloudinary:", error);
   }
 };
 
-export { uploadVideoToCloudinary };
+export { uploadToCloudinary };
