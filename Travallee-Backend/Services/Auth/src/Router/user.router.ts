@@ -13,12 +13,12 @@ import {
 } from "../Controllers/user.controller.js";
 
 import passport from "passport";
-import { roleMiddleware } from "@packages";
+
 
 const router = Router();
 
 router.post("/register", registerUser);
-router.post("/logout", roleMiddleware, logoutUser);
+router.post("/logout",  logoutUser);
 router.post("/login", loginUser);
 router.get(
   "/auth/google",
@@ -31,12 +31,12 @@ router.get(
   passport.authenticate("google", { failureRedirect: "/login", session: false }),
   googleAuth
 );
-router.get("/profile", roleMiddleware, getUserProfile);
-router.put("/update-profile", roleMiddleware, updateUserProfile);
-router.delete("/delete-profile", roleMiddleware, deleteUserProfile);
+router.get("/profile",  getUserProfile);
+router.put("/update-profile", updateUserProfile);
+router.delete("/delete-profile", deleteUserProfile);
 router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
-router.get("/profile-picture", roleMiddleware, getUserProfilePicture);
+router.get("/profile-picture", getUserProfilePicture);
 
 
 
