@@ -12,14 +12,19 @@
   },
   "dependencies": {
     "axios": "^1.13.6",
+    "bullmq": "^5.71.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "ioredis": "^5.10.1",
+    "nodemailer": "^8.0.4",
     "nodemon": "^3.1.14",
+    "resend": "^6.9.4",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
+    "@types/nodemailer": "^7.0.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

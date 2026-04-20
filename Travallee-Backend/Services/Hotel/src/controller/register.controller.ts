@@ -1,5 +1,3 @@
-
-
 import {
   asyncHandler,
   apiError,
@@ -18,30 +16,58 @@ import {
 import mongoose from "mongoose";
 
 const registerHotel = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user?._id || req.user?.id;
-  const hotelImages = req.files?.hotelImages;
+  const userID = req.user.id;
+  const files = req.files || [];
 
- 
   if (!userID) {
     return apiError(res, 401, "Unauthorized: User ID not found in request");
   }
+  req.body.userID = userID;
 
-  if (hotelImages) {
+  if (files.length > 0) {
     try {
-      const imagesArray = Array.isArray(hotelImages) ? hotelImages : [hotelImages];
-      const uploadedUrls: string[] = [];
+      const hotelImageUrls: string[] = [];
+      const verificationDocUrls: string[] = [];
 
-      for (const image of imagesArray) {
-        const uploadResult = await uploadToCloudinary({
-          filePath: image.tempFilePath,
-        });
-        uploadedUrls.push(uploadResult);
+      for (const file of files) {
+        // Get file path - multer stores it in 'path'
+        const filePath = file.path || file.tempFilePath;
+        
+        if (!filePath) {
+          console.error("File path not found", file);
+          continue;
+        }
+
+        // Separate files based on field name
+        if (file.fieldname === "VerificationDocuments" || file.fieldname === "verificationDocuments") {
+          const uploadResult = await uploadToCloudinary(filePath, "verification_documents");
+          if (uploadResult) verificationDocUrls.push(uploadResult);
+        } else {
+         
+          const uploadResult = await uploadToCloudinary(filePath, "hotel_images");
+          if (uploadResult) hotelImageUrls.push(uploadResult);
+        }
       }
-      req.body.hotelImages = uploadedUrls;
+
+      if (hotelImageUrls.length > 0) {
+        req.body.hotelImages = hotelImageUrls;
+      } else {
+        req.body.hotelImages = [];
+      }
+
+      if (verificationDocUrls.length > 0) {
+        req.body.VerificationDocuments = verificationDocUrls;
+      } else {
+        req.body.VerificationDocuments = [];
+      }
     } catch (error: any) {
-      console.error("Error uploading hotel images:", error);
-      return apiError(res, 500, "Failed to upload hotel images", { error: error.message });
+      console.error("Error uploading files:", error);
+      return apiError(res, 500, "Failed to upload files", { error: error.message });
     }
+  } else {
+    // Empty arrays if no files
+    req.body.hotelImages = [];
+    req.body.VerificationDocuments = [];
   }
 
   try {
@@ -50,7 +76,6 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 400, "Validation failed", parsedData.error.issues);
     }
     const hotelData: HotelInput = parsedData.data;
-    hotelData.userID = userID;
     const newHotel = new hotelModel(hotelData);
     await newHotel.save();
     return apiResponse(
@@ -71,7 +96,7 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
 
 const createroom = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
-  const roomImages = req.files?.roomImages;
+  const files = req.files || [];
 
   if (!hotelId) {
     return apiError(res, 400, "Hotel ID is required in URL parameters");
@@ -81,17 +106,21 @@ const createroom = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 400, "Invalid hotel ID format");
   }
 
-
-  if (roomImages) {
+  if (files.length > 0) {
     try {
-      const imagesArray = Array.isArray(roomImages) ? roomImages : [roomImages];
       const uploadedUrls: string[] = [];
 
-      for (const image of imagesArray) {
-        const uploadResult = await uploadToCloudinary({
-          filePath: image.tempFilePath,
-        });
-        uploadedUrls.push(uploadResult);
+      for (const file of files) {
+        // Get file path - multer stores it in 'path'
+        const filePath = file.path || file.tempFilePath;
+        
+        if (!filePath) {
+          console.error("File path not found", file);
+          continue;
+        }
+
+        const uploadResult = await uploadToCloudinary(filePath, "room_images");
+        if (uploadResult) uploadedUrls.push(uploadResult);
       }
       req.body.roomImages = uploadedUrls;
     } catch (error: any) {

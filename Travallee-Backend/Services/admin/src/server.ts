@@ -1,10 +1,9 @@
+
 import app from "./app.js";
-import dotenv from 'dotenv';
+//@ts-ignore
 import { connectDB } from "@packages"
 
-dotenv.config({
-    path: './.env'
-})
+
 
 try {
     const db = await connectDB(process.env.MONGO_URI as string, process.env.MONGO_DB_NAME as string);

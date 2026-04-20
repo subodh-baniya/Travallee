@@ -62,23 +62,49 @@ export default function SignUp() {
         return;
       }
 
+      console.log("📝 Attempting registration...");
       const response = await axios.post(API_SIGNUP, data, {
         withCredentials: true,
         headers: { "Content-Type": "application/json" },
+        timeout: 15000,
       });
 
+      console.log("✅ Registration successful");
+
       if (response.status === 201) {
-        await axios.post(
-          API_SEND_VERIFICATION,
-          { email: data.email },
-          { withCredentials: true, headers: { "Content-Type": "application/json" } }
-        );
+        console.log("📧 Sending OTP...");
+        try {
+          await axios.post(
+            API_SEND_VERIFICATION,
+            { email: data.email },
+            { 
+              withCredentials: true, 
+              headers: { "Content-Type": "application/json" },
+              timeout: 15000,
+            }
+          );
+          console.log("✅ OTP sent successfully");
+        } catch (otpError: any) {
+          console.warn("⚠️ OTP send failed, but continuing:", otpError.message);
+        }
+        
+        console.log("🚀 Navigating to verification...");
         proceedToVerification();
       } else {
         setErrorMessage(response.data?.message || "Registration failed. Please try again.");
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || "Signup failed";
+      console.error("❌ Signup error:", error);
+      let msg = "Signup failed";
+      
+      if (error.response?.data?.message) {
+        msg = error.response.data.message;
+      } else if (error.code === "ECONNABORTED") {
+        msg = "Request timeout. Please check your connection.";
+      } else if (error.message) {
+        msg = error.message;
+      }
+      
       setErrorMessage(msg);
     } finally {
       setLoading(false);
@@ -86,11 +112,16 @@ export default function SignUp() {
   };
 
   const proceedToVerification = () => {
-    router.push({
-      pathname: "/(auth)/verify-code",
-      params: { email: email.trim() },
-    } as any);
-    };
+    try {
+      router.push({
+        pathname: "/(auth)/verify-code",
+        params: { email: email.trim() },
+      } as any);
+    } catch (navError: any) {
+      console.error("❌ Navigation error:", navError);
+      setErrorMessage("Failed to navigate. Please try again.");
+    }
+  };
 
   const handleSignIn = () => {
     router.push("/(auth)/signin" as any);

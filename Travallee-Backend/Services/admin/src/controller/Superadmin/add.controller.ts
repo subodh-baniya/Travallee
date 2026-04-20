@@ -1,3 +1,4 @@
+//@ts-ignore
 import { apiError, asyncHandler, apiResponse , UserModel, sendEmail} from "@packages";
 
 

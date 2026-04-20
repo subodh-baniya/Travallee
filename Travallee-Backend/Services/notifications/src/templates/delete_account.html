@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Deletion Confirmation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .banner { width: 100%; height: 300px; background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border-bottom: 2px solid #e040fb; }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .delete-badge { display: inline-block; background-color: #ff6b6b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .highlight { color: #e040fb; font-weight: 600; }
+        .info-box { background-color: #2a2a2a; border-left: 4px solid #ffa500; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #b0b0b0; }
+        .info-box strong { color: #ffa500; }
+        .deletion-details { background-color: #252525; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #b0b0b0; }
+        .deletion-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #333; }
+        .deletion-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .deletion-label { color: #888; }
+        .deletion-value { color: #ff6b6b; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #e040fb; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .social-icons { margin: 20px 0; }
+        .social-icons a { display: inline-block; width: 40px; height: 40px; background-color: #333; border-radius: 50%; line-height: 40px; text-align: center; margin: 0 8px; color: #e040fb; text-decoration: none; font-size: 18px; }
+        .social-icons a:hover { background-color: #e040fb; color: #1a1a1a; }
+        .address { color: #888; font-size: 12px; margin: 20px 0; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Your Journey Awaits</div>
+        </div>
+        <div class="banner">[Account Image - 600x300px]</div>
+        <div class="content">
+            <div class="delete-badge">⚠️ ACCOUNT DELETED</div>
+            <h2>Your Account Has Been Deleted</h2>
+            <p>Hi {{user_name}},</p>
+            <p>Your Travallee account has been successfully deleted. All your personal data has been removed from our servers.</p>
+            <div class="deletion-details">
+                <div class="deletion-row">
+                    <span class="deletion-label">Deletion Date</span>
+                    <span class="deletion-value">{{deletion_date}}</span>
+                </div>
+                <div class="deletion-row">
+                    <span class="deletion-label">Account Email</span>
+                    <span class="deletion-value">{{user_email}}</span>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>What was deleted:</strong><br>
+                • Account profile and preferences<br>
+                • Booking history and reservations<br>
+                • Payment information<br>
+                • Communication history<br>
+                • Reward points and credits
+            </div>
+            <p><strong>Can I recover my account?</strong><br>
+            No, deleted accounts cannot be restored. If you change your mind, you'll need to create a new account and start fresh.</p>
+            <p style="font-size: 13px; color: #b0b0b0; margin-top: 20px;">Thank you for being part of the Travallee community. We hope to see you again in the future!<br><br>
+            Questions or concerns? Contact us at support@travallee.com
+            </p>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://facebook.com/travallee" title="Facebook">f</a>
+                <a href="https://instagram.com/travallee" title="Instagram">📷</a>
+                <a href="https://twitter.com/travallee" title="Twitter">𝕏</a>
+                <a href="https://tiktok.com/@travallee" title="TikTok">♪</a>
+                <a href="https://youtube.com/travallee" title="YouTube">▶</a>
+            </div>
+            <div class="address">
+                [YOUR ADDRESS HERE]<br>
+                Phone: [YOUR PHONE]<br>
+                Email: support@travallee.com
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,73 +1,101 @@
-# React + TypeScript + Vite
+# User Frontend - Travallee Hotel Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The public-facing website for Travallee hotel management platform. Browse hotels, search availability, and manage bookings with a modern, responsive React TypeScript interface.
 
-Currently, two official plugins are available:
+## 🎯 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🏨 **Hotel Browsing** - Discover available hotels and rooms
+- 🔍 **Search & Filter** - Find perfect rooms by date, location, and amenities
+- 📅 **Booking System** - Easy reservation management
+- 👤 **User Accounts** - Sign up, login, and manage bookings
+- 💳 **Payment Integration** - Secure payment processing
+- ⭐ **Reviews & Ratings** - See guest reviews and ratings
+- 📱 **Responsive Design** - Mobile-optimized interface
 
-## React Compiler
+## 💻 Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19.2** with TypeScript 5.9
+- **Vite 8.0** for fast builds
+- **Tailwind CSS 3.4** for styling
+- **React Router v6** for navigation
+- **Zustand** for state management (optional)
 
-## Expanding the ESLint configuration
+## 📁 Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── Pages/               # Page components
+│   ├── InitialHome.tsx
+│   ├── AboutUs.tsx
+│   ├── Services.tsx
+│   ├── ContactUs.tsx
+│   └── Loginpage.tsx
+├── Components/          # Reusable components
+│   ├── InitialNav.tsx
+│   ├── Herosection.tsx
+│   └── Footer.tsx
+├── Contexts/            # React Context
+│   └── Authcontext.tsx
+├── Routes/              # Routing configuration
+│   └── Route.tsx
+├── App.tsx              # Root component
+└── main.tsx             # Entry point
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Quick Start
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+```bash
+npm install
 ```
+
+### Development
+```bash
+npm run dev
+```
+App opens at **http://localhost:5173**
+
+### Production Build
+```bash
+npm run build
+npm run preview
+```
+
+## 📝 Environment Variables
+
+Create `.env` file:
+
+```env
+# API Configuration
+VITE_API_BASE_URL=http://localhost:4000/api/v1
+VITE_AUTH_SERVICE_URL=http://localhost:3000/api/v1
+
+# App Settings
+VITE_APP_NAME=Travallee
+VITE_MOCK_API=true
+```
+
+## 🎨 Styling
+
+- **Tailwind CSS** for utility styles
+- **Global styles** in `src/App.css`
+- **Responsive design** with mobile-first approach
+- **Plus Jakarta Sans** font family
+
+## 🔗 Available Scripts
+
+```bash
+npm run dev          # Development server
+npm run build        # Production build
+npm run preview      # Preview production build
+npm run lint         # Run linting
+npm run format       # Format code
+```
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+MIT License

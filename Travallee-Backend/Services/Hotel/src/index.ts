@@ -1,3 +1,4 @@
+// @ts-ignore
 import { connectDB } from "@packages";
 import app from "./app.js";
 

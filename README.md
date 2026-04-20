@@ -83,40 +83,108 @@ Travallee/
 - **npm** or **yarn**
 - **Docker** (for backend services)
 
-### Admin Frontend Setup
+### ⚡ Quick Commands
 
+#### Option 1: Full Stack with Docker (Recommended for Production)
+```bash
+# Start all services at once
+docker-compose up -d
+
+# View all logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f auth
+docker-compose logs -f admin
+docker-compose logs -f bookings
+
+# Stop all services
+docker-compose down
+
+# Rebuild images (after code changes)
+docker-compose up -d --build
+```
+
+#### Option 2: Individual Services (Development)
+```bash
+# Terminal 1: Admin Frontend
+cd Admin-Frontend && npm install && npm run dev
+# Runs on http://localhost:5173
+
+# Terminal 2: Mobile App
+cd Travallee-App && npm install && npm start
+# Scan QR code with Expo Go
+
+# Terminal 3: Backend Auth Service
+cd Travallee-Backend/Services/Auth && npm install && npm run dev
+# Runs on http://localhost:3000
+
+# Terminal 4: Backend Admin Service
+cd Travallee-Backend/Services/admin && npm install && npm run dev
+# Runs on http://localhost:4001
+
+# Terminal 5: Backend Booking Service
+cd Travallee-Backend/Services/booking && npm install && npm run dev
+# Runs on http://localhost:5002
+
+# Terminal 6: Backend Hotel Service
+cd Travallee-Backend/Services/Hotel && npm install && npm run dev
+# Runs on http://localhost:5003
+```
+
+#### Option 3: Parallel NPM Scripts (All Frontends at Once)
+```bash
+# From root directory
+npm install
+
+# If package.json has workspaces setup, run:
+npm run dev:all
+
+# Or manually:
+npm run dev:admin & npm run dev:user & npm run dev:app
+```
+
+#### Option 4: Docker Compose + Manual Frontend (Hybrid)
+```bash
+# Terminal 1: Start backend services only
+docker-compose up -d
+
+# Terminal 2: Run Admin Frontend locally for hot-reload
+cd Admin-Frontend && npm install && npm run dev
+
+# Terminal 3: Run Mobile App locally for hot-reload
+cd Travallee-App && npm install && npm start
+```
+
+### Standard Setup (Step by Step)
+
+**Admin Frontend:**
 ```bash
 cd Admin-Frontend
 npm install
 npm run dev
 ```
-
-Visit http://localhost:5173 and login with:
+Visit http://localhost:5173 with credentials:
 - **Email:** admin@travallee.com
 - **Password:** admin123
 
-### Backend Setup with Docker
-
-```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### Mobile App Setup
-
+**Mobile App:**
 ```bash
 cd Travallee-App
 npm install
 npm start
 ```
-
 Scan the QR code with Expo Go app on your phone.
+
+**Backend Services:**
+```bash
+docker-compose up -d
+```
+Services run on:
+- Auth: http://localhost:3000
+- Admin: http://localhost:4001
+- Bookings: http://localhost:5002
+- Hotel: http://localhost:5003
 
 ## 📖 Documentation
 

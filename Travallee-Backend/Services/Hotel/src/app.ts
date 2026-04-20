@@ -1,13 +1,6 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import hotelRoutes from "./routes/hotel.routes.js";
-
-dotenv.config(
-    {
-        path: "./.env"
-    }
-);
 
 const app = express();
 

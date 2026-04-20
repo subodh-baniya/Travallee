@@ -21,13 +21,13 @@ const API_ENDPOINTS_AUTH: ApiEndpoints = {
 
 
 // for hotel service
-const API_HOTEL = `${API_URL}/api/hotel`;
+const API_HOTEL = `${API_URL}:3001/api/v1/hotels`;
 
 const API_ENDPOINTS_HOTEL: ApiEndpoints = {
   GET_HOTELS: `${API_HOTEL}`,
   FEATURED_HOTELS: `${API_HOTEL}/featured`,
   GET_HOTEL_BY_ID: `${API_HOTEL}/:id`,
-  CREATE_HOTEL: `${API_HOTEL}/create`,
+  CREATE_HOTEL: `${API_HOTEL}/register`,
   UPDATE_HOTEL: `${API_HOTEL}/update/:id`,
   DELETE_HOTEL: `${API_HOTEL}/delete/:id`,
   GET_ROOMS: `${API_HOTEL}/:hotelId/rooms`,

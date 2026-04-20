@@ -1,37 +1,48 @@
 import { NavLink } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const InitialNav = () => {
-  const linkClasses = ({ isActive }:{isActive:boolean}) =>
-    `font-medium px-2 py-1 cursor-pointer transition ${
-      isActive ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"
-    }`;
+  const links = [
+    { name: "Home", to: "/initialhome/herosection" },
+    { name: "About Us", to: "aboutus" },
+    { name: "Our Services", to: "services" },
+    { name: "Contact Us", to: "contactus" },
+  ];
 
   return (
     <header className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <div className="text-2xl font-bold text-blue-600">Travallee</div>
+
         <nav>
           <ul className="flex space-x-6">
-            <li>
-              <NavLink to="/initialhome/herosection" className={linkClasses}>
-                Home
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="aboutus" className={linkClasses}>
-                About Us
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="services" className={linkClasses}>
-                Our Services
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="contactus" className={linkClasses}>
-                Contact Us
-              </NavLink>
-            </li>
+            {links.map((link) => (
+              <li key={link.to} className="relative">
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) =>
+                    `px-2 py-1 ${
+                      isActive
+                        ? "text-blue-600"
+                        : "text-gray-700 hover:text-blue-600"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {link.name}
+                      {isActive && (
+                        <motion.div
+                          layoutId="underline"
+                          className="absolute left-0 bottom-0 w-full h-0.5 bg-blue-600"
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </nav>
       </div>

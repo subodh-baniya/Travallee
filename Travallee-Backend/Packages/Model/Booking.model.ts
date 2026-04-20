@@ -55,6 +55,10 @@ const bookingSchema = new mongoose.Schema({
 
     paymentReferenceId:{
         type:String
+    },
+    khalti_pidx:{
+        type:String,
+        default:null
     }
 
 }, { timestamps: true })

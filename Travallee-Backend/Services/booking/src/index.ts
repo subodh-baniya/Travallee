@@ -1,8 +1,6 @@
-import dotenv from "dotenv"
+// @ts-ignore
 import {connectDB} from "@packages"
-dotenv.config({
-    path:"./.env"
-})
+
 import app from "./app.js"
 
 connectDB(process.env.DATABASE_URL as string ,process.env.DATABASE_NAME as string).then(()=>{

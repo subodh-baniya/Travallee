@@ -67,10 +67,13 @@ const checkRoles = (roles: string[]) => {
 const adminMiddleware = checkRole("admin");
 const hotelOwnerMiddleware = checkRole("hotelOwner");
 const userMiddleware = checkRole("user");
+const superAdminMiddleware = checkRole("superadmin");
+const hotelAdminMiddleware = checkRole("hotelAdmin");
 
 // Multiple roles middleware
 const adminOrOwnerMiddleware = checkRoles(["admin", "hotelOwner"]);
 const anyAuthenticatedMiddleware = checkRoles(["admin", "hotelOwner", "user"]);
+const superAdminOrHotelAdminMiddleware = checkRoles(["superadmin", "hotelAdmin"]);
 
 // Check ownership (for hotels/rooms)
 const checkOwnership = async (req: any, res: any, next: any) => {
@@ -115,7 +118,10 @@ export {
   adminMiddleware,
   hotelOwnerMiddleware,
   userMiddleware,
+  superAdminMiddleware,
+  hotelAdminMiddleware,
   adminOrOwnerMiddleware,
   anyAuthenticatedMiddleware,
+  superAdminOrHotelAdminMiddleware,
   checkOwnership,
 };

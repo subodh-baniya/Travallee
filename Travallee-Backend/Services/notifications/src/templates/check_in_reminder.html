@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-In Day Reminder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .banner { width: 100%; height: 300px; background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border-bottom: 2px solid #e040fb; }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .checkin-badge { display: inline-block; background-color: #4facfe; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .highlight { color: #e040fb; font-weight: 600; }
+        .countdown { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 20px; border-radius: 6px; text-align: center; margin: 20px 0; color: #fff; }
+        .countdown-time { font-size: 48px; font-weight: 900; margin: 10px 0; font-family: 'Courier New', monospace; }
+        .countdown-label { font-size: 13px; opacity: 0.9; }
+        .hotel-card { background-color: #252525; padding: 15px; border-radius: 6px; border-left: 4px solid #4facfe; margin: 20px 0; }
+        .hotel-name { font-size: 16px; color: #fff; font-weight: 600; margin-bottom: 8px; }
+        .hotel-detail { display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #333; font-size: 13px; }
+        .hotel-detail:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .detail-label { color: #888; }
+        .detail-value { color: #4facfe; font-weight: 500; }
+        .instructions-box { background-color: #2a2a2a; border-left: 4px solid #e040fb; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .instructions-box h4 { color: #e040fb; font-size: 14px; margin-bottom: 10px; }
+        .instructions-box ul { margin-left: 20px; font-size: 13px; color: #b0b0b0; }
+        .instructions-box li { margin-bottom: 6px; }
+        .cta-button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); color: white; text-decoration: none; border-radius: 4px; font-weight: 600; margin: 20px 0; font-size: 15px; border: none; cursor: pointer; }
+        .cta-button:hover { opacity: 0.9; }
+        .info-box { background-color: #2a2a2a; border-left: 4px solid #ffa500; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #b0b0b0; }
+        .info-box strong { color: #ffa500; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #e040fb; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .social-icons { margin: 20px 0; }
+        .social-icons a { display: inline-block; width: 40px; height: 40px; background-color: #333; border-radius: 50%; line-height: 40px; text-align: center; margin: 0 8px; color: #e040fb; text-decoration: none; font-size: 18px; }
+        .social-icons a:hover { background-color: #e040fb; color: #1a1a1a; }
+        .address { color: #888; font-size: 12px; margin: 20px 0; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+        .contact-info { display: flex; justify-content: space-around; margin: 20px 0; padding: 15px 0; border-top: 1px solid #333; border-bottom: 1px solid #333; }
+        .contact-item { text-align: center; font-size: 13px; }
+        .contact-label { color: #888; margin-bottom: 5px; }
+        .contact-value { color: #4facfe; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Your Journey Awaits</div>
+        </div>
+        <div class="banner">[Hotel Image - 600x300px]</div>
+        <div class="content">
+            <div class="checkin-badge">✓ CHECK-IN TODAY</div>
+            <h2>Your Check-In is Today!</h2>
+            <p>Hi {{user_name}},</p>
+            <p>Get ready for an amazing stay! Your booking at <span class="highlight">{{hotel_name}}</span> starts today. Here's everything you need to know.</p>
+            
+            <div class="countdown">
+                <div class="countdown-label">CHECK-IN TIME</div>
+                <div class="countdown-time">{{check_in_time}}</div>
+                <div class="countdown-label">Standard check-in time</div>
+            </div>
+
+            <div class="hotel-card">
+                <div class="hotel-name">{{hotel_name}}</div>
+                <div class="hotel-detail">
+                    <span class="detail-label">📍 Address</span>
+                    <span class="detail-value">{{hotel_address}}</span>
+                </div>
+                <div class="hotel-detail">
+                    <span class="detail-label">🏨 Room Number</span>
+                    <span class="detail-value">{{room_number}}</span>
+                </div>
+                <div class="hotel-detail">
+                    <span class="detail-label">📞 Contact</span>
+                    <span class="detail-value">{{hotel_phone}}</span>
+                </div>
+                <div class="hotel-detail">
+                    <span class="detail-label">🔑 Check-Out</span>
+                    <span class="detail-value">{{check_out_time}}</span>
+                </div>
+            </div>
+
+            <div class="instructions-box">
+                <h4>✓ Check-In Instructions</h4>
+                <ul>
+                    <li>Proceed to the front desk upon arrival</li>
+                    <li>Have your booking reference ({{booking_id}}) ready</li>
+                    <li>Provide a valid photo ID and payment method</li>
+                    <li>Ask the receptionist about WiFi and amenities</li>
+                    <li>Keep your room key card secure</li>
+                    <li>Report any issues immediately to the front desk</li>
+                </ul>
+            </div>
+
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-label">Booking Reference</div>
+                    <div class="contact-value">{{booking_id}}</div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-label">Total Nights</div>
+                    <div class="contact-value">{{total_nights}}</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Need Early Check-In?</strong><br>
+                Subject to availability, the hotel may accommodate early check-in. Contact them directly at {{hotel_phone}} to request early access. Early check-in may incur additional fees.
+            </div>
+
+            <p style="font-size: 13px; color: #b0b0b0; margin-top: 20px;">
+                <strong>Questions or changes?</strong><br>
+                Contact our support team at support@travallee.com or call {{support_phone}}. We're here to help!
+            </p>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://facebook.com/travallee" title="Facebook">f</a>
+                <a href="https://instagram.com/travallee" title="Instagram">📷</a>
+                <a href="https://twitter.com/travallee" title="Twitter">𝕏</a>
+                <a href="https://tiktok.com/@travallee" title="TikTok">♪</a>
+                <a href="https://youtube.com/travallee" title="YouTube">▶</a>
+            </div>
+            <div class="address">
+                [YOUR ADDRESS HERE]<br>
+                Phone: [YOUR PHONE]<br>
+                Email: support@travallee.com
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

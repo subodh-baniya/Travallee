@@ -1,8 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config({
-    path: "./.env"
-});
-
+//@ts-ignore
 import { connectDB } from "@packages";
 import app from "./app.js";
 

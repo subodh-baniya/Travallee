@@ -1,15 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+// @ts-ignore
 import { apiError, asyncHandler, apiResponse , UserModel } from "@packages";
-import dotenv from "dotenv";
-
-dotenv.config(
-    {
-        path:"../../.env"
-    }
-);
-
-
 
 export const passportGoogle = passport.use(
     new GoogleStrategy(

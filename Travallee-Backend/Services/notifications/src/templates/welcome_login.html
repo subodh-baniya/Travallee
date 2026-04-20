@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Travallee</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .banner { width: 100%; height: 300px; background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border-bottom: 2px solid #e040fb; }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .highlight { color: #e040fb; font-weight: 600; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 30px 0; font-size: 15px; }
+        .cta-button:hover { opacity: 0.9; }
+        .features { background-color: #252525; padding: 25px; border-radius: 6px; margin: 30px 0; }
+        .feature-item { margin-bottom: 15px; padding-left: 20px; position: relative; }
+        .feature-item::before { content: "✓"; position: absolute; left: 0; color: #e040fb; font-weight: bold; }
+        .feature-item:last-child { margin-bottom: 0; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #e040fb; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .social-icons { margin: 20px 0; }
+        .social-icons a { display: inline-block; width: 40px; height: 40px; background-color: #333; border-radius: 50%; line-height: 40px; text-align: center; margin: 0 8px; color: #e040fb; text-decoration: none; font-size: 18px; }
+        .social-icons a:hover { background-color: #e040fb; color: #1a1a1a; }
+        .address { color: #888; font-size: 12px; margin: 20px 0; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Your Journey Awaits</div>
+        </div>
+        <div class="banner">[Header Image - 600x300px]</div>
+        <div class="content">
+            <h2>Welcome to Travallee, {{user_name}}! 🎉</h2>
+            <p>We're thrilled to have you join our community of modern travelers. Get ready to discover, book, and experience amazing hotels around the world.</p>
+            <div class="features">
+                <div class="feature-item">Instant booking confirmation and real-time updates</div>
+                <div class="feature-item">24/7 customer support for peace of mind</div>
+                <div class="feature-item">Exclusive deals and early access to new properties</div>
+                <div class="feature-item">Earn rewards on every booking</div>
+            </div>
+            <p>Your account is now active and ready to explore. Dive into our handpicked collection of hotels and create unforgettable memories.</p>
+            <center>
+                <a href="{{app_link}}" class="cta-button">Start Exploring</a>
+            </center>
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">Questions? We're here to help. Reply to this email or contact our support team.</p>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://facebook.com/travallee" title="Facebook">f</a>
+                <a href="https://instagram.com/travallee" title="Instagram">📷</a>
+                <a href="https://twitter.com/travallee" title="Twitter">𝕏</a>
+                <a href="https://tiktok.com/@travallee" title="TikTok">♪</a>
+                <a href="https://youtube.com/travallee" title="YouTube">▶</a>
+            </div>
+            <div class="address">
+                [YOUR ADDRESS HERE]<br>
+                Phone: [YOUR PHONE]<br>
+                Email: support@travallee.com
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

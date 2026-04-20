@@ -49,13 +49,18 @@ export default function VerifyCode() {
     setErrorMessage("");
 
     try {
+      console.log("🔐 Verifying OTP...");
       const payload = email ? { email, otp } : { phone, otp };
       const response = await axios.post(API_VERIFY_OTP, payload, {
         withCredentials: true,
         headers: { "Content-Type": "application/json" },
+        timeout: 15000,
       });
 
+      console.log("✅ OTP verified successfully");
+
       if (response.status === 200) {
+        console.log("🚀 Navigating to success page...");
         router.push("/(auth)/success" as any);
       } else {
         setErrorMessage(
@@ -63,10 +68,17 @@ export default function VerifyCode() {
         );
       }
     } catch (error: any) {
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "OTP verification failed. Please try again.";
+      console.error("❌ Verification error:", error);
+      let msg = "OTP verification failed. Please try again.";
+      
+      if (error.response?.data?.message) {
+        msg = error.response.data.message;
+      } else if (error.code === "ECONNABORTED") {
+        msg = "Request timeout. Please check your connection.";
+      } else if (error.message) {
+        msg = error.message;
+      }
+      
       setErrorMessage(msg);
     } finally {
       setLoading(false);

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Reminder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .banner { width: 100%; height: 300px; background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border-bottom: 2px solid #e040fb; }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .countdown-badge { display: inline-block; background-color: #ffa500; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        .booking-card { background-color: #252525; border-left: 4px solid #ffa500; padding: 20px; margin: 25px 0; border-radius: 6px; }
+        .booking-row { display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #333; }
+        .booking-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .booking-label { color: #888; font-size: 13px; }
+        .booking-value { color: #ffa500; font-weight: 600; font-size: 14px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .highlight { color: #e040fb; font-weight: 600; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 30px 0; font-size: 15px; }
+        .cta-button:hover { opacity: 0.9; }
+        .tips-box { background-color: #252525; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .tips-box strong { color: #e040fb; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #e040fb; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .social-icons { margin: 20px 0; }
+        .social-icons a { display: inline-block; width: 40px; height: 40px; background-color: #333; border-radius: 50%; line-height: 40px; text-align: center; margin: 0 8px; color: #e040fb; text-decoration: none; font-size: 18px; }
+        .social-icons a:hover { background-color: #e040fb; color: #1a1a1a; }
+        .address { color: #888; font-size: 12px; margin: 20px 0; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Your Journey Awaits</div>
+        </div>
+        <div class="banner">[Hotel Image - 600x300px]</div>
+        <div class="content">
+            <div class="countdown-badge">⏰ CHECK-IN IN 24 HOURS</div>
+            <h2>Your Stay at {{hotel_name}} Starts Tomorrow!</h2>
+            <p>Hi {{user_name}},</p>
+            <p>Your check-in is coming up! Here are the details for your upcoming stay.</p>
+            <div class="booking-card">
+                <div class="booking-row">
+                    <span class="booking-label">Booking ID</span>
+                    <span class="booking-value">{{booking_id}}</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Hotel</span>
+                    <span class="booking-value">{{hotel_name}}</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Check-in Date</span>
+                    <span class="booking-value">{{check_in_date}}</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Check-in Time</span>
+                    <span class="booking-value">3:00 PM</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Room Number</span>
+                    <span class="booking-value">{{room_number}}</span>
+                </div>
+            </div>
+            <div class="tips-box">
+                <strong>📋 Before You Arrive:</strong><br>
+                • Keep your booking confirmation ready<br>
+                • Bring a valid ID<br>
+                • Contact the hotel if you need early check-in<br>
+                • Review house rules on the app
+            </div>
+            <center>
+                <a href="{{booking_link}}" class="cta-button">View Check-in Details</a>
+            </center>
+            <p style="font-size: 14px; color: #888;">Have questions? Message the hotel directly from your booking or call {{hotel_phone}}</p>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://facebook.com/travallee" title="Facebook">f</a>
+                <a href="https://instagram.com/travallee" title="Instagram">📷</a>
+                <a href="https://twitter.com/travallee" title="Twitter">𝕏</a>
+                <a href="https://tiktok.com/@travallee" title="TikTok">♪</a>
+                <a href="https://youtube.com/travallee" title="YouTube">▶</a>
+            </div>
+            <div class="address">
+                [YOUR ADDRESS HERE]<br>
+                Phone: [YOUR PHONE]<br>
+                Email: support@travallee.com
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

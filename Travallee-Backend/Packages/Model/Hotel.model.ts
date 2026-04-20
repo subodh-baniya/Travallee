@@ -5,7 +5,7 @@ const HotelSchema = new mongoose.Schema(
   {
     userID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",
     },
     ownerName: {
       type: String,
@@ -79,7 +79,9 @@ const HotelSchema = new mongoose.Schema(
             type:String,
            default:"EPAYTEST" //in production it will be provided by the hotel when they register as merchant 
     },
-    
+    khalti_SecretKey: {
+       type: String } 
+    ,
     rooms: [
       {
         roomNumber: { type: String, required: true },
@@ -90,7 +92,7 @@ const HotelSchema = new mongoose.Schema(
     ],
     bookingHistory: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         roomId: { type: mongoose.Schema.Types.ObjectId },
         checkinDate: { type: Date, required: true },
         checkoutDate: { type: Date, required: true },

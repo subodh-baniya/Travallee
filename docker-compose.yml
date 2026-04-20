@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    logging:
+      driver: "none"
   auth:
     build:
       context: .
@@ -13,6 +21,7 @@ services:
       - /app/node_modules
     depends_on:
       - db
+      - redis
     restart: unless-stopped
 
   admin:
@@ -74,6 +83,7 @@ services:
       - /app/node_modules
     depends_on:
       - db
+      - redis
     restart: unless-stopped
 
   db:

@@ -1,13 +1,13 @@
+//@ts-ignore
 import { connectDB } from "@packages"
 import app from "./app.js"
 
 
 const startServer = async()=>{
     try {
-        await connectDB( process.env.MONGODB_URI as string, process.env.MONGODB_DB_NAME as string);
-        console.log("Connected to MongoDB");
+        await connectDB( process.env.MONGODB_URI as string, process.env.MONGODB_DB_NAME as string);     
         app.listen(process.env.PORT,()=>{
-            console.log(`Server is running on port ${process.env.PORT}`);
+            console.log(` Notifications service running on port ${process.env.PORT}`);
         })  
        
     } catch (error) {

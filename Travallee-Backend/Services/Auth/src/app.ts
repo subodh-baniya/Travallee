@@ -1,13 +1,10 @@
 
 import express, { Router } from "express";
-import dotenv from "dotenv";
+
 import cookie from "cookie-parser";
 import cors from "cors";
 import passport from "passport";
 
-dotenv.config({     
-    path: "./.env"
-});
 
 
 import UserRouter from "./Router/user.router.js";

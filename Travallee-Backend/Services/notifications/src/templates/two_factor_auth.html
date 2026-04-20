@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your 2FA Code</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #e040fb 0%, #c2185b 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .banner { width: 100%; height: 300px; background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border-bottom: 2px solid #e040fb; }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .security-badge { display: inline-block; background-color: #4c8ff7; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .highlight { color: #e040fb; font-weight: 600; }
+        .otp-box { background: linear-gradient(135deg, #f700ff15 0%, #d700ff15 100%); border: 2px dashed #e040fb; padding: 30px; border-radius: 6px; margin: 30px 0; text-align: center; }
+        .otp-code { font-size: 48px; font-weight: 900; color: #e040fb; letter-spacing: 8px; font-family: monospace; margin: 20px 0; }
+        .otp-info { color: #888; font-size: 12px; margin-top: 15px; }
+        .warning-box { background-color: #2a2a2a; border-left: 4px solid #ffa500; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #b0b0b0; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #e040fb; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .social-icons { margin: 20px 0; }
+        .social-icons a { display: inline-block; width: 40px; height: 40px; background-color: #333; border-radius: 50%; line-height: 40px; text-align: center; margin: 0 8px; color: #e040fb; text-decoration: none; font-size: 18px; }
+        .social-icons a:hover { background-color: #e040fb; color: #1a1a1a; }
+        .address { color: #888; font-size: 12px; margin: 20px 0; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Your Journey Awaits</div>
+        </div>
+        <div class="banner">[Security Image - 600x300px]</div>
+        <div class="content">
+            <div class="security-badge">🔐 TWO-FACTOR AUTHENTICATION</div>
+            <h2>Your Verification Code</h2>
+            <p>Hi {{user_name}},</p>
+            <p>We need to verify your identity to keep your account secure. Use the code below to complete your login.</p>
+            <div class="otp-box">
+                <p style="color: #888; font-size: 12px; margin-bottom: 10px;">VERIFICATION CODE</p>
+                <div class="otp-code">{{otp_code}}</div>
+                <div class="otp-info">
+                    Valid for <span class="highlight">10 minutes</span> only
+                </div>
+            </div>
+            <p>If you didn't try to login, <span class="highlight">ignore this email</span>. Your account is safe.</p>
+            <div class="warning-box">
+                <strong>⚠️ Security Tips:</strong><br>
+                • Never share this code with anyone<br>
+                • Travallee staff will never ask for this code<br>
+                • This code expires in 10 minutes
+            </div>
+            <p style="font-size: 13px; color: #b0b0b0;">Didn't request this? Your account password is still secure. <a href="{{security_link}}" style="color: #e040fb;">Review your account activity.</a></p>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://facebook.com/travallee" title="Facebook">f</a>
+                <a href="https://instagram.com/travallee" title="Instagram">📷</a>
+                <a href="https://twitter.com/travallee" title="Twitter">𝕏</a>
+                <a href="https://tiktok.com/@travallee" title="TikTok">♪</a>
+                <a href="https://youtube.com/travallee" title="YouTube">▶</a>
+            </div>
+            <div class="address">
+                [YOUR ADDRESS HERE]<br>
+                Phone: [YOUR PHONE]<br>
+                Email: support@travallee.com
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

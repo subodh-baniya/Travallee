@@ -8,21 +8,29 @@ export const createHotelSchema = zod.object({
   hotelDescription: zod.string().min(1, 'Hotel description is required'),
   hotelLocation: zod.string().min(1, 'Hotel location is required'),
   hotelName: zod.string().min(1, 'Hotel name is required'),
-  hotelImages: zod.array(zod.string()).min(1, 'At least one hotel image is required'),
+  hotelImages: zod.union([
+    zod.array(zod.string()).min(1, 'At least one hotel image is required'),
+    zod.string().transform(str => (typeof str === 'string' && str.length > 0 ? str.split(',').map(s => s.trim()) : []))
+  ]).pipe(zod.array(zod.string()).min(1, 'At least one hotel image is required')),
   propertyType: zod.string().min(1, 'Property type is required'),
-  verified: zod.boolean().default(false),
-  VerificationDocuments: zod.array(zod.string()).min(1, 'At least one verification document is required'),
+  verified: zod.union([zod.boolean(), zod.string().transform(str => str === 'true')]).default(false),
+  VerificationDocuments: zod.union([
+    zod.array(zod.string()).min(1, 'At least one verification document is required'),
+    zod.string().transform(str => (typeof str === 'string' && str.length > 0 ? str.split(',').map(s => s.trim()) : []))
+  ]).pipe(zod.array(zod.string()).min(1, 'At least one verification document is required')),
   contactNumber: zod.string().regex(/^\d{10,}$/, 'Valid contact number (10+ digits) is required'),
-  isactive: zod.boolean().default(false),
-  facilities: zod.array(zod.string()).min(1, 'At least one facility is required'),
+  isactive: zod.union([zod.boolean(), zod.string().transform(str => str === 'true')]).default(false),
+  facilities: zod.union([
+    zod.array(zod.string()).min(1, 'At least one facility is required'),
+    zod.string().transform(str => (typeof str === 'string' && str.length > 0 ? str.split(',').map(s => s.trim()) : []))
+  ]).pipe(zod.array(zod.string()).min(1, 'At least one facility is required')),
   checkinTime: zod.string().min(1, 'Check-in time is required'),
   checkoutTime: zod.string().min(1, 'Check-out time is required'),
-  pricePerNight: zod.number().positive('Price per night must be greater than 0'),
-  rating: zod.number().min(0).max(5).default(0),
-  numberOfReviews: zod.number().min(0).default(0),
-  isFeatured: zod.boolean().default(false),
+  pricePerNight: zod.coerce.number().positive('Price per night must be greater than 0'),
+  rating: zod.coerce.number().min(0).max(5).default(0),
+  numberOfReviews: zod.coerce.number().min(0).default(0),
+  isFeatured: zod.union([zod.boolean(), zod.string().transform(str => str === 'true')]).default(false),
   roomIDs: zod.array(zod.string()).optional(),
-
 });
 
 export const createRoomSchema = zod.object({
