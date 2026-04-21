@@ -1,88 +1,62 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import LoginPage from '../pages/LoginPage';
+import HotelAdminLayout from '../components/layout/HotelAdminLayout';
 import DashboardPage from '../pages/DashboardPage';
-import HotelPage from '../pages/HotelPage';
-import RoomsPage from '../pages/RoomsPage';
-import EmployeesPage from '../pages/EmployeesPage';
 import BookingsPage from '../pages/BookingsPage';
-import EarningsPage from '../pages/EarningsPage';
-import ReviewsPage from '../pages/ReviewsPage';
+import GuestsPage from '../pages/GuestsPage';
 import ChatPage from '../pages/ChatPage';
+import ReviewsPage from '../pages/ReviewsPage';
+import EarningsPage from '../pages/EarningsPage';
+import ReportsPage from '../pages/ReportsPage';
+import HotelSettingsPage from '../pages/HotelSettingsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const token = localStorage.getItem('authToken');
-  return token ? <>{children}</> : <Navigate to="/" />;
+  const { token } = useAuth();
+  
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
 const AppRoutes: React.FC = () => {
+  const { token } = useAuth();
+  
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
+      {/* Login route - no protection needed */}
+      <Route path="/login" element={<LoginPage />} />
+      
+      {/* Root route - redirect based on auth state */}
+      <Route 
+        path="/" 
+        element={token ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+      />
+      
+      {/* Protected admin routes with layout */}
       <Route
-        path="/dashboard"
+        path="/"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <HotelAdminLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/hotel"
-        element={
-          <ProtectedRoute>
-            <HotelPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/rooms"
-        element={
-          <ProtectedRoute>
-            <RoomsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/employees"
-        element={
-          <ProtectedRoute>
-            <EmployeesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/bookings"
-        element={
-          <ProtectedRoute>
-            <BookingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/earnings"
-        element={
-          <ProtectedRoute>
-            <EarningsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reviews"
-        element={
-          <ProtectedRoute>
-            <ReviewsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="reservations" element={<BookingsPage />} />
+        <Route path="guests" element={<GuestsPage />} />
+        <Route path="messages" element={<ChatPage />} />
+        <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="finance" element={<EarningsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="settings" element={<HotelSettingsPage />} />
+      </Route>
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

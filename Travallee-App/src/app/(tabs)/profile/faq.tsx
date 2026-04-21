@@ -11,7 +11,7 @@ import { RealixColors, realixFaqs } from '@/src/constants/screens/realix';
 
 export default function FaqScreen() {
   const [query, setQuery] = useState('');
-  const [openId, setOpenId] = useState(realixFaqs[0].id);
+  const [openId, setOpenId] = useState<string>('');
 
   const filteredFaqs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

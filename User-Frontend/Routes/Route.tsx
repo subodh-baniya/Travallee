@@ -9,6 +9,14 @@ import Loginpage from "../Pages/Loginpage"
 import Dashboard from "../Pages/Dashboard"
 import ProtectedRoute from "./ProtectedRoute"
 import Publicroute from "./Publicroute"
+import Overview from "../Pages/Overview"
+import Bookings from "../Pages/Bookings"
+import Rooms from "../Pages/Rooms"
+import Pricing from "../Pages/Pricing"
+import Guests from "../Pages/Guests"
+import Payments from "../Pages/Payments"
+import Reports from "../Pages/Reports"
+import Settings from "../Pages/Settings" 
 
 const router=createBrowserRouter(
     createRoutesFromElements(
@@ -26,9 +34,20 @@ const router=createBrowserRouter(
         </Route>
         </Route>
 
-        <Route element={<ProtectedRoute/>}>
-        <Route path="/dashboard"element={<Dashboard/>}/>
+          <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />}>
+
+          <Route index element={<Overview/>} />
+          <Route path="bookings" element={<Bookings/>} />
+          <Route path="rooms" element={<Rooms/>} />
+          <Route path="pricing" element={<Pricing/>} />
+          <Route path="guests" element={<Guests/>} />
+          <Route path="payments" element={<Payments/>} />
+          <Route path="reports" element={<Reports/>} />
+          <Route path="settings" element={<Settings/>} />
+
         </Route>
+      </Route>
         
         </>
     )

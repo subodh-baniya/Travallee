@@ -1,7 +1,7 @@
-## Description
+ ## Description
 Brief description of the changes in this PR.
 
-## Related Issue
+<!-- ## Related Issue
 Closes #(issue number)
 
 ## Type of Change
@@ -20,12 +20,12 @@ Describe the testing you've done:
 - [ ] Manual testing completed
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
-- [ ] All tests pass locally
+- [ ] All tests pass locally -->
 
 ## Screenshots (if applicable)
 Add screenshots for UI changes.
 
-## Checklist
+<!-- ## Checklist
 - [ ] Code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -38,4 +38,4 @@ Add screenshots for UI changes.
 Does this PR introduce any breaking changes? If yes, describe them.
 
 ## Additional Context
-Add any other context here.
+Add any other context here. --> --> -->

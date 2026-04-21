@@ -1,9 +1,5 @@
 import { Router } from "express";
-<<<<<<< HEAD
-import {registerHotel , createroom ,deleteRoom , featuredHotels} from "../controller/register.controller.js";
-=======
-import {registerHotel , createroom ,deleteRoom , featuredHotels, HotelData} from "../controller/register.controller.js";
->>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
+import {registerHotel , createroom ,deleteRoom , featuredHotels, HotelData, getHotelInfo} from "../controller/register.controller.js";
 
 import { connectDB,
     UserModel,
@@ -32,16 +28,12 @@ import { connectDB,
 
 const router = Router();
 
-<<<<<<< HEAD
-router.post("/register", registerHotel);
-router.post("/room/:hotelId", createroom);
-router.delete("/room/:hotelId/:roomId",deleteRoom); 
-=======
 router.post("/register", authenticate, upload.any(), registerHotel);
+router.get("/my-hotel", authenticate, getHotelInfo);
 router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 router.delete("/room/:hotelId/:roomId", deleteRoom); 
->>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
 router.get("/featured", featuredHotels); 
+router.get("/:hotelId", HotelData);
 
 
 

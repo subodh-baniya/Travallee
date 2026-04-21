@@ -11,9 +11,9 @@ const ProtectedRoute = () => {
     return <Loader/>;
   }
 
-  const {isAuthenticated,loading}=auth;
+  const {isAuthenticated,authChecked}=auth;
 
-  if(loading){
+  if(!authChecked){
     return <Loader/>;
   }
 

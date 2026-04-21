@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';   
+import adminRoutes from './router/router.js';
 
 const app = express();
 
@@ -16,7 +17,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-// Define your routes here
+
+app.use('/api/v1/admin', adminRoutes);
 
 
 export default app;

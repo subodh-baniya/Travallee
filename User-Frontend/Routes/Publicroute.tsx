@@ -5,13 +5,17 @@ import {Loader} from "../Components/Loader"
 const Publicroute = () => {
   const auth = useAuth();
 
-  if (!auth) return <Loader/>;
+  if (!auth) return <Loader />;
 
-  const { isAuthenticated, loading } = auth;
+  const { isAuthenticated, authChecked } = auth;
 
-  if (loading) return <Loader/>;
+  if (!authChecked) return <Loader />;
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  return isAuthenticated ? (
+    <Navigate to="/dashboard" replace />
+  ) : (
+    <Outlet />
+  );
 };
 
 export default Publicroute;

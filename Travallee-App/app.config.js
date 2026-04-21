@@ -11,8 +11,21 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     
+    plugins: [
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission: "Allow Travallee to access your location to provide better services nearby.",
+        },
+      ],
+    ],
+    
     ios: {
-      supportsTablet: true
+      supportsTablet: true,
+      infoPlist: {
+        NSLocationWhenInUseUsageDescription: "We need your location to provide better services nearby.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "We need your location to show nearby places and improve your experience.",
+      },
     },
     android: {
       adaptiveIcon: {
@@ -20,7 +33,11 @@ export default {
         
       },
       edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      permissions: [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+      ],
     },
     web: {
       output: "static",

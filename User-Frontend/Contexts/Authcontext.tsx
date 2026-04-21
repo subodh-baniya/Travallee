@@ -14,7 +14,7 @@ export type AuthContextType = {
   login: (form: { Username: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   user: user|null;
-  loading:boolean;
+  authChecked:boolean;
 }
 
 export const Authcontext = createContext<AuthContextType | null>(null);

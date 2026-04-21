@@ -9,6 +9,7 @@ const API_ENDPOINTS_AUTH: ApiEndpoints = {
   LOGIN: `${API_AUTH}/login`,
   LOGOUT: `${API_AUTH}/logout`,
   REGISTER: `${API_AUTH}/register`,
+  PROFILE: `${API_AUTH}/profile`,
   USER_PROFILE: `${API_AUTH}/profile-picture`,
   UPDATE_PROFILE: `${API_AUTH}/update-profile`,
   CHANGE_PASSWORD: `${API_AUTH}/change-password`,
@@ -27,9 +28,6 @@ const API_ENDPOINTS_HOTEL: ApiEndpoints = {
   GET_HOTELS: `${API_HOTEL}`,
   FEATURED_HOTELS: `${API_HOTEL}/featured`,
   GET_HOTEL_BY_ID: `${API_HOTEL}/:id`,
-  CREATE_HOTEL: `${API_HOTEL}/register`,
-  UPDATE_HOTEL: `${API_HOTEL}/update/:id`,
-  DELETE_HOTEL: `${API_HOTEL}/delete/:id`,
   GET_ROOMS: `${API_HOTEL}/:hotelId/rooms`,
 };
 
@@ -44,7 +42,6 @@ const API_ENDPOINTS_BOOKING: ApiEndpoints = {
   GET_BOOKINGS: `${API_BOOKING}`,
   GET_BOOKING_BY_ID: `${API_BOOKING}/:id`,
   CREATE_BOOKING: `${API_BOOKING}/create`,
-  UPDATE_BOOKING: `${API_BOOKING}/update/:id`,
   CANCEL_BOOKING: `${API_BOOKING}/cancel/:id`,
 };
 

@@ -13,7 +13,7 @@ import {
   createHotelSchema,
   createRoomSchema,
 } from "../validator/hotel.validator.js";
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 const registerHotel = asyncHandler(async (req: any, res: any) => {
   const userID = req.user.id;
@@ -509,6 +509,29 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error: Unable to search rooms");
   }
 });
+const getHotelInfo = asyncHandler(async (req:any, res:any) => {
+    const userId = req.user?.id || req.user?._id;
+    console.log("User from req.user:", req.user);
+    console.log("Fetching hotel information for user ID:", userId);
+    console.log("User ID type:", typeof userId);
+
+    if (!userId) {
+        return apiError(res, 401, "User not authenticated");
+    }
+
+    const hotelData = await hotelModel.findOne({ userID: new mongo.ObjectId(userId) });
+    
+    console.log("Query result:", hotelData);
+    
+    if (!hotelData) {
+        // Try alternative query for debugging
+        const allHotels = await hotelModel.find({});
+        console.log("All hotels in DB:", allHotels);
+        return apiError(res, 404, "Hotel not found for this user");
+    }
+    
+    apiResponse(res, 200, true, "Hotel information retrieved successfully", hotelData);
+})
 
 
 
@@ -521,4 +544,5 @@ export {
   RoomData,
   searchHotels,
   searchRooms,
+  getHotelInfo,
 };

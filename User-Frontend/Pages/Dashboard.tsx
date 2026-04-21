@@ -1,29 +1,28 @@
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../Contexts/Authcontext"
-
+import Sidebar from "../Components/Sidebar";
+import Topbar from "../Components/Topbar";
+import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
-
-  const navigateto=useNavigate()
-  const auth=useAuth();
-  if(!auth){
-    return null;
-  }
-  const {user,logout}=auth;
-
-  const loggingout=()=>{
-logout();
-navigateto('/login',{replace:true});
-  }
-
   return (
-    <div>
-      <p>{user?.Username}</p>
-      <button onClick={()=>{loggingout()}}>logout</button>
+    <div className="flex h-screen">
+
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Right side */}
+      <div className="flex flex-col flex-1">
+
+        {/* Topbar */}
+        <Topbar />
+
+        {/* Dynamic content */}
+        <main className="flex-1 p-4 overflow-y-auto bg-gray-100">
+          <Outlet />
+        </main>
+
+      </div>
     </div>
+  );
+};
 
-    
-  )
-}
-
-export default Dashboard
+export default Dashboard;

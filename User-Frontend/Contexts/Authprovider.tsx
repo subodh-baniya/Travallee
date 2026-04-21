@@ -4,54 +4,63 @@ import axios from "axios";
 import type { user } from './Authcontext';
 
 export const Authprovider = ({ children }: { children: React.ReactNode }) => {
-  const [user,setUser]=useState<user | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setloading]=useState(true);
+  const [user, setUser] = useState<user | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-useEffect(() => {
-  const fetchUser = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
-        { withCredentials: true }
-      );
+  const isAuthenticated = !!user;
 
-      setUser(res.data.data);
-      setIsAuthenticated(true);
-    } catch {
-      setUser(null);
-      setIsAuthenticated(false);
-    }finally{
-      setloading(false);
-    }
-  };
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/users/profile`,
+          { withCredentials: true }
+        );
 
-  fetchUser();
-}, []);
-  
+        setUser(res.data.data);
+      } catch {
+        setUser(null);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    initAuth();
+  }, []);
 
   const login = async (form: { Username: string; password: string }) => {
     const res = await axios.post(
-      `${import.meta.env.VITE_AUTH_API_BASE_URL}/login`,
+      `${import.meta.env.VITE_API_BASE_URL}/users/login`,
       form,
       { withCredentials: true }
     );
 
-    setUser(res.data.data); 
-    setIsAuthenticated(true);
+    setUser(res.data.data);
   };
 
   const logout = async () => {
-    await axios.post( `${import.meta.env.VITE_AUTH_API_BASE_URL}/logout`,{}, { withCredentials: true })
+    await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/users/logout`,
+      {},
+      { withCredentials: true }
+    );
+
     setUser(null);
-    setIsAuthenticated(false);
   };
 
   return (
-    <Authcontext.Provider value={{ user, login, logout, isAuthenticated, loading }}>
+    <Authcontext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated,
+        authChecked,
+      }}
+    >
       {children}
     </Authcontext.Provider>
-  )
-}
+  );
+};
 
 

@@ -1,16 +1,10 @@
 
-import { apiError } from "./Utils/api.error.js";
+import { apiError } from "./Utils/response/api.error.js";
 import { asyncHandler } from "./Utils/asynchandler.js";
-import {apiResponse} from "./Utils/api.response.js";
+import {apiResponse} from "./Utils/response/api.response.js";
 import { UserModel } from "./Model/User.model.js";
 import { hotelModel } from "./Model/Hotel.model.js";
-<<<<<<< HEAD
-import { roleMiddleware } from "./middleware/role.middleware.js";
-import {passwordCheck} from "./middleware/password.middleware.js";
-import {connectDB} from "./Utils/connect.db.js"
-import { sendEmail } from "./Utils/resendmail.js";
-import { uploadVToCloudinary } from "./Utils/cloudinary.js";
-=======
+import { BannerModel } from "./Model/banner.model.js";
 import {
   authenticate,
   checkRole,
@@ -28,11 +22,9 @@ import {
 import { passwordCheck } from "./Utils/Func/password.js";
 import {connectDB} from "./Utils/Func/connect.db.js"
 import { uploadToCloudinary } from "./Utils/Func/cloudinary.js";
->>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
 import { roomModel } from "./Model/Room.model.js";
 import { bookingModel } from "./Model/Booking.model.js";
 import {upload} from "./middleware/mullter.middleware.js";
-
 
 
 
@@ -44,9 +36,6 @@ export {
     asyncHandler,
     apiResponse,
     hotelModel,
-<<<<<<< HEAD
-    roleMiddleware,
-=======
     authenticate,
     checkRole,
     checkRoles,
@@ -59,16 +48,11 @@ export {
     anyAuthenticatedMiddleware,
     superAdminOrHotelAdminMiddleware,
     checkOwnership,
->>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
     passwordCheck,
     roomModel,
     bookingModel,
-<<<<<<< HEAD
-    uploadVideoToCloudinary
-}
-=======
     uploadToCloudinary,
     upload,
+    BannerModel
 };
 
->>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d

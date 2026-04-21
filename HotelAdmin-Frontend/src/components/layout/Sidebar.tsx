@@ -109,7 +109,7 @@ const Sidebar: React.FC = () => {
           </div>
         )}
 
-        {/* Operations Section */}}
+        {/* Operations Section */}
         <div
           onClick={() => toggleSection('operations')}
           style={{
@@ -169,7 +169,7 @@ const Sidebar: React.FC = () => {
           </div>
         )}
 
-        {/* Business Section */}}
+        {/* Business Section */}
         <div
           onClick={() => toggleSection('business')}
           style={{
