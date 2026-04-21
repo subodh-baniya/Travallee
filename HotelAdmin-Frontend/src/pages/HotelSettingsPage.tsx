@@ -214,6 +214,19 @@ const HotelSettingsPage: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleAddStaff = () => {
+    if (!newStaff.name.trim() || !newStaff.position.trim() || !newStaff.email.trim() || !newStaff.phone.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    const staffMember: Staff = {
+      ...newStaff,
+      id: Date.now().toString(),
+    };
+    setStaffList((prev) => [...prev, staffMember]);
+    setNewStaff(BLANK_STAFF);
+  };
+
   const D = isEditing ? formData : hotelDetails;
 
   /* ── Inline field ── */
