@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+
+import { apiError, asyncHandler, apiResponse , UserModel , uploadToCloudinary , sendEmail} from "@packages";
+=======
 import {
   apiError,
   asyncHandler,
@@ -7,6 +11,7 @@ import {
   hotelModel,
   roomModel, //@ts-ignore
 } from "@packages";
+>>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue,  } from "bullmq";
@@ -198,8 +203,15 @@ const updateUserProfile = asyncHandler(async (req: any, res: any) => {
   }
   if (profileImage) {
     try {
+<<<<<<< HEAD
+      if (file) {
+          const videoUrl = await uploadVideoToCloudinary({ filePath: file.path });
+          user.profileVideo = videoUrl;
+      }
+=======
       const response = await uploadToCloudinary(profileImage.path, "profile_pictures");
       user.profileimage = response;
+>>>>>>> f51a6882f5123d8310b442b6378b71ec4bb80f6d
     } catch (error: any) {
       console.error("Error uploading profile image to Cloudinary:", error);
       return apiError(res, 500, "Failed to upload profile image", error);
