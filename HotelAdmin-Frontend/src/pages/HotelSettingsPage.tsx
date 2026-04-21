@@ -214,6 +214,19 @@ const HotelSettingsPage: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleAddStaff = () => {
+    if (!newStaff.name.trim() || !newStaff.position.trim() || !newStaff.email.trim() || !newStaff.phone.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    const staffMember: Staff = {
+      ...newStaff,
+      id: Date.now().toString(),
+    };
+    setStaffList((prev) => [...prev, staffMember]);
+    setNewStaff(BLANK_STAFF);
+  };
+
   const D = isEditing ? formData : hotelDetails;
 
   /* ── Inline field ── */
@@ -255,7 +268,7 @@ const HotelSettingsPage: React.FC = () => {
       {/* ── Hero ── */}
       <header className="relative bg-[#3D1F12] overflow-hidden px-10 pt-10 pb-8 flex items-end justify-between gap-6 flex-wrap">
         {/* Gold shimmer top border */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-80" />
+        <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-transparent via-amber-400 to-transparent opacity-80" />
 
         {/* Subtle texture overlay */}
         <div className="absolute inset-0 opacity-[0.04]"
@@ -286,7 +299,7 @@ const HotelSettingsPage: React.FC = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide bg-gradient-to-br from-emerald-600 to-emerald-800 text-emerald-50 shadow-lg hover:-translate-y-px transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide bg-linear-to-br from-emerald-600 to-emerald-800 text-emerald-50 shadow-lg hover:-translate-y-px transition-all cursor-pointer"
               >
                 ✓ Save Changes
               </button>
@@ -294,7 +307,7 @@ const HotelSettingsPage: React.FC = () => {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-bold tracking-wide bg-gradient-to-br from-amber-400 to-amber-600 text-[#3D1F12] shadow-lg hover:-translate-y-px hover:from-amber-300 hover:to-amber-500 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-bold tracking-wide bg-linear-to-br from-amber-400 to-amber-600 text-[#3D1F12] shadow-lg hover:-translate-y-px hover:from-amber-300 hover:to-amber-500 transition-all cursor-pointer"
             >
               ✎ Edit Details
             </button>
@@ -365,7 +378,7 @@ const HotelSettingsPage: React.FC = () => {
           <CardTitle icon="✍️">Description</CardTitle>
           {isEditing ? (
             <textarea
-              className={`${inputCls} min-h-[110px] resize-y leading-relaxed`}
+              className={`${inputCls} min-h-27.5 resize-y leading-relaxed`}
               name="hotelDescription"
               value={formData.hotelDescription}
               onChange={handleInputChange}
@@ -384,7 +397,7 @@ const HotelSettingsPage: React.FC = () => {
               <div>
                 <label className={labelCls}>Comma-separated</label>
                 <textarea
-                  className={`${inputCls} min-h-[110px] resize-y`}
+                  className={`${inputCls} min-h-27.5 resize-y`}
                   value={facilitiesInput}
                   onChange={(e) => setFacilitiesInput(e.target.value)}
                   placeholder="Free WiFi, Parking, Breakfast, Spa…"
@@ -437,9 +450,9 @@ const HotelSettingsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, [name]: !value }))}
-                        className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer ${value ? 'bg-emerald-500' : 'bg-stone-300'}`}
+                        className={`relative w-10 h-5.5 rounded-full transition-colors shrink-0 cursor-pointer ${value ? 'bg-emerald-500' : 'bg-stone-300'}`}
                       >
-                        <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-[22px]' : 'translate-x-[3px]'}`} />
+                        <span className={`absolute top-0.75 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-5.5' : 'translate-x-0.75'}`} />
                       </button>
                       <span className="text-sm font-medium text-stone-700">{label}</span>
                     </label>
@@ -465,7 +478,7 @@ const HotelSettingsPage: React.FC = () => {
               <div>
                 <label className={labelCls}>One URL per line</label>
                 <textarea
-                  className={`${inputCls} min-h-[110px] resize-y font-mono text-xs`}
+                  className={`${inputCls} min-h-27.5 resize-y font-mono text-xs`}
                   value={imageInput}
                   onChange={(e) => setImageInput(e.target.value)}
                   placeholder="https://…"
@@ -542,7 +555,7 @@ const HotelSettingsPage: React.FC = () => {
                   key={s.id}
                   className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-stone-50 border border-stone-100 hover:border-amber-200 hover:shadow-sm transition-all"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center font-serif font-bold text-[#3D1F12] text-sm shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-br from-amber-200 to-amber-400 flex items-center justify-center font-serif font-bold text-[#3D1F12] text-sm shrink-0">
                     {initials(s.name)}
                   </div>
 
@@ -603,7 +616,7 @@ const HotelSettingsPage: React.FC = () => {
 
               <button
                 onClick={handleAddStaff}
-                className="w-full py-3 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-amber-400 to-amber-500 text-[#3D1F12] shadow-md hover:from-amber-300 hover:to-amber-400 hover:-translate-y-px transition-all cursor-pointer"
+                className="w-full py-3 rounded-xl font-bold text-sm tracking-wide bg-linear-to-r from-amber-400 to-amber-500 text-[#3D1F12] shadow-md hover:from-amber-300 hover:to-amber-400 hover:-translate-y-px transition-all cursor-pointer"
               >
                 + Add Staff Member
               </button>
