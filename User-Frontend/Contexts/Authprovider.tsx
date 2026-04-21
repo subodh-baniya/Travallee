@@ -13,7 +13,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     const initAuth = async () => {
       try {
         const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/users/profile`,
+          `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
           { withCredentials: true }
         );
 
@@ -30,7 +30,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (form: { Username: string; password: string }) => {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+      `${import.meta.env.VITE_AUTH_API_BASE_URL}/login`,
       form,
       { withCredentials: true }
     );
@@ -40,7 +40,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/users/logout`,
+      `${import.meta.env.VITE_AUTH_API_BASE_URL}/logout`,
       {},
       { withCredentials: true }
     );
