@@ -557,42 +557,27 @@ const getHotelInfo = asyncHandler(async (req: any, res: any) => {
   );
 });
 
-const getNearbyHotels = asyncHandler(async (req: any, res: any) => {
-  const { latitude, longitude, radius = "30" } = req.query;
-  console.log("Received coordinates:", { latitude, longitude, radius });
+const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
 
-  if (!latitude || !longitude) {
-    return apiError(res, 400, "Latitude and longitude are required");
-  }
+    const hotels = await hotelModel
+      .find({ rating: { $gte: 4.0 } })
+      .select(
+        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
+      )
+      .sort({ rating: -1, numberOfReviews: -1 });
 
-  try {
-    const radiusInKm = parseFloat(radius as string) || 30;
-    const nearbyHotels = await hotelModel.find({
-      hotelLocation: {
-        $geoWithin: {
-          $centerSphere: [
-            [parseFloat(longitude as string), parseFloat(latitude as string)],
-            radiusInKm / 6378.1, // Convert radius to radians
-          ],
-        },
-      },
-    });
-
-    if (nearbyHotels.length === 0) {
-      return apiError(res, 404, "No nearby hotels found");
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No highly reviewed hotels found");
     }
 
     return apiResponse(
       res,
       200,
       true,
-      "Nearby hotels retrieved successfully",
-      nearbyHotels,
+      "Highly reviewed hotels retrieved successfully",
+      hotels,
     );
-  } catch (error) {
-    console.error("Error fetching nearby hotels:", error);
-    return apiError(res, 500, "Internal server errodfasfsfr");
-  }
+  
 });
 
 export {
@@ -605,5 +590,5 @@ export {
   searchHotels,
   searchRooms,
   getHotelInfo,
-  getNearbyHotels,
+  highReviewedHotels,
 };
