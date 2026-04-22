@@ -60,15 +60,8 @@ export default function EditProfileScreen() {
           return;
         }
 
-        const response = await axios.get(API_ENDPOINTS_AUTH.PROFILE, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          withCredentials: true,
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(API_ENDPOINTS_AUTH.PROFILE);
 
         if (response.data.success && response.data.data) {
           const userData = response.data.data;
@@ -160,17 +153,10 @@ export default function EditProfileScreen() {
         name: 'profile-photo.jpg',
       } as any);
 
-      const response = await axios.post(
+      // Token is automatically added by apiClient interceptor
+      const response = await apiClient.post(
         API_ENDPOINTS_AUTH.UPDATE_PROFILE,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-          withCredentials: true,
-          timeout: 30000,
-        }
+        formData
       );
 
       if (response.data.success) {
@@ -211,18 +197,10 @@ export default function EditProfileScreen() {
         ...(number.trim() && { number: number.trim() }),
       };
 
-      const response = await axios.post(
+      // Token is automatically added by apiClient interceptor
+      const response = await apiClient.post(
         API_ENDPOINTS_AUTH.UPDATE_PROFILE,
-        updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          withCredentials: true,
-          timeout: 10000,
-        }
+        updateData
       );
 
       if (response.data.success) {

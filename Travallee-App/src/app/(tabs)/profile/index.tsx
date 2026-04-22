@@ -111,15 +111,8 @@ export default function ProfileScreen() {
           return;
         }
 
-        const response = await axios.get(API_PROFILE_IMAGE, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          withCredentials: true,
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(API_PROFILE_IMAGE);
         
         if (response.data.success && response.data.data?.profilePicture) {
           setProfileImage(response.data.data.profilePicture);

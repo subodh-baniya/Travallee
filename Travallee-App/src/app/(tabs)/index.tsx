@@ -284,9 +284,12 @@ const stat = StyleSheet.create({
 export default function HomeScreen() {
   const API_PROFILE = API_ENDPOINTS_AUTH.PROFILE;
   const FEATURED_HOTEL = API_ENDPOINTS_HOTEL.FEATURED_HOTELS;
+  const HIGH_REVIEWED_HOTEL = API_ENDPOINTS_HOTEL.HIGH_REVIEWED_HOTELS;
 
   const [featuredHotels, setFeaturedHotels] = useState<Hotel[]>([]);
+  const [highReviewedHotels, setHighReviewedHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [highReviewedLoading, setHighReviewedLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -342,6 +345,23 @@ export default function HomeScreen() {
       } catch (err: any) {
         setError(err.response?.data?.message || err.message || "Failed to load hotels");
       } finally { setLoading(false); }
+    })();
+  }, []);
+
+  // Fetch high-reviewed hotels for "Travelled Favourite" section
+  useEffect(() => {
+    (async () => {
+      try {
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(HIGH_REVIEWED_HOTEL);
+        if (response.data.success && response.data.data) {
+          setHighReviewedHotels(response.data.data);
+        }
+      } catch (err: any) {
+        console.error("Failed to load high-reviewed hotels:", err.message);
+      } finally {
+        setHighReviewedLoading(false);
+      }
     })();
   }, []);
 
@@ -539,15 +559,15 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* ── Nearby hotels ── */}
+        {/* ── Travelled Favourite (High-Reviewed Hotels) ── */}
         <View style={s.sectionBlock}>
           <View style={s.sectionRow}>
             <View>
-              <Text style={s.sectionEye}>AROUND YOU</Text>
-              <Text style={s.sectionTitle}>Hotels nearby</Text>
+              <Text style={s.sectionEye}>HIGHLY RECOMMENDED</Text>
+              <Text style={s.sectionTitle}>Best rated stays</Text>
             </View>
             <Pressable
-              onPress={() => router.push("/(tabs)/explore/detail")}
+              onPress={() => router.push("/(tabs)/explore")}
               style={s.seeAllBtn}
             >
               <Text style={s.seeAllText}>See all</Text>
@@ -555,13 +575,15 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {loading ? (
+          {highReviewedLoading ? (
             <View style={s.loadBox}>
               <ActivityIndicator color={N.saffron} />
+              <Text style={s.loadText}>Loading favorites…</Text>
             </View>
-          ) : error || featuredHotels.length === 0 ? (
+          ) : highReviewedHotels.length === 0 ? (
             <View style={s.errorBox}>
-              <Text style={s.errorText}>{error || "No hotels available"}</Text>
+              <Ionicons name="heart-outline" size={28} color={N.textMuted} />
+              <Text style={s.errorText}>No favorites available yet</Text>
             </View>
           ) : (
             <ScrollView
@@ -571,7 +593,7 @@ export default function HomeScreen() {
               snapToInterval={274}
               decelerationRate="fast"
             >
-              {featuredHotels.map((hotel) => (
+              {highReviewedHotels.map((hotel) => (
                 <HotelCard
                   key={hotel._id}
                   hotel={hotel}
@@ -611,6 +633,8 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+
+        <DhokaSeparator />
 
         {/* ── Promo card ── */}
         <View style={s.promoCard}>
