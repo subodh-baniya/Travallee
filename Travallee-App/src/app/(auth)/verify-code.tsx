@@ -7,7 +7,7 @@ import { Typography } from "@/src/constants/app/typography";
 import { Spacing } from "@/src/constants/app/spacing";
 
 import { API_ENDPOINTS_AUTH } from "@/src/constants/api";
-import axios from "axios";
+import apiClient from "@/src/services/apiClient";
 
 const OTP_LENGTH = 4;
 
@@ -51,11 +51,8 @@ export default function VerifyCode() {
     try {
       console.log("🔐 Verifying OTP...");
       const payload = email ? { email, otp } : { phone, otp };
-      const response = await axios.post(API_VERIFY_OTP, payload, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-        timeout: 15000,
-      });
+      // Token is automatically added by apiClient interceptor
+      const response = await apiClient.post(API_VERIFY_OTP, payload);
 
       console.log("✅ OTP verified successfully");
 

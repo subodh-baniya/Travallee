@@ -12,7 +12,7 @@ import {
   RealixSectionLabel,
 } from '@/src/components/realix/screen-shell';
 import { RealixColors } from '@/src/constants/screens/realix';
-import axios from 'axios';
+import apiClient from '@/src/services/apiClient';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
@@ -84,15 +84,8 @@ export default function ProfileScreen() {
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
 
-        const response = await axios.get(API_PROFILE, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          withCredentials: true,
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(API_PROFILE);
 
         if (response.data.success && response.data.data) {
           setProfileData(response.data.data);
@@ -118,15 +111,8 @@ export default function ProfileScreen() {
           return;
         }
 
-        const response = await axios.get(API_PROFILE_IMAGE, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          withCredentials: true,
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(API_PROFILE_IMAGE);
         
         if (response.data.success && response.data.data?.profilePicture) {
           setProfileImage(response.data.data.profilePicture);

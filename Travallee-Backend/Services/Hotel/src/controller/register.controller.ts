@@ -5,9 +5,8 @@ import {
   hotelModel,
   roomModel,
   uploadToCloudinary,
-  passwordCheck,
-} // @ts-ignore
- from "@packages";
+  passwordCheck, // @ts-ignore
+} from "@packages";
 import type { HotelInput, RoomInput } from "../validator/hotel.validator.js";
 import {
   createHotelSchema,
@@ -32,19 +31,27 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
       for (const file of files) {
         // Get file path - multer stores it in 'path'
         const filePath = file.path || file.tempFilePath;
-        
+
         if (!filePath) {
           console.error("File path not found", file);
           continue;
         }
 
         // Separate files based on field name
-        if (file.fieldname === "VerificationDocuments" || file.fieldname === "verificationDocuments") {
-          const uploadResult = await uploadToCloudinary(filePath, "verification_documents");
+        if (
+          file.fieldname === "VerificationDocuments" ||
+          file.fieldname === "verificationDocuments"
+        ) {
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "verification_documents",
+          );
           if (uploadResult) verificationDocUrls.push(uploadResult);
         } else {
-         
-          const uploadResult = await uploadToCloudinary(filePath, "hotel_images");
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "hotel_images",
+          );
           if (uploadResult) hotelImageUrls.push(uploadResult);
         }
       }
@@ -62,7 +69,9 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
       }
     } catch (error: any) {
       console.error("Error uploading files:", error);
-      return apiError(res, 500, "Failed to upload files", { error: error.message });
+      return apiError(res, 500, "Failed to upload files", {
+        error: error.message,
+      });
     }
   } else {
     // Empty arrays if no files
@@ -90,7 +99,11 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
     if (error.name === "ValidationError") {
       return apiError(res, 400, "Hotel validation failed", error.errors);
     }
-    return apiError(res, 500, "Internal server error: Unable to register hotel");
+    return apiError(
+      res,
+      500,
+      "Internal server error: Unable to register hotel",
+    );
   }
 });
 
@@ -113,7 +126,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       for (const file of files) {
         // Get file path - multer stores it in 'path'
         const filePath = file.path || file.tempFilePath;
-        
+
         if (!filePath) {
           console.error("File path not found", file);
           continue;
@@ -125,7 +138,9 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       req.body.roomImages = uploadedUrls;
     } catch (error: any) {
       console.error("Error uploading room images:", error);
-      return apiError(res, 500, "Failed to upload room images", { error: error.message });
+      return apiError(res, 500, "Failed to upload room images", {
+        error: error.message,
+      });
     }
   }
 
@@ -209,14 +224,18 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 
 const deleteRoom = asyncHandler(async (req: any, res: any) => {
   const userID = req.user?._id || req.user?.id;
-   if (!userID) {
+  if (!userID) {
     return apiError(res, 401, "Unauthorized: User ID not found in request");
   }
   const { hotelId, roomId } = req.params;
   const { password } = req.body;
 
-   if (!userID || !password) {
-    return apiError(res, 400, "User ID and password are required in request body");
+  if (!userID || !password) {
+    return apiError(
+      res,
+      400,
+      "User ID and password are required in request body",
+    );
   }
 
   const passwordCheckResult = await passwordCheck(password, userID);
@@ -353,10 +372,8 @@ const RoomData = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-
 const searchHotels = asyncHandler(async (req: any, res: any) => {
-
-   // query = name 
+  // query = name
   const { query, location, page = 1, limit = 10 } = req.query;
 
   if (!query && !location) {
@@ -367,7 +384,6 @@ const searchHotels = asyncHandler(async (req: any, res: any) => {
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.max(1, Math.min(50, parseInt(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
-
 
     const searchFilter: any = {};
 
@@ -390,7 +406,7 @@ const searchHotels = asyncHandler(async (req: any, res: any) => {
       .limit(limitNum)
       .skip(skip)
       .select(
-        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured"
+        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
       )
       .sort({ rating: -1, numberOfReviews: -1 });
 
@@ -413,16 +429,16 @@ const searchHotels = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-
-// not completed
-const Filter = asyncHandler(async (req: any, res: any) => {
-    
-});
-
-
 const searchRooms = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
-  const { query, roomType, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
+  const {
+    query,
+    roomType,
+    minPrice,
+    maxPrice,
+    page = 1,
+    limit = 10,
+  } = req.query;
 
   if (!hotelId) {
     return apiError(res, 400, "Hotel ID is required in URL parameters");
@@ -482,7 +498,7 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
       .limit(limitNum)
       .skip(skip)
       .select(
-        "roomNumber roomType pricePerNight capacity amenities roomImages rating"
+        "roomNumber roomType pricePerNight capacity amenities roomImages rating",
       )
       .sort({ floorNumber: 1, roomNumber: 1 });
 
@@ -509,32 +525,90 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error: Unable to search rooms");
   }
 });
-const getHotelInfo = asyncHandler(async (req:any, res:any) => {
-    const userId = req.user?.id || req.user?._id;
-    console.log("User from req.user:", req.user);
-    console.log("Fetching hotel information for user ID:", userId);
-    console.log("User ID type:", typeof userId);
+const getHotelInfo = asyncHandler(async (req: any, res: any) => {
+  const userId = req.user?.id || req.user?._id;
+  console.log("User from req.user:", req.user);
+  console.log("Fetching hotel information for user ID:", userId);
+  console.log("User ID type:", typeof userId);
 
-    if (!userId) {
-        return apiError(res, 401, "User not authenticated");
+  if (!userId) {
+    return apiError(res, 401, "User not authenticated");
+  }
+
+  const hotelData = await hotelModel.findOne({
+    userID: new mongo.ObjectId(userId),
+  });
+
+  console.log("Query result:", hotelData);
+
+  if (!hotelData) {
+    // Try alternative query for debugging
+    const allHotels = await hotelModel.find({});
+    console.log("All hotels in DB:", allHotels);
+    return apiError(res, 404, "Hotel not found for this user");
+  }
+
+  apiResponse(
+    res,
+    200,
+    true,
+    "Hotel information retrieved successfully",
+    hotelData,
+  );
+});
+
+const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
+
+    const hotels = await hotelModel
+      .find({ rating: { $gte: 4.0 } })
+      .select(
+        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
+      )
+      .sort({ rating: -1, numberOfReviews: -1 });
+
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No highly reviewed hotels found");
     }
 
-    const hotelData = await hotelModel.findOne({ userID: new mongo.ObjectId(userId) });
-    
-    console.log("Query result:", hotelData);
-    
-    if (!hotelData) {
-        // Try alternative query for debugging
-        const allHotels = await hotelModel.find({});
-        console.log("All hotels in DB:", allHotels);
-        return apiError(res, 404, "Hotel not found for this user");
+    return apiResponse(
+      res,
+      200,
+      true,
+      "Highly reviewed hotels retrieved successfully",
+      hotels,
+    );
+  
+});
+
+const getAllHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const hotels = await hotelModel.find({ }).limit(10);
+    if (hotels.length === 0) {
+      console.log("No active hotels found in database");
+      return apiResponse(res, 200, true, "No hotels available", []);
     }
-    
-    apiResponse(res, 200, true, "Hotel information retrieved successfully", hotelData);
-})
+    console.log(`Retrieved ${hotels.length} hotels`);
+    return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
+  } catch (error: any) {
+    console.error("Error fetching hotels:", error.message);
+    return apiError(res, 500, "Failed to fetch hotels: " + error.message);
+  }
+});
 
-
-
+const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const hotels = await hotelModel.find({ propertyType: "Resort", isactive: true }).limit(10);
+    if (hotels.length === 0) {
+      console.log("No active resorts found in database");
+      return apiResponse(res, 200, true, "No resorts available", []);
+    }
+    console.log(`Retrieved ${hotels.length} resorts`);
+    return apiResponse(res, 200, true, "Resort hotels retrieved successfully", hotels);
+  } catch (error: any) {
+    console.error("Error fetching resorts:", error.message);
+    return apiError(res, 500, "Failed to fetch resorts: " + error.message);
+  }
+});
 export {
   registerHotel,
   createroom,
@@ -545,4 +619,7 @@ export {
   searchHotels,
   searchRooms,
   getHotelInfo,
+  highReviewedHotels,
+  getAllHotels,
+  getAllResortHotels,
 };

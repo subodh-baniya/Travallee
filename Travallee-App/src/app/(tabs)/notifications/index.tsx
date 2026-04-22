@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RealixColors, realixInboxThreads } from '@/src/constants/screens/realix';
+import { RealixColors } from '@/src/constants/screens/realix';
 
 export default function InboxScreen() {
   const router = useRouter();
@@ -25,30 +25,7 @@ export default function InboxScreen() {
       </Pressable>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {realixInboxThreads.map((thread) => (
-          <Pressable
-            key={thread.id}
-            style={styles.thread}
-            onPress={() => router.push({ pathname: '/(tabs)/notifications/chat', params: { thread: thread.id } })}
-          >
-            <View style={styles.avatarWrap}>
-              <Text style={styles.avatarText}>{thread.avatar}</Text>
-              {thread.online ? <View style={styles.onlineDot} /> : null}
-            </View>
-            <View style={styles.threadBody}>
-              <View style={styles.threadTop}>
-                <Text style={styles.threadName}>{thread.name}</Text>
-                <Text style={styles.threadTime}>{thread.time}</Text>
-              </View>
-              <View style={styles.threadBottom}>
-                <Text style={styles.threadMessage} numberOfLines={1}>{thread.message}</Text>
-                {thread.unreadCount ? (
-                  <View style={styles.badge}><Text style={styles.badgeText}>{thread.unreadCount}</Text></View>
-                ) : null}
-              </View>
-            </View>
-          </Pressable>
-        ))}
+        {/* Inbox threads will be rendered here */}
       </ScrollView>
     </SafeAreaView>
   );

@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RealixColors, realixChatMessages, realixInboxThreads } from '@/src/constants/screens/realix';
+import { RealixColors, realixInboxThreads } from '@/src/constants/screens/realix';
 
 export default function InboxChatScreen() {
   const router = useRouter();
@@ -29,20 +29,7 @@ export default function InboxChatScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {realixChatMessages.map((message) => {
-          if (message.type === 'time') {
-            return <Text key={message.id} style={styles.time}>{message.value}</Text>;
-          }
-
-          const incoming = message.type === 'incoming';
-          return (
-            <View key={message.id} style={[styles.messageRow, incoming ? styles.rowStart : styles.rowEnd]}>
-              <View style={[styles.messageBubble, incoming ? styles.bubbleIncoming : styles.bubbleOutgoing]}>
-                <Text style={[styles.messageText, incoming ? styles.textIncoming : styles.textOutgoing]}>{message.value}</Text>
-              </View>
-            </View>
-          );
-        })}
+        {/* Chat messages will be rendered here */}
       </ScrollView>
 
       <View style={styles.composer}>

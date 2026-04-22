@@ -24,7 +24,7 @@ import { Spacing } from "@/src/constants/app/spacing";
 
 import registerSchema from "@/src/schema/registerschema";
 import { API_ENDPOINTS_AUTH } from "@/src/constants/api";
-import axios from "axios";
+import apiClient from "@/src/services/apiClient";
 
 export default function SignUp() {
   const API_SIGNUP = API_ENDPOINTS_AUTH.REGISTER;
@@ -63,25 +63,18 @@ export default function SignUp() {
       }
 
       console.log("📝 Attempting registration...");
-      const response = await axios.post(API_SIGNUP, data, {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-        timeout: 15000,
-      });
+      // Token is automatically added by apiClient interceptor (if token exists)
+      const response = await apiClient.post(API_SIGNUP, data);
 
       console.log("✅ Registration successful");
 
       if (response.status === 201) {
         console.log("📧 Sending OTP...");
         try {
-          await axios.post(
+          // Token is automatically added by apiClient interceptor
+          await apiClient.post(
             API_SEND_VERIFICATION,
-            { email: data.email },
-            { 
-              withCredentials: true, 
-              headers: { "Content-Type": "application/json" },
-              timeout: 15000,
-            }
+            { email: data.email }
           );
           console.log("✅ OTP sent successfully");
         } catch (otpError: any) {

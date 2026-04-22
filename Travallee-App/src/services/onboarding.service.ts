@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import apiClient from "./apiClient";
 import { API_ENDPOINTS_CONTENT } from "@/src/constants/api";
 import {
   ONBOARDING_SLIDES,
@@ -26,10 +26,8 @@ const parseSlides = (raw: any): OnboardingSlide[] => {
 
 export async function getOnboardingSlides(): Promise<OnboardingSlide[]> {
   try {
-    const response = await axios.get(API_ENDPOINTS_CONTENT.ONBOARDING, {
-      timeout: 5000,
-      withCredentials: true,
-    });
+    // Token is automatically added by apiClient interceptor
+    const response = await apiClient.get(API_ENDPOINTS_CONTENT.ONBOARDING);
 
     const data = response.data?.data || response.data;
     const remoteSlides = parseSlides(data?.slides || data);

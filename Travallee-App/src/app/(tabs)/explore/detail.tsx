@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
-import axios from 'axios';
+import apiClient from '@/src/services/apiClient';
 import { API_ENDPOINTS_HOTEL } from '@/src/constants/api';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -90,11 +90,8 @@ export default function HotelDetailScreen() {
           return;
         }
         const url = API_ENDPOINTS_HOTEL.GET_HOTEL_BY_ID.replace(':id', hotelId as string);
-        const response = await axios.get(url, {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          timeout: 15000,
-        });
+        // Token is automatically added by apiClient interceptor (if token exists)
+        const response = await apiClient.get(url);
         // Handle both { success, data } and direct object response shapes
         const data = response.data?.success ? response.data.data : response.data;
         if (data?._id) {

@@ -15,7 +15,8 @@ import { Colors } from '@/src/constants/app/color';
 import { Typography } from '@/src/constants/app/typography';
 import { Spacing } from '@/src/constants/app/spacing';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
-import axios, { isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
+import apiClient from '@/src/services/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/src/context/AuthContext';
@@ -78,10 +79,8 @@ export default function SignIn() {
 
     try {
       const payload = { Username: trimmedUsername, password: trimmedPassword };
-      const response = await axios.post(API_SIGNIN, payload, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      // Token is automatically added by apiClient interceptor
+      const response = await apiClient.post(API_SIGNIN, payload);
 
       if (response.status === 200) {
         const token :  string = response.data?.data?.token;

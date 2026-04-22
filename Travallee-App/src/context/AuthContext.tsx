@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios, { isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
+import apiClient from '@/src/services/apiClient';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
 
 interface User {
@@ -34,10 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSignOut(true);
         return;
       }
-      const response = await axios.get(API_ENDPOINTS_AUTH.USER_PROFILE, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+      // Token is automatically added by apiClient interceptor
+      const response = await apiClient.get(API_ENDPOINTS_AUTH.USER_PROFILE);
 
       if (response.status === 200) {
         const userData = response.data?.data;

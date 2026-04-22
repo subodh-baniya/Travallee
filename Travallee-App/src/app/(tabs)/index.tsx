@@ -18,7 +18,7 @@ import * as SecureStore from "expo-secure-store";
 import { useAuth } from "@/src/context/AuthContext";
 import { useLocation } from "@/src/hooks/useLocation";
 import { RealixColors } from "@/src/constants/screens/realix";
-import axios from "axios";
+import apiClient from "@/src/services/apiClient";
 import { API_ENDPOINTS_HOTEL } from "@/src/constants/api";
 import { API_ENDPOINTS_AUTH } from "@/src/constants/api";
 
@@ -284,9 +284,12 @@ const stat = StyleSheet.create({
 export default function HomeScreen() {
   const API_PROFILE = API_ENDPOINTS_AUTH.PROFILE;
   const FEATURED_HOTEL = API_ENDPOINTS_HOTEL.FEATURED_HOTELS;
+  const HIGH_REVIEWED_HOTEL = API_ENDPOINTS_HOTEL.HIGH_REVIEWED_HOTELS;
 
   const [featuredHotels, setFeaturedHotels] = useState<Hotel[]>([]);
+  const [highReviewedHotels, setHighReviewedHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [highReviewedLoading, setHighReviewedLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -317,10 +320,8 @@ export default function HomeScreen() {
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
         
-        const res = await axios.get(API_PROFILE, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const res = await apiClient.get(API_PROFILE);
         
         if (res.data.success && res.data.data) {
           setUserName(res.data.data.Name || "Traveller");
@@ -337,15 +338,30 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await axios.get(FEATURED_HOTEL, {
-          headers: { Accept: "application/json" },
-          timeout: 15000,
-        });
+        // Token is automatically added by apiClient interceptor (if token exists)
+        const r = await apiClient.get(FEATURED_HOTEL);
         if (r.data.success && r.data.data) setFeaturedHotels(r.data.data);
         else setError("No featured hotels available");
       } catch (err: any) {
         setError(err.response?.data?.message || err.message || "Failed to load hotels");
       } finally { setLoading(false); }
+    })();
+  }, []);
+
+  // Fetch high-reviewed hotels for "Travelled Favourite" section
+  useEffect(() => {
+    (async () => {
+      try {
+        // Token is automatically added by apiClient interceptor
+        const response = await apiClient.get(HIGH_REVIEWED_HOTEL);
+        if (response.data.success && response.data.data) {
+          setHighReviewedHotels(response.data.data);
+        }
+      } catch (err: any) {
+        console.error("Failed to load high-reviewed hotels:", err.message);
+      } finally {
+        setHighReviewedLoading(false);
+      }
     })();
   }, []);
 
@@ -478,7 +494,7 @@ export default function HomeScreen() {
               <Text style={s.sectionTitle}>Featured stays</Text>
             </View>
             <Pressable
-              onPress={() => router.push("/(tabs)/explore/detail")}
+              onPress={() => router.push("/(tabs)/explore")}
               style={s.seeAllBtn}
             >
               <Text style={s.seeAllText}>See all</Text>
@@ -509,7 +525,7 @@ export default function HomeScreen() {
                   key={hotel._id}
                   hotel={hotel}
                   onPress={() =>
-                    router.push({
+                    router.replace({
                       pathname: "/(tabs)/explore/detail",
                       params: { hotelId: hotel._id },
                     })
@@ -543,15 +559,15 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* ── Nearby hotels ── */}
+        {/* ── Travelled Favourite (High-Reviewed Hotels) ── */}
         <View style={s.sectionBlock}>
           <View style={s.sectionRow}>
             <View>
-              <Text style={s.sectionEye}>AROUND YOU</Text>
-              <Text style={s.sectionTitle}>Hotels nearby</Text>
+              <Text style={s.sectionEye}>HIGHLY RECOMMENDED</Text>
+              <Text style={s.sectionTitle}>Best rated stays</Text>
             </View>
             <Pressable
-              onPress={() => router.push("/(tabs)/explore/detail")}
+              onPress={() => router.push("/(tabs)/explore")}
               style={s.seeAllBtn}
             >
               <Text style={s.seeAllText}>See all</Text>
@@ -559,13 +575,15 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {loading ? (
+          {highReviewedLoading ? (
             <View style={s.loadBox}>
               <ActivityIndicator color={N.saffron} />
+              <Text style={s.loadText}>Loading favorites…</Text>
             </View>
-          ) : error || featuredHotels.length === 0 ? (
+          ) : highReviewedHotels.length === 0 ? (
             <View style={s.errorBox}>
-              <Text style={s.errorText}>{error || "No hotels available"}</Text>
+              <Ionicons name="heart-outline" size={28} color={N.textMuted} />
+              <Text style={s.errorText}>No favorites available yet</Text>
             </View>
           ) : (
             <ScrollView
@@ -575,12 +593,12 @@ export default function HomeScreen() {
               snapToInterval={274}
               decelerationRate="fast"
             >
-              {featuredHotels.map((hotel) => (
+              {highReviewedHotels.map((hotel) => (
                 <HotelCard
                   key={hotel._id}
                   hotel={hotel}
                   onPress={() =>
-                    router.push({
+                    router.replace({
                       pathname: "/(tabs)/explore/detail",
                       params: { hotelId: hotel._id },
                     })
@@ -615,6 +633,8 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+
+        <DhokaSeparator />
 
         {/* ── Promo card ── */}
         <View style={s.promoCard}>

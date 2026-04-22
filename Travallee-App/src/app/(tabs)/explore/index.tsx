@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import {
   Pressable, ScrollView, StyleSheet, Text, View,
-  Image, FlatList,
+  Image, FlatList, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -12,16 +12,15 @@ import {
   realixDestinations,
   realixDiscoverProperty,
 } from '@/src/constants/screens/realix';
+import apiClient from '@/src/services/apiClient';
+import { API_ENDPOINTS_HOTEL } from '@/src/constants/api';
 
 // ─── Nepal Data ──────────────────────────────────────────────────────────────
 
 const FILTER_CHIPS = [
-  { id: 'all',      label: 'All',        icon: 'globe-outline' },
-  { id: 'popular',  label: 'Popular',    icon: 'flame-outline' },
-  { id: 'trekking', label: 'Trekking',   icon: 'trail-sign-outline' },
-  { id: 'heritage', label: 'Heritage',   icon: 'business-outline' },
-  { id: 'resort',   label: 'Resort',     icon: 'umbrella-outline' },
-  { id: 'budget',   label: 'Budget',     icon: 'wallet-outline' },
+  { id: 'all',      label: 'All Hotels',     icon: 'globe-outline' },
+  { id: 'hotels',   label: 'Hotels',         icon: 'business-outline' },
+  { id: 'resorts',  label: 'Resorts',        icon: 'umbrella-outline' },
 ] as const;
 
 type FilterId = typeof FILTER_CHIPS[number]['id'];
@@ -152,6 +151,47 @@ export default function ExploreScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('explore');
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
+  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch hotels or resorts based on filter
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        if (activeFilter === 'hotels') {
+          const response = await apiClient.get(API_ENDPOINTS_HOTEL.GET_ALL_HOTELS);
+          if (response.data.success && Array.isArray(response.data.data)) {
+            setFilteredData(response.data.data);
+          } else {
+            setFilteredData([]);
+          }
+        } else if (activeFilter === 'resorts') {
+          const response = await apiClient.get(API_ENDPOINTS_HOTEL.GET_ALL_RESORTS);
+          if (response.data.success && Array.isArray(response.data.data)) {
+            setFilteredData(response.data.data);
+          } else {
+            setFilteredData([]);
+          }
+        } else {
+          // Fetch featured hotels from backend for 'all' filter
+          const response = await apiClient.get(API_ENDPOINTS_HOTEL.FEATURED_HOTELS);
+          if (response.data.success && Array.isArray(response.data.data)) {
+            setFilteredData(response.data.data);
+          } else {
+            setFilteredData([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [activeFilter]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -160,7 +200,6 @@ export default function ExploreScreen() {
       {/* ── Fixed Header ── */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>नमस्ते 🙏</Text>
           <Text style={styles.title}>Discover Nepal</Text>
         </View>
         <View style={styles.headerActions}>
@@ -260,57 +299,74 @@ export default function ExploreScreen() {
 
             {/* Featured Properties */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Featured Properties</Text>
+              <Text style={styles.sectionTitle}>
+                {activeFilter === 'hotels' ? 'Hotels' : activeFilter === 'resorts' ? 'Resorts' : 'Featured Properties'}
+              </Text>
               <Pressable>
                 <Text style={styles.seeAll}>See all →</Text>
               </Pressable>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.featuredScroll}
-            >
-              {FEATURED_PROPERTIES.map((prop) => (
-                <Pressable
-                  key={prop.id}
-                  style={styles.featuredCard}
-                  onPress={() => router.push('/(tabs)/explore/detail')}
-                >
-                  <Image
-                    source={{ uri: prop.image }}
-                    style={styles.featuredImg}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.featuredTag}>
-                    <Text style={[styles.featuredTagText, { color: prop.tagTextColor }]}>
-                      {prop.tag}
-                    </Text>
-                  </View>
+            {loading ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={RealixColors.accent} />
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredScroll}
+              >
+                {filteredData.length > 0 ? (
+                  filteredData.map((prop: any) => (
+                    <Pressable
+                      key={prop._id || prop.id}
+                      style={styles.featuredCard}
+                      onPress={() =>
+                        router.replace({
+                          pathname: '/(tabs)/explore/detail',
+                          params: { hotelId: prop._id || prop.id },
+                        })
+                      }
+                    >
+                      <Image
+                        source={{ uri: prop.image || prop.hotelImages?.[0] || 'https://via.placeholder.com/300' }}
+                        style={styles.featuredImg}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.featuredTag}>
+                        <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
+                          {prop.tag || (prop.isFeatured ? 'Featured' : prop.propertyType || 'Hotel')}
+                        </Text>
+                      </View>
                   <Pressable style={styles.featuredHeart}>
                     <Ionicons name="heart-outline" size={14} color="#fff" />
                   </Pressable>
                   <View style={styles.featuredBody}>
                     <View style={styles.featuredTypeRow}>
-                      <Text style={styles.featuredType}>{prop.type}</Text>
+                      <Text style={styles.featuredType}>{prop.type || prop.propertyType || 'Hotel'}</Text>
                       <View style={styles.ratingPill}>
                         <Ionicons name="star" size={10} color="#FFB800" />
                         <Text style={styles.ratingText}>{prop.rating}</Text>
                       </View>
                     </View>
-                    <Text style={styles.featuredName} numberOfLines={1}>{prop.name}</Text>
+                    <Text style={styles.featuredName} numberOfLines={1}>{prop.name || prop.hotelName}</Text>
                     <View style={styles.featuredLocRow}>
                       <Ionicons name="location-outline" size={11} color={RealixColors.textMuted} />
-                      <Text style={styles.featuredLoc} numberOfLines={1}>{prop.location}</Text>
+                      <Text style={styles.featuredLoc} numberOfLines={1}>{prop.location || prop.hotelLocation}</Text>
                     </View>
                     <View style={styles.featuredPriceRow}>
-                      <Text style={styles.featuredPrice}>${prop.price}</Text>
+                      <Text style={styles.featuredPrice}>${prop.price || prop.pricePerNight || 'N/A'}</Text>
                       <Text style={styles.featuredPriceSub}>/night</Text>
                     </View>
                   </View>
                 </Pressable>
-              ))}
-            </ScrollView>
+                  ))
+                ) : (
+                  <View />
+                )}
+              </ScrollView>
+            )}
 
             {/* Destinations */}
             <View style={styles.sectionHeader}>
