@@ -7,6 +7,8 @@ import {
   HotelData,
   getHotelInfo,
   highReviewedHotels,
+  getAllHotels,
+  getAllResortHotels,
 } from "../controller/register.controller.js";
 
 import {
@@ -43,6 +45,8 @@ router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 router.delete("/room/:hotelId/:roomId", authenticate, deleteRoom);
 router.get("/featured", authenticate, featuredHotels);
 router.get("/high-reviewed", authenticate, highReviewedHotels);
+router.get("/hotels", authenticate, getAllHotels);
+router.get("/resorts", authenticate, getAllResortHotels);
 router.get("/:hotelId", authenticate, HotelData);
 
 export default router;

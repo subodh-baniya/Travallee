@@ -494,7 +494,7 @@ export default function HomeScreen() {
               <Text style={s.sectionTitle}>Featured stays</Text>
             </View>
             <Pressable
-              onPress={() => router.push("/(tabs)/explore/detail")}
+              onPress={() => router.push("/(tabs)/explore")}
               style={s.seeAllBtn}
             >
               <Text style={s.seeAllText}>See all</Text>
@@ -525,7 +525,7 @@ export default function HomeScreen() {
                   key={hotel._id}
                   hotel={hotel}
                   onPress={() =>
-                    router.push({
+                    router.replace({
                       pathname: "/(tabs)/explore/detail",
                       params: { hotelId: hotel._id },
                     })
@@ -598,7 +598,7 @@ export default function HomeScreen() {
                   key={hotel._id}
                   hotel={hotel}
                   onPress={() =>
-                    router.push({
+                    router.replace({
                       pathname: "/(tabs)/explore/detail",
                       params: { hotelId: hotel._id },
                     })

@@ -580,6 +580,35 @@ const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
   
 });
 
+const getAllHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const hotels = await hotelModel.find({ }).limit(10);
+    if (hotels.length === 0) {
+      console.log("No active hotels found in database");
+      return apiResponse(res, 200, true, "No hotels available", []);
+    }
+    console.log(`Retrieved ${hotels.length} hotels`);
+    return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
+  } catch (error: any) {
+    console.error("Error fetching hotels:", error.message);
+    return apiError(res, 500, "Failed to fetch hotels: " + error.message);
+  }
+});
+
+const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const hotels = await hotelModel.find({ propertyType: "Resort", isactive: true }).limit(10);
+    if (hotels.length === 0) {
+      console.log("No active resorts found in database");
+      return apiResponse(res, 200, true, "No resorts available", []);
+    }
+    console.log(`Retrieved ${hotels.length} resorts`);
+    return apiResponse(res, 200, true, "Resort hotels retrieved successfully", hotels);
+  } catch (error: any) {
+    console.error("Error fetching resorts:", error.message);
+    return apiError(res, 500, "Failed to fetch resorts: " + error.message);
+  }
+});
 export {
   registerHotel,
   createroom,
@@ -591,4 +620,6 @@ export {
   searchRooms,
   getHotelInfo,
   highReviewedHotels,
+  getAllHotels,
+  getAllResortHotels,
 };
