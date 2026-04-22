@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
-import axios from 'axios';
+import apiClient from '@/src/services/apiClient';
 import { API_ENDPOINTS_HOTEL } from '@/src/constants/api';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');

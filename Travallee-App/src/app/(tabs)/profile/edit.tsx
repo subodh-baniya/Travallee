@@ -16,7 +16,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
+import apiClient from '@/src/services/apiClient';
 import {
   RealixCard,
   RealixHeader,

@@ -18,7 +18,7 @@ import * as SecureStore from "expo-secure-store";
 import { useAuth } from "@/src/context/AuthContext";
 import { useLocation } from "@/src/hooks/useLocation";
 import { RealixColors } from "@/src/constants/screens/realix";
-import axios from "axios";
+import apiClient from "@/src/services/apiClient";
 import { API_ENDPOINTS_HOTEL } from "@/src/constants/api";
 import { API_ENDPOINTS_AUTH } from "@/src/constants/api";
 
@@ -317,10 +317,8 @@ export default function HomeScreen() {
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
         
-        const res = await axios.get(API_PROFILE, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 10000,
-        });
+        // Token is automatically added by apiClient interceptor
+        const res = await apiClient.get(API_PROFILE);
         
         if (res.data.success && res.data.data) {
           setUserName(res.data.data.Name || "Traveller");
@@ -337,10 +335,8 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await axios.get(FEATURED_HOTEL, {
-          headers: { Accept: "application/json" },
-          timeout: 15000,
-        });
+        // Token is automatically added by apiClient interceptor (if token exists)
+        const r = await apiClient.get(FEATURED_HOTEL);
         if (r.data.success && r.data.data) setFeaturedHotels(r.data.data);
         else setError("No featured hotels available");
       } catch (err: any) {
