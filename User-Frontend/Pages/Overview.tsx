@@ -1,223 +1,224 @@
-import { useEffect, useState } from "react";
-import {StatCard} from "../Components/Statcard";
-
+import { StatCard } from "../Components/Statcard";
 import {
   FaBed,
   FaCalendarCheck,
   FaDollarSign,
-  FaUsers,
+  FaConciergeBell,
 } from "react-icons/fa";
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-
-
-interface Stats {
-  totalBookings: number;
-  revenue: number;
-  occupancyRate: number;
-  totalGuests: number;
-}
-
-interface RevenueItem {
-  day: string;
-  revenue: number;
-}
-
-interface OccupancyItem {
-  day: string;
-  occupancy: number;
-}
-
-interface PieItem {
-  name: string;
-  value: number;
-}
-
-interface Booking {
-  id: string;
-  guestName: string;
-  roomType: string;
-  nights: number;
-  status: string;
-}
-
-interface DashboardData {
-  stats: Stats;
-  revenueTrend: RevenueItem[];
-  occupancyTrend: OccupancyItem[];
-  roomDistribution: PieItem[];
-  recentBookings: Booking[];
-}
-
-
-const mockData: DashboardData = {
-  stats: {
-    totalBookings: 128,
-    revenue: 4320,
-    occupancyRate: 76,
-    totalGuests: 54,
-  },
-  revenueTrend: [
-    { day: "Mon", revenue: 400 },
-    { day: "Tue", revenue: 700 },
-    { day: "Wed", revenue: 500 },
-    { day: "Thu", revenue: 900 },
-  ],
-  occupancyTrend: [
-    { day: "Mon", occupancy: 60 },
-    { day: "Tue", occupancy: 70 },
-    { day: "Wed", occupancy: 65 },
-    { day: "Thu", occupancy: 80 },
-  ],
-  roomDistribution: [
-    { name: "Deluxe", value: 40 },
-    { name: "Suite", value: 25 },
-    { name: "Standard", value: 35 },
-  ],
-  recentBookings: [
-    {
-      id: "1",
-      guestName: "John Doe",
-      roomType: "Deluxe",
-      nights: 2,
-      status: "CONFIRMED",
-    },
-  ],
-};
-
-
-const COLORS = ["#2563eb", "#60a5fa", "#93c5fd"];
-
 const Overview = () => {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: "Rs. 1,25,018",
+      icon: <FaDollarSign />,
+    },
+    {
+      title: "Rooms Occupied",
+      value: "37 / 50",
+      icon: <FaBed />,
+    },
+    {
+      title: "Today's Check-ins",
+      value: "8",
+      icon: <FaCalendarCheck />,
+    },
+    {
+      title: "Pending Complaints",
+      value: "3",
+      icon: <FaConciergeBell />,
+    },
+  ];
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const miniStats = [
+    { label: "Restaurant Revenue Today", value: "Rs. 18,400" },
+    { label: "Average Guest Rating", value: "4.7 / 5" },
+    { label: "Service Requests Open", value: "12" },
+  ];
 
-      setData(mockData);
-    };
+  const rooms = [
+    { room: "101", type: "Deluxe", guest: "Priya Sharma", status: "Occupied" },
+    { room: "204", type: "Suite", guest: "—", status: "Available" },
+    { room: "305", type: "Standard", guest: "Rajan Thapa", status: "Checkout" },
+    { room: "112", type: "Deluxe", guest: "—", status: "Maintenance" },
+  ];
 
-    fetchData();
-  }, []);
+  const checkins = [
+    { name: "Priya Sharma", room: "101", time: "Arrived" },
+    { name: "David Lee", room: "310", time: "2:30 PM" },
+    { name: "Maya Karki", room: "217", time: "4:00 PM" },
+  ];
 
-  if (!data) return <div>Loading...</div>;
+  const statusMap: Record<string, string> = {
+    Occupied: "bg-blue-50 text-blue-600 border-blue-100",
+    Available: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    Checkout: "bg-amber-50 text-amber-600 border-amber-100",
+    Maintenance: "bg-rose-50 text-rose-600 border-rose-100",
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Bookings"
-          value={data.stats.totalBookings}
-          icon={<FaCalendarCheck />}
-          accent="blue"
-        />
-        <StatCard
-          title="Revenue"
-          value={`$${data.stats.revenue}`}
-          icon={<FaDollarSign />}
-          accent="green"
-        />
-        <StatCard
-          title="Occupancy"
-          value={`${data.stats.occupancyRate}%`}
-          icon={<FaBed />}
-          accent="purple"
-        />
-        <StatCard
-          title="Guests"
-          value={data.stats.totalGuests}
-          icon={<FaUsers />}
-          accent="orange"
-        />
+      {/* HEADER */}
+      <div>
+        <h1 className="text-lg font-semibold text-slate-900">
+          Overview
+        </h1>
+        <p className="text-xs text-slate-500">
+          Hotel operations summary
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stats.map((s, i) => (
+          <div key={i} className="transition hover:-translate-y-1 duration-200">
+            <StatCard
+              title={s.title}
+              value={s.value}
+              icon={s.icon}
+            />
+          </div>
+        ))}
+      </div>
 
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm h-72">
-          <h3 className="text-sm font-medium mb-4">Revenue</h3>
+      {/* MINI STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {miniStats.map((m, i) => (
+          <div
+            key={i}
+            className="
+              bg-white border border-slate-200 rounded-xl p-4
+              transition duration-200
+              hover:shadow-md hover:border-blue-200 hover:-translate-y-1
+            "
+          >
+            <p className="text-xs text-slate-500">{m.label}</p>
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              {m.value}
+            </p>
+          </div>
+        ))}
+      </div>
 
-          <ResponsiveContainer>
-            <LineChart data={data.revenueTrend}>
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Line
-                dataKey="revenue"
-                stroke="#2563eb"
-                strokeWidth={2.5}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      {/* MAIN GRID */}
+      <div className="grid lg:grid-cols-3 gap-5">
 
-        <div className="bg-white p-6 rounded-xl shadow-sm h-72">
-          <h3 className="text-sm font-medium mb-4">Room Types</h3>
+        {/* ROOM TABLE */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
 
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie data={data.roomDistribution} dataKey="value">
-                {data.roomDistribution.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-700">
+              Room Overview
+            </h3>
+            <span className="text-xs text-slate-400">Live</span>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-slate-100">
+
+            <table className="w-full text-sm">
+
+              <thead className="bg-slate-50 text-xs text-slate-400">
+                <tr>
+                  <th className="text-left py-3 px-3 font-medium">Room</th>
+                  <th className="text-left font-medium">Type</th>
+                  <th className="text-left font-medium">Guest</th>
+                  <th className="text-left font-medium">Status</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+
+                {rooms.map((r, i) => (
+                  <tr
+                    key={i}
+                    className="
+                      transition duration-150
+                      hover:bg-slate-50 hover:scale-[1.01]
+                    "
+                  >
+
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="font-semibold text-blue-600">
+                          {r.room}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="text-slate-600">{r.type}</td>
+
+                    <td className="text-slate-600">
+                      {r.guest === "—" ? (
+                        <span className="text-slate-400 italic">
+                          No guest
+                        </span>
+                      ) : (
+                        r.guest
+                      )}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`
+                          text-xs px-2.5 py-1 rounded-full border
+                          ${statusMap[r.status]}
+                        `}
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+
+                  </tr>
                 ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+              </tbody>
 
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm h-72">
-          <h3 className="text-sm font-medium mb-4">Occupancy</h3>
+            </table>
 
-          <ResponsiveContainer>
-            <BarChart data={data.occupancyTrend}>
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="occupancy" fill="#2563eb" />
-            </BarChart>
-          </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h3 className="text-sm font-medium mb-4">Recent Bookings</h3>
+        {/* CHECKINS */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
+
+          <h3 className="text-sm font-medium text-slate-700 mb-4">
+            Today's Check-ins
+          </h3>
 
           <div className="space-y-3">
-            {data.recentBookings.map((b) => (
+
+            {checkins.map((c, i) => (
               <div
-                key={b.id}
-                className="flex justify-between p-3 rounded-lg hover:bg-gray-50"
+                key={i}
+                className="
+                  flex items-center justify-between
+                  p-2 rounded-lg
+                  hover:bg-slate-50 transition
+                "
               >
+
                 <div>
-                  <p className="text-sm font-medium">{b.guestName}</p>
-                  <p className="text-xs text-gray-500">
-                    {b.nights} nights • {b.roomType}
+                  <p className="text-sm font-medium text-slate-800">
+                    {c.name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Room {c.room}
                   </p>
                 </div>
 
                 <span className="text-xs text-blue-600">
-                  {b.status}
+                  {c.time}
                 </span>
+
               </div>
             ))}
+
           </div>
+
         </div>
+
       </div>
 
     </div>
