@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import StatCard from "../Components/Statcard";
+import {StatCard} from "../Components/Statcard";
 
 import {
   FaBed,

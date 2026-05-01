@@ -33,8 +33,8 @@ const router=createBrowserRouter(
         <Route path="contactus" element={<ContactUs/>}/>
         </Route>
         </Route>
-
-          <Route element={<ProtectedRoute />}>
+{/* 
+          <Route element={<ProtectedRoute />}> */}
         <Route path="/dashboard" element={<Dashboard />}>
 
           <Route index element={<Overview/>} />
@@ -46,7 +46,7 @@ const router=createBrowserRouter(
           <Route path="reports" element={<Reports/>} />
           <Route path="settings" element={<Settings/>} />
 
-        </Route>
+        {/* </Route> */}
       </Route>
         
         </>
