@@ -1,8 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Contexts/Authcontext";
 import { motion } from "framer-motion";
+import { FiMenu } from "react-icons/fi";
 
-const Topbar = () => {
+interface TopbarProps {
+  onToggleSidebar: () => void;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
   const navigate = useNavigate();
 
@@ -11,19 +16,27 @@ const Topbar = () => {
   const { user, logout } = auth;
 
   return (
-    <header className="h-16 bg-white flex items-center justify-between px-6 shadow-sm">
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
 
-      <div className="flex items-center">
-        <span className="text-base font-bold text-gray-800 tracking-wide">
-          Dashboard
-        </span>
-      </div>
+      {/* Hamburger */}
+      <button
+        onClick={onToggleSidebar}
+        className="flex flex-col justify-center gap-0.75 w-8 h-8"
+      >
+            <FiMenu size={20} />
+      </button>
 
-      <div className="flex items-center gap-5">
+      {/* Right actions */}
+      <div className="flex items-center gap-4">
 
         <motion.div
-          whileHover={{ scale: 1.03 }}
-          className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium"
+          whileHover={{ y: -1 }}
+          className="
+            px-3 py-1.5 rounded-full
+            bg-blue-50 text-blue-600
+            text-xs font-medium
+            border border-blue-100
+          "
         >
           {user?.Username}
         </motion.div>
@@ -33,9 +46,16 @@ const Topbar = () => {
             logout();
             navigate("/", { replace: true });
           }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition"
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.98 }}
+          className="
+            px-3 py-1.5 text-xs font-medium
+            rounded-md
+            text-slate-600
+            border border-slate-200
+            hover:border-blue-200 hover:text-blue-600
+            transition-all
+          "
         >
           Logout
         </motion.button>

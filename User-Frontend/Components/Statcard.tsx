@@ -1,41 +1,67 @@
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import React from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
 
-type Accent = "blue" | "green" | "purple" | "orange";
-
-interface StatCardProps {
+interface StatCardProps extends HTMLMotionProps<"div"> {
   title: string;
   value: string | number;
-  icon: ReactNode;
-  accent?: Accent;
+  icon?: React.ReactNode;
+  trend?: string;
 }
 
-const StatCard = ({ title, value, icon, accent = "blue" }: StatCardProps) => {
-  const map: Record<Accent, string> = {
-    blue: "bg-blue-50 text-blue-700",
-    green: "bg-green-50 text-green-700",
-    purple: "bg-purple-50 text-purple-700",
-    orange: "bg-orange-50 text-orange-700",
-  };
+export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
+  ({ title, value, icon, trend, className = "", ...props }, ref) => {
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -2 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`
+          rounded-xl border bg-white
+          border-slate-200
+          p-5 transition-all duration-200
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white p-5 rounded-xl shadow-sm hover:shadow-md transition"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-500">{title}</p>
-          <h2 className="text-2xl font-semibold text-gray-800">{value}</h2>
+          hover:shadow-md hover:border-blue-200
+          ${className}
+        `}
+        {...props}
+      >
+        <div className="flex items-center justify-between">
+
+          <div className="space-y-1">
+            <p className="text-xs text-slate-400">
+              {title}
+            </p>
+
+            <h2 className="text-2xl font-semibold text-slate-900">
+              {value}
+            </h2>
+
+            {trend && (
+              <span className="text-xs text-slate-500">
+                {trend}
+              </span>
+            )}
+          </div>
+
+          {icon && (
+            <div className="
+              p-3 rounded-lg
+              bg-blue-50
+              text-blue-600
+              transition-colors
+              hover:bg-blue-100
+            ">
+              {icon}
+            </div>
+          )}
+
         </div>
+      </motion.div>
+    );
+  }
+);
 
-        <div className={`p-3 rounded-lg ${map[accent]}`}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+StatCard.displayName = "StatCard";
 
-export default StatCard;
