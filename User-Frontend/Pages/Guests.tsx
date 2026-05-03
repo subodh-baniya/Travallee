@@ -1,169 +1,224 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 /* ---------------- TYPES ---------------- */
 
-type Status = "ALL" | "ACTIVE" | "VIP" | "BLOCKED";
+type Membership = "VIP" | "ORDINARY";
+type StayStatus = "CHECKED_IN" | "CHECKED_OUT";
+type Filter = "ALL" | Membership | StayStatus;
 
 interface Guest {
   id: string;
   name: string;
-  email: string;
-  totalBookings: number;
-  totalSpent: number;
-  status: "ACTIVE" | "VIP" | "BLOCKED";
-  lastVisit: string;
+  room: string;
+  type: string;
+  checkIn: string;
+  checkOut: string;
+  totalStays: number;
+  totalSpent: string;
+  membership: Membership;
+  stayStatus: StayStatus;
 }
 
-interface GuestResponse {
-  guests: Guest[];
-}
+/* ---------------- DATA ---------------- */
 
-/* ---------------- MOCK DATA ---------------- */
+const guests: Guest[] = [
+  {
+    id: "1",
+    name: "Priya Sharma",
+    room: "101",
+    type: "Deluxe",
+    checkIn: "Mar 27",
+    checkOut: "Mar 29",
+    totalStays: 4,
+    totalSpent: "Rs. 42,000",
+    membership: "VIP",
+    stayStatus: "CHECKED_IN",
+  },
+  {
+    id: "2",
+    name: "David Lee",
+    room: "310",
+    type: "Suite",
+    checkIn: "Mar 27",
+    checkOut: "Apr 1",
+    totalStays: 1,
+    totalSpent: "Rs. 42,000",
+    membership: "ORDINARY",
+    stayStatus: "CHECKED_IN",
+  },
+  {
+    id: "3",
+    name: "Maya Karki",
+    room: "217",
+    type: "Standard",
+    checkIn: "Mar 27",
+    checkOut: "Mar 29",
+    totalStays: 2,
+    totalSpent: "Rs. 8,400",
+    membership: "ORDINARY",
+    stayStatus: "CHECKED_OUT",
+  },
+];
 
-const mockData: GuestResponse = {
-  guests: [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      totalBookings: 5,
-      totalSpent: 450,
-      status: "VIP",
-      lastVisit: "2026-04-18",
-    },
-    {
-      id: "2",
-      name: "Alice Smith",
-      email: "alice@example.com",
-      totalBookings: 2,
-      totalSpent: 120,
-      status: "ACTIVE",
-      lastVisit: "2026-04-10",
-    },
-    {
-      id: "3",
-      name: "Mark Lee",
-      email: "mark@example.com",
-      totalBookings: 1,
-      totalSpent: 80,
-      status: "BLOCKED",
-      lastVisit: "2026-03-30",
-    },
-  ],
+/* ---------------- STYLES ---------------- */
+
+const membershipMap = {
+  VIP: "bg-purple-50 text-purple-600 border-purple-100",
+  ORDINARY: "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+const stayMap = {
+  CHECKED_IN: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  CHECKED_OUT: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
 /* ---------------- COMPONENT ---------------- */
 
 const Guests = () => {
-  const [data, setData] = useState<GuestResponse | null>(null);
-  const [filter, setFilter] = useState<Status>("ALL");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("ALL");
 
-  useEffect(() => {
-    const fetchGuests = async () => {
-      // future API
-      // const res = await fetch(`/api/dashboard/guests?status=${filter}`);
-      // const json = await res.json();
-      // setData(json.data);
+  const filtered = guests.filter((g) => {
+    const matchSearch =
+      g.name.toLowerCase().includes(search.toLowerCase()) ||
+      g.room.includes(search);
 
-      setData(mockData);
-    };
+    const matchFilter =
+      filter === "ALL" ||
+      g.membership === filter ||
+      g.stayStatus === filter;
 
-    fetchGuests();
-  }, [filter]);
-
-  if (!data) return <div>Loading...</div>;
-
-  const filteredGuests =
-    filter === "ALL"
-      ? data.guests
-      : data.guests.filter((g) => g.status === filter);
+    return matchSearch && matchFilter;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* ---------------- FILTERS ---------------- */}
-      <div className="flex gap-3">
-        {["ALL", "ACTIVE", "VIP", "BLOCKED"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s as Status)}
-            className={`px-4 py-1.5 text-sm rounded-full transition ${
-              filter === s
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">
+            Guests
+          </h1>
+          <p className="text-xs text-slate-500">
+            Guest profiles and stay details
+          </p>
+        </div>
+
+        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+          + Add Guest
+        </button>
+      </div>
+
+      {/* FILTER BAR */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
+
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search guest or room..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+        />
+
+        {/* FILTERS */}
+        <div className="flex flex-wrap gap-2">
+          {["ALL", "VIP", "ORDINARY", "CHECKED_IN", "CHECKED_OUT"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f as Filter)}
+              className={`px-3 py-1.5 text-xs rounded-full transition ${
+                filter === f
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {f.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+
+      </div>
+
+      {/* GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        {filtered.map((g, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="
+              bg-white border border-slate-200 rounded-xl p-5
+              transition duration-200
+              hover:shadow-md hover:-translate-y-1
+            "
           >
-            {s}
-          </button>
-        ))}
-      </div>
 
-      {/* ---------------- TABLE ---------------- */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* TOP */}
+            <div className="flex justify-between items-start mb-4">
 
-        <table className="w-full text-sm">
-
-          <thead className="bg-gray-50 text-gray-600 text-left">
-            <tr>
-              <th className="p-4">Guest</th>
-              <th className="p-4">Email</th>
-              <th className="p-4">Bookings</th>
-              <th className="p-4">Spent</th>
-              <th className="p-4">Last Visit</th>
-              <th className="p-4">Status</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredGuests.map((g) => (
-              <motion.tr
-                key={g.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="border-t hover:bg-gray-50 transition"
-              >
-
-                <td className="p-4 font-medium text-gray-800">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
                   {g.name}
-                </td>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Room {g.room} • {g.type}
+                </p>
+              </div>
 
-                <td className="p-4 text-gray-600">
-                  {g.email}
-                </td>
+              <div className="flex flex-col gap-1 items-end">
 
-                <td className="p-4">
-                  {g.totalBookings}
-                </td>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full border ${membershipMap[g.membership]}`}
+                >
+                  {g.membership}
+                </span>
 
-                <td className="p-4 font-medium">
-                  ${g.totalSpent}
-                </td>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full border ${stayMap[g.stayStatus]}`}
+                >
+                  {g.stayStatus === "CHECKED_IN"
+                    ? "Checked In"
+                    : "Checked Out"}
+                </span>
 
-                <td className="p-4 text-gray-600">
-                  {g.lastVisit}
-                </td>
+              </div>
 
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      g.status === "VIP"
-                        ? "bg-purple-100 text-purple-700"
-                        : g.status === "ACTIVE"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {g.status}
-                  </span>
-                </td>
+            </div>
 
-              </motion.tr>
-            ))}
-          </tbody>
+            {/* DETAILS */}
+            <div className="grid grid-cols-2 gap-y-3 text-xs">
 
-        </table>
+              <div className="text-slate-500">Check-in</div>
+              <div className="text-right text-slate-800 font-medium">
+                {g.checkIn}
+              </div>
+
+              <div className="text-slate-500">Check-out</div>
+              <div className="text-right text-slate-800 font-medium">
+                {g.checkOut}
+              </div>
+
+              <div className="text-slate-500">Total stays</div>
+              <div className="text-right text-slate-800 font-medium">
+                {g.totalStays}
+              </div>
+
+              <div className="text-slate-500">Total spent</div>
+              <div className="text-right text-slate-900 font-semibold">
+                {g.totalSpent}
+              </div>
+
+            </div>
+
+          </motion.div>
+        ))}
+
       </div>
+
     </div>
   );
 };
