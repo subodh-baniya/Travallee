@@ -135,7 +135,7 @@ const Bookings = () => {
 
       </div>
 
-     {/* TABLE */}
+  {/* TABLE */}
 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
 
   <table className="w-full text-sm">
@@ -146,7 +146,11 @@ const Bookings = () => {
         <th className="text-left px-4 py-3 font-medium">Guest</th>
         <th className="text-center px-4 py-3 font-medium">Room</th>
         <th className="text-left px-4 py-3 font-medium">Type</th>
-        <th className="text-left px-4 py-3 font-medium">Dates</th>
+
+        {/* SPLIT HERE */}
+        <th className="text-left px-4 py-3 font-medium">Check-in</th>
+        <th className="text-left px-4 py-3 font-medium">Check-out</th>
+
         <th className="text-right px-4 py-3 font-medium">Amount</th>
         <th className="text-center px-4 py-3 font-medium">Status</th>
         <th className="text-right px-4 py-3 font-medium"></th>
@@ -181,8 +185,14 @@ const Bookings = () => {
             {b.type}
           </td>
 
+          {/* CHECK-IN */}
           <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-            {b.checkIn} → {b.checkOut}
+            {b.checkIn}
+          </td>
+
+          {/* CHECK-OUT */}
+          <td className="px-4 py-3 text-slate-500 text-xs align-middle">
+            {b.checkOut}
           </td>
 
           <td className="px-4 py-3 text-right font-medium align-middle">
