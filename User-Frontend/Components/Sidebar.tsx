@@ -9,25 +9,25 @@ const sections = [
   {
     title: "MAIN",
     items: [
-      { name: "Dashboard", path: "/dashboard" },
-      { name: "Bookings", path: "/bookings" },
-      { name: "Guests", path: "/guests" },
-      { name: "Messages", path: "/chat" },
+      { name: "Overview", path: "/dashboard/overview" },
+      { name: "Bookings", path: "/dashboard/bookings" },
+      { name: "Guests", path: "/dashboard/guests" },
+      { name: "Messages", path: "/dashboard/chat" },
     ],
   },
   {
     title: "OPERATIONS",
     items: [
-      { name: "Rooms", path: "/rooms" },
-      { name: "Reviews", path: "/reviews" },
+      { name: "Rooms", path: "/dashboard/rooms" },
+      { name: "Reviews", path: "/dashboard/reviews" },
     ],
   },
   {
     title: "BUSINESS",
     items: [
-      { name: "Finance", path: "/earnings" },
-      { name: "Reports", path: "/reports" },
-      { name: "Settings", path: "/settings" },
+      { name: "Finance", path: "/dashboard/earnings" },
+      { name: "Reports", path: "/dashboard/reports" },
+      { name: "Settings", path: "/dashboard/settings" },
     ],
   },
 ];
@@ -46,10 +46,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       <div className="h-16 flex items-center px-4 border-b border-slate-100">
         {!collapsed ? (
           <div>
-            <span className="text-lg font-semibold text-slate-900">
-              Travalle
+            <span className="text-lg font-semibold text-blue-600">
+              Travallee
             </span>
-            <div className="text-[10px] text-blue-500 tracking-widest">
+            <div className="text-[10px] text-slate-800 tracking-widest">
               HOTEL OWNER
             </div>
           </div>

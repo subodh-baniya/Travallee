@@ -37,7 +37,7 @@ const router=createBrowserRouter(
           <Route element={<ProtectedRoute />}> */}
         <Route path="/dashboard" element={<Dashboard />}>
 
-          <Route index element={<Overview/>} />
+          <Route index path="overview" element={<Overview/>} />
           <Route path="bookings" element={<Bookings/>} />
           <Route path="rooms" element={<Rooms/>} />
           <Route path="pricing" element={<Pricing/>} />

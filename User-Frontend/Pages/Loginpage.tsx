@@ -40,7 +40,7 @@ const Loginpage = () => {
 
       await login(form);
 
-      navigateto("/dashboard");
+      navigateto("/dashboard/overview");
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       setError(err.response?.data?.message || "Login failed");
