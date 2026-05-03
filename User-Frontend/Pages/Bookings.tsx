@@ -1,173 +1,214 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { StatCard } from "../Components/Statcard";
+import {
+  FaCalendarCheck,
+  FaClock,
+  FaCheckCircle,
+  FaTimesCircle,
+} from "react-icons/fa";
 
-/* ---------------- TYPES ---------------- */
+/* ---------------- DATA ---------------- */
 
 type Status = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
 
-interface Booking {
-  id: string;
-  guestName: string;
-  roomType: string;
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  totalPrice: number;
-  status: string;
-}
-
-interface BookingResponse {
-  bookings: Booking[];
-  pagination: {
-    page: number;
-    totalPages: number;
-  };
-}
-
-/* ---------------- MOCK ---------------- */
-
-const mockData: BookingResponse = {
-  bookings: [
-    {
-      id: "1",
-      guestName: "John Doe",
-      roomType: "Deluxe",
-      checkIn: "2026-04-20",
-      checkOut: "2026-04-22",
-      nights: 2,
-      totalPrice: 200,
-      status: "CONFIRMED",
-    },
-    {
-      id: "2",
-      guestName: "Alice",
-      roomType: "Suite",
-      checkIn: "2026-04-18",
-      checkOut: "2026-04-19",
-      nights: 1,
-      totalPrice: 120,
-      status: "PENDING",
-    },
-  ],
-  pagination: {
-    page: 1,
-    totalPages: 3,
+const bookings = [
+  {
+    id: "R-1081",
+    guest: "Priya Sharma",
+    room: "101",
+    type: "Deluxe",
+    checkIn: "Mar 27",
+    checkOut: "Mar 29",
+    amount: "Rs. 8,400",
+    status: "CONFIRMED",
   },
+  {
+    id: "R-1082",
+    guest: "David Lee",
+    room: "310",
+    type: "Suite",
+    checkIn: "Mar 27",
+    checkOut: "Apr 1",
+    amount: "Rs. 42,000",
+    status: "CONFIRMED",
+  },
+  {
+    id: "R-1083",
+    guest: "Maya Karki",
+    room: "217",
+    type: "Standard",
+    checkIn: "Mar 27",
+    checkOut: "Mar 29",
+    amount: "Rs. 4,200",
+    status: "PENDING",
+  },
+  {
+    id: "R-1077",
+    guest: "Karen White",
+    room: "304",
+    type: "Deluxe",
+    checkIn: "Mar 23",
+    checkOut: "Mar 26",
+    amount: "Rs. 12,600",
+    status: "CANCELLED",
+  },
+];
+
+/* ---------------- STATUS STYLE ---------------- */
+
+const statusMap: Record<string, string> = {
+  CONFIRMED: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  PENDING: "bg-amber-50 text-amber-600 border-amber-100",
+  CANCELLED: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
 /* ---------------- COMPONENT ---------------- */
 
 const Bookings = () => {
-  const [data, setData] = useState<BookingResponse | null>(null);
-  const [statusFilter, setStatusFilter] = useState<Status>("ALL");
+  const [filter, setFilter] = useState<Status>("ALL");
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // future API
-      // const res = await fetch(`/api/dashboard/bookings?status=${statusFilter}`);
-      // const json = await res.json();
-      // setData(json.data);
-
-      setData(mockData);
-    };
-
-    fetchData();
-  }, [statusFilter]);
-
-  if (!data) return <div>Loading...</div>;
+  const filtered = bookings.filter((b) => {
+    return (
+      (filter === "ALL" || b.status === filter) &&
+      (b.guest.toLowerCase().includes(search.toLowerCase()) ||
+        b.room.includes(search))
+    );
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* -------- FILTERS -------- */}
-      <div className="flex gap-3">
-        {["ALL", "CONFIRMED", "PENDING", "CANCELLED"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s as Status)}
-            className={`px-4 py-1.5 text-sm rounded-full ${
-              statusFilter === s
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">
+            Bookings
+          </h1>
+          <p className="text-xs text-slate-500">
+            Manage all reservations
+          </p>
+        </div>
+
+        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+          + New Booking
+        </button>
       </div>
 
-      {/* -------- TABLE -------- */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600 text-left">
-            <tr>
-              <th className="p-4">Guest</th>
-              <th className="p-4">Room</th>
-              <th className="p-4">Dates</th>
-              <th className="p-4">Nights</th>
-              <th className="p-4">Price</th>
-              <th className="p-4">Status</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {data.bookings.map((b) => (
-              <motion.tr
-                key={b.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="border-t hover:bg-gray-50"
-              >
-                <td className="p-4 font-medium">{b.guestName}</td>
-
-                <td className="p-4 text-gray-600">{b.roomType}</td>
-
-                <td className="p-4 text-gray-600">
-                  {b.checkIn} → {b.checkOut}
-                </td>
-
-                <td className="p-4">{b.nights}</td>
-
-                <td className="p-4 font-medium">
-                  ${b.totalPrice}
-                </td>
-
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      b.status === "CONFIRMED"
-                        ? "bg-green-100 text-green-700"
-                        : b.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard title="Total" value="142" icon={<FaCalendarCheck />} />
+        <StatCard title="Confirmed" value="98" icon={<FaCheckCircle />} />
+        <StatCard title="Pending" value="31" icon={<FaClock />} />
+        <StatCard title="Cancelled" value="13" icon={<FaTimesCircle />} />
       </div>
 
-      {/* -------- PAGINATION -------- */}
-      <div className="flex justify-end gap-2">
-        {Array.from({ length: data.pagination.totalPages }).map((_, i) => (
-          <button
-            key={i}
-            className={`px-3 py-1 text-sm rounded ${
-              data.pagination.page === i + 1
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
+      {/* FILTER BAR */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
+
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search guest or room..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+        />
+
+        {/* STATUS FILTER */}
+        <div className="flex gap-2">
+          {["ALL", "CONFIRMED", "PENDING", "CANCELLED"].map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s as Status)}
+              className={`px-3 py-1.5 text-xs rounded-full transition ${
+                filter === s
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
       </div>
 
+     {/* TABLE */}
+<div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+
+  <table className="w-full text-sm">
+
+    <thead className="bg-slate-50 text-slate-500 text-xs">
+      <tr>
+        <th className="text-left px-4 py-3 font-medium">ID</th>
+        <th className="text-left px-4 py-3 font-medium">Guest</th>
+        <th className="text-center px-4 py-3 font-medium">Room</th>
+        <th className="text-left px-4 py-3 font-medium">Type</th>
+        <th className="text-left px-4 py-3 font-medium">Dates</th>
+        <th className="text-right px-4 py-3 font-medium">Amount</th>
+        <th className="text-center px-4 py-3 font-medium">Status</th>
+        <th className="text-right px-4 py-3 font-medium"></th>
+      </tr>
+    </thead>
+
+    <tbody className="divide-y divide-slate-100">
+
+      {filtered.map((b, i) => (
+        <motion.tr
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="hover:bg-slate-50 transition"
+        >
+
+          <td className="px-4 py-3 text-slate-400 align-middle">
+            {b.id}
+          </td>
+
+          <td className="px-4 py-3 font-medium text-slate-800 align-middle">
+            {b.guest}
+          </td>
+
+          <td className="px-4 py-3 text-center align-middle">
+            <span className="text-blue-600 font-medium">
+              {b.room}
+            </span>
+          </td>
+
+          <td className="px-4 py-3 text-slate-600 align-middle">
+            {b.type}
+          </td>
+
+          <td className="px-4 py-3 text-slate-500 text-xs align-middle">
+            {b.checkIn} → {b.checkOut}
+          </td>
+
+          <td className="px-4 py-3 text-right font-medium align-middle">
+            {b.amount}
+          </td>
+
+          <td className="px-4 py-3 text-center align-middle">
+            <span
+              className={`text-xs px-2.5 py-1 rounded-full border ${statusMap[b.status]}`}
+            >
+              {b.status}
+            </span>
+          </td>
+
+          <td className="px-4 py-3 text-right align-middle">
+            <button className="text-xs text-blue-600 hover:underline">
+              Edit
+            </button>
+          </td>
+
+        </motion.tr>
+      ))}
+
+    </tbody>
+  </table>
+</div>
     </div>
   );
 };

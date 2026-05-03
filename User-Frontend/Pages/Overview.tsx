@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StatCard } from "../Components/Statcard";
 import {
   FaBed,
@@ -7,27 +8,13 @@ import {
 } from "react-icons/fa";
 
 const Overview = () => {
+  const [floor, setFloor] = useState("all");
+
   const stats = [
-    {
-      title: "Total Revenue",
-      value: "Rs. 1,25,018",
-      icon: <FaDollarSign />,
-    },
-    {
-      title: "Rooms Occupied",
-      value: "37 / 50",
-      icon: <FaBed />,
-    },
-    {
-      title: "Today's Check-ins",
-      value: "8",
-      icon: <FaCalendarCheck />,
-    },
-    {
-      title: "Pending Complaints",
-      value: "3",
-      icon: <FaConciergeBell />,
-    },
+    { title: "Total Revenue", value: "Rs. 1,25,018", icon: <FaDollarSign /> },
+    { title: "Rooms Occupied", value: "37 / 50", icon: <FaBed /> },
+    { title: "Today's Check-ins", value: "8", icon: <FaCalendarCheck /> },
+    { title: "Pending Complaints", value: "3", icon: <FaConciergeBell /> },
   ];
 
   const miniStats = [
@@ -36,12 +23,16 @@ const Overview = () => {
     { label: "Service Requests Open", value: "12" },
   ];
 
+  // added floor field
   const rooms = [
-    { room: "101", type: "Deluxe", guest: "Priya Sharma", status: "Occupied" },
-    { room: "204", type: "Suite", guest: "—", status: "Available" },
-    { room: "305", type: "Standard", guest: "Rajan Thapa", status: "Checkout" },
-    { room: "112", type: "Deluxe", guest: "—", status: "Maintenance" },
+    { room: "101", floor: "1", type: "Deluxe", guest: "Priya Sharma", status: "Occupied" },
+    { room: "204", floor: "2", type: "Suite", guest: "—", status: "Available" },
+    { room: "305", floor: "3", type: "Standard", guest: "Rajan Thapa", status: "Checkout" },
+    { room: "112", floor: "1", type: "Deluxe", guest: "—", status: "Maintenance" },
   ];
+
+  const filteredRooms =
+    floor === "all" ? rooms : rooms.filter((r) => r.floor === floor);
 
   const checkins = [
     { name: "Priya Sharma", room: "101", time: "Arrived" },
@@ -61,23 +52,15 @@ const Overview = () => {
 
       {/* HEADER */}
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Overview
-        </h1>
-        <p className="text-xs text-slate-500">
-          Hotel operations summary
-        </p>
+        <h1 className="text-lg font-semibold text-slate-900">Overview</h1>
+        <p className="text-xs text-slate-500">Hotel operations summary</p>
       </div>
 
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((s, i) => (
           <div key={i} className="transition hover:-translate-y-1 duration-200">
-            <StatCard
-              title={s.title}
-              value={s.value}
-              icon={s.icon}
-            />
+            <StatCard title={s.title} value={s.value} icon={s.icon} />
           </div>
         ))}
       </div>
@@ -87,11 +70,7 @@ const Overview = () => {
         {miniStats.map((m, i) => (
           <div
             key={i}
-            className="
-              bg-white border border-slate-200 rounded-xl p-4
-              transition duration-200
-              hover:shadow-md hover:border-blue-200 hover:-translate-y-1
-            "
+            className="bg-white border border-slate-200 rounded-xl p-4 transition hover:shadow-md hover:border-blue-200 hover:-translate-y-1"
           >
             <p className="text-xs text-slate-500">{m.label}</p>
             <p className="text-lg font-semibold text-slate-900 mt-1">
@@ -108,10 +87,28 @@ const Overview = () => {
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
 
           <div className="flex items-center justify-between mb-4">
+
             <h3 className="text-sm font-medium text-slate-700">
               Room Overview
             </h3>
-            <span className="text-xs text-slate-400">Live</span>
+
+            {/* FLOOR FILTER */}
+            <select
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+              className="
+                text-xs border border-slate-200 rounded-md px-2 py-1
+                bg-white text-slate-600
+                focus:outline-none focus:ring-1 focus:ring-blue-500
+                hover:border-blue-300 transition
+              "
+            >
+              <option value="all">All Floors</option>
+              <option value="1">Floor 1</option>
+              <option value="2">Floor 2</option>
+              <option value="3">Floor 3</option>
+            </select>
+
           </div>
 
           <div className="overflow-hidden rounded-lg border border-slate-100">
@@ -129,15 +126,11 @@ const Overview = () => {
 
               <tbody className="divide-y divide-slate-100">
 
-                {rooms.map((r, i) => (
+                {filteredRooms.map((r, i) => (
                   <tr
                     key={i}
-                    className="
-                      transition duration-150
-                      hover:bg-slate-50 hover:scale-[1.01]
-                    "
+                    className="transition hover:bg-slate-50 hover:scale-[1.01]"
                   >
-
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -161,15 +154,11 @@ const Overview = () => {
 
                     <td>
                       <span
-                        className={`
-                          text-xs px-2.5 py-1 rounded-full border
-                          ${statusMap[r.status]}
-                        `}
+                        className={`text-xs px-2.5 py-1 rounded-full border ${statusMap[r.status]}`}
                       >
                         {r.status}
                       </span>
                     </td>
-
                   </tr>
                 ))}
 
@@ -192,13 +181,8 @@ const Overview = () => {
             {checkins.map((c, i) => (
               <div
                 key={i}
-                className="
-                  flex items-center justify-between
-                  p-2 rounded-lg
-                  hover:bg-slate-50 transition
-                "
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition"
               >
-
                 <div>
                   <p className="text-sm font-medium text-slate-800">
                     {c.name}
@@ -211,7 +195,6 @@ const Overview = () => {
                 <span className="text-xs text-blue-600">
                   {c.time}
                 </span>
-
               </div>
             ))}
 
