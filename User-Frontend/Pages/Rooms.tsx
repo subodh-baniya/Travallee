@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 /* ---------------- TYPES ---------------- */
 
 type RoomType = "DELUXE" | "SUITE" | "STANDARD";
+type StatusFilter = "ALL" | "AVAILABLE" | "BOOKED" | "MAINTENANCE";
+type TypeFilter = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
 
 interface Room {
   id: string;
@@ -12,7 +14,7 @@ interface Room {
   pricePerNight: number;
   capacity: number;
   images: string[];
-  isAvailable: boolean;
+  status: "AVAILABLE" | "BOOKED" | "MAINTENANCE";
 }
 
 interface RoomResponse {
@@ -27,197 +29,206 @@ const mockData: RoomResponse = {
       id: "1",
       roomNumber: "101",
       roomType: "DELUXE",
-      pricePerNight: 120,
+      pricePerNight: 4200,
       capacity: 2,
       images: [
         "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85",
       ],
-      isAvailable: true,
+      status: "AVAILABLE",
     },
     {
       id: "2",
       roomNumber: "202",
       roomType: "SUITE",
-      pricePerNight: 220,
+      pricePerNight: 8400,
       capacity: 4,
       images: [
-        "https://images.unsplash.com/photo-1501117716987-c8e1ecb2103f",
+        "https://media.designcafe.com/wp-content/uploads/2023/07/05141750/aesthetic-room-decor.jpg",
       ],
-      isAvailable: false,
+      status: "BOOKED",
+    },
+    {
+      id: "3",
+      roomNumber: "105",
+      roomType: "DELUXE",
+      pricePerNight: 4200,
+      capacity: 2,
+      images: [
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2",
+      ],
+      status: "MAINTENANCE",
     },
   ],
+};
+
+/* ---------------- STATUS STYLE ---------------- */
+
+const statusMap: Record<string, string> = {
+  AVAILABLE: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  BOOKED: "bg-blue-50 text-blue-600 border-blue-100",
+  MAINTENANCE: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
 /* ---------------- COMPONENT ---------------- */
 
 const Rooms = () => {
   const [data, setData] = useState<RoomResponse | null>(null);
-
-  /* FORM STATE */
-  const [form, setForm] = useState({
-    roomNumber: "",
-    roomType: "DELUXE",
-    pricePerNight: "",
-    capacity: "",
-    images: [] as File[],
-  });
+  const [filter, setFilter] = useState<StatusFilter>("ALL");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const fetchRooms = async () => {
-      // future API
-      // const res = await fetch("/api/dashboard/rooms");
-      // const json = await res.json();
-      // setData(json.data);
-
-      setData(mockData);
-    };
-
-    fetchRooms();
+    setData(mockData);
   }, []);
 
   if (!data) return <div>Loading...</div>;
 
-  /* ---------------- CREATE ROOM (mock) ---------------- */
-
-  const handleCreate = () => {
-    const newRoom: Room = {
-      id: Date.now().toString(),
-      roomNumber: form.roomNumber,
-      roomType: form.roomType as RoomType,
-      pricePerNight: Number(form.pricePerNight),
-      capacity: Number(form.capacity),
-      images: form.images.map((f) => URL.createObjectURL(f)),
-      isAvailable: true,
-    };
-
-    setData({
-      rooms: [newRoom, ...data.rooms],
-    });
-  };
+  const filtered = data.rooms.filter((room) => {
+    return (
+      (filter === "ALL" || room.status === filter) &&
+      (typeFilter === "ALL" || room.roomType === typeFilter) &&
+      room.roomNumber.includes(search)
+    );
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* ---------------- CREATE ROOM FORM ---------------- */}
-      <div className="bg-white p-6 rounded-xl shadow-sm space-y-4">
-
-        <h2 className="text-lg font-semibold">Add Room</h2>
-
-        <div className="grid md:grid-cols-4 gap-3">
-
-          <input
-            placeholder="Room Number"
-            className="border p-2 rounded"
-            onChange={(e) =>
-              setForm({ ...form, roomNumber: e.target.value })
-            }
-          />
-
-          <select
-            className="border p-2 rounded"
-            onChange={(e) =>
-              setForm({ ...form, roomType: e.target.value })
-            }
-          >
-            <option>DELUXE</option>
-            <option>SUITE</option>
-            <option>STANDARD</option>
-          </select>
-
-          <input
-            placeholder="Price"
-            type="number"
-            className="border p-2 rounded"
-            onChange={(e) =>
-              setForm({ ...form, pricePerNight: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Capacity"
-            type="number"
-            className="border p-2 rounded"
-            onChange={(e) =>
-              setForm({ ...form, capacity: e.target.value })
-            }
-          />
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">
+            Rooms
+          </h1>
+          <p className="text-xs text-slate-500">
+            Manage room inventory
+          </p>
         </div>
 
-        {/* IMAGE UPLOAD */}
-        <input
-          type="file"
-          multiple
-          className="border p-2 rounded w-full"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              images: Array.from(e.target.files || []),
-            })
-          }
-        />
-
-        <button
-          onClick={handleCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Create Room
+        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+          + Add Room
         </button>
       </div>
 
-      {/* ---------------- ROOMS LIST ---------------- */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* FILTER BAR */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
 
-        {data.rooms.map((room) => (
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search room number..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+        />
+
+        {/* STATUS FILTER */}
+        <div className="flex gap-2">
+          {["ALL", "AVAILABLE", "BOOKED", "MAINTENANCE"].map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s as StatusFilter)}
+              className={`px-3 py-1.5 text-xs rounded-full transition ${
+                filter === s
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {/* ROOM TYPE DROPDOWN */}
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+          className="px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-white"
+        >
+          <option value="ALL">ALL TYPES</option>
+          <option value="DELUXE">DELUXE</option>
+          <option value="SUITE">SUITE</option>
+          <option value="STANDARD">STANDARD</option>
+        </select>
+      </div>
+
+      {/* GRID */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        {filtered.map((room) => (
           <motion.div
             key={room.id}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-sm overflow-hidden"
+            className="
+              bg-white border border-slate-200 rounded-xl
+              overflow-hidden
+              hover:shadow-md hover:-translate-y-1
+              transition
+            "
           >
 
             {/* IMAGE */}
-            <img
-              src={room.images[0]}
-              className="h-40 w-full object-cover"
-            />
+            <div className="relative">
+              <img
+                src={room.images[0]}
+                className="h-40 w-full object-cover"
+              />
 
-            {/* DETAILS */}
-            <div className="p-4 space-y-2">
+              <span
+                className={`
+                  absolute top-3 right-3 text-[11px] px-2 py-1 rounded-full border
+                  ${statusMap[room.status]}
+                `}
+              >
+                {room.status}
+              </span>
+            </div>
 
-              <div className="flex justify-between">
-                <h3 className="font-semibold">
-                  Room {room.roomNumber}
-                </h3>
+            {/* CONTENT */}
+            <div className="p-4 space-y-3">
 
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    room.isAvailable
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {room.isAvailable ? "Available" : "Booked"}
+              <div className="flex justify-between items-center">
+
+                <div>
+                  <h3 className="text-xl font-semibold text-blue-600">
+                    {room.roomNumber}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 tracking-wide">
+                    {room.roomType}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Rs. {room.pricePerNight}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    per night
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>Capacity: {room.capacity}</span>
+                <span className="text-blue-600 font-medium">
+                  Floor {room.roomNumber[0]}
                 </span>
               </div>
 
-              <p className="text-sm text-gray-600">
-                {room.roomType}
-              </p>
-
-              <p className="text-sm">
-                Capacity: {room.capacity}
-              </p>
-
-              <p className="font-semibold">
-                ${room.pricePerNight}/night
-              </p>
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button className="text-xs text-blue-600 hover:underline">
+                  Manage
+                </button>
+              </div>
 
             </div>
+
           </motion.div>
         ))}
 
       </div>
-
     </div>
   );
 };

@@ -12,7 +12,6 @@ const sections = [
       { name: "Overview", path: "/dashboard/overview" },
       { name: "Bookings", path: "/dashboard/bookings" },
       { name: "Guests", path: "/dashboard/guests" },
-      { name: "Messages", path: "/dashboard/chat" },
     ],
   },
   {
