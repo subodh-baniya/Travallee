@@ -17,16 +17,43 @@ const Footer = () => {
         <div className="text-center md:text-right">
           <h3 className="font-semibold text-white mb-2">Follow Us</h3>
           <div className="flex justify-center md:justify-end space-x-4 mb-4">
-            <FaFacebookF className="hover:text-blue-500 cursor-pointer transition transform hover:scale-110" />
-            <FaInstagram className="hover:text-pink-500 cursor-pointer transition transform hover:scale-110" />
-            <FaTwitter className="hover:text-blue-400 cursor-pointer transition transform hover:scale-110" />
+            
+            {/* Facebook Link */}
+            <a 
+              href="https://www.facebook.com/kcprabin09" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+            >
+              <FaFacebookF className="hover:text-blue-500 cursor-pointer transition transform hover:scale-110" />
+            </a>
+
+            {/* Instagram Link */}
+            <a 
+              href="https://www.instagram.com/kc_prabinn/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
+              <FaInstagram className="hover:text-pink-500 cursor-pointer transition transform hover:scale-110" />
+            </a>
+
+            {/* Twitter Link */}
+            <a 
+              href="#" /* Replace the # with your actual Twitter link */
+              target="_blank" 
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+            >
+              <FaTwitter className="hover:text-blue-400 cursor-pointer transition transform hover:scale-110" />
+            </a>
+
           </div>
           <p className="text-gray-400 text-sm">
             &copy; 2026 Travallee. All rights reserved.
           </p>
         </div>
       </div>
-
     </footer>
   );
 };
