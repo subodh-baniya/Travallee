@@ -17,6 +17,8 @@ import Guests from "../Pages/Guests"
 import Payments from "../Pages/Payments"
 import Reports from "../Pages/Reports"
 import Settings from "../Pages/Settings" 
+import Finance from "../Pages/Finance"
+import ReviewsPage from "../Pages/Review"
 
 const router=createBrowserRouter(
     createRoutesFromElements(
@@ -31,13 +33,14 @@ const router=createBrowserRouter(
         <Route path="aboutus" element={<AboutUs/>}/>
         <Route path="services" element={<Services/>}/>
         <Route path="contactus" element={<ContactUs/>}/>
+          <Route path="pricing" element={<Pricing/>}/>
         </Route>
         </Route>
-
-          <Route element={<ProtectedRoute />}>
+{/* 
+          <Route element={<ProtectedRoute />}> */}
         <Route path="/dashboard" element={<Dashboard />}>
-
-          <Route index path="overview" element={<Overview/>} />
+             <Route index element={<Navigate to="overview" replace />}/>
+          <Route path="overview" element={<Overview/>} />
           <Route path="bookings" element={<Bookings/>} />
           <Route path="rooms" element={<Rooms/>} />
           <Route path="pricing" element={<Pricing/>} />
@@ -45,8 +48,10 @@ const router=createBrowserRouter(
           <Route path="payments" element={<Payments/>} />
           <Route path="reports" element={<Reports/>} />
           <Route path="settings" element={<Settings/>} />
+           <Route path="reviews" element={<ReviewsPage/>} />
+            <Route path="finance" element={<Finance/>} />
 
-        </Route>
+        {/* </Route> */}
       </Route>
         
         </>
