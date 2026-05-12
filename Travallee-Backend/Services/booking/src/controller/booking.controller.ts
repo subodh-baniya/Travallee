@@ -19,10 +19,11 @@ const discountAmount = (totalAmount: number, discountPercentage: number) => {
 
 const taxAmount = (totalAmount: number, taxRate: number) => {
     return totalAmount * (taxRate / 100);
-}   
+} 
+
 const createBooking = asyncHandler(async (req: any, res: any) => {
     try {
-        const { roomId,hotelId, checkIn, checkOut, guestCount } = req.query;
+        const { roomId,hotelId, checkIn, checkOut, guestCount } = req.body;
 
         if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount) {
             return apiError(res, 400, "All fields are required");
@@ -77,7 +78,9 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     } catch (error: any) {
         return apiError(res, 500, "Failed to create booking");
     }
-})  
+})
+
+
 const esewaSuccess = asyncHandler(async (req: any, res: any) => {
     try {
         const { data } = req.query;
