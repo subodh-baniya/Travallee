@@ -59,6 +59,16 @@ export default function SelectDateScreen() {
 
   const isSelectionComplete = checkIn !== null && checkOut !== null;
 
+  // Calculate pricing
+  const nights = isSelectionComplete ? checkOut - checkIn : 0;
+  const nightlyPrice = realixDiscoverProperty.nightlyPrice;
+  const roomFee = nights * nightlyPrice;
+  const discountPercentage = 0.15; // 15% discount
+  const discount = roomFee * discountPercentage;
+  const taxRate = 0.1; // 10% tax
+  const tax = (roomFee - discount) * taxRate;
+  const total = roomFee - discount + tax;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="light" />
@@ -157,16 +167,16 @@ export default function SelectDateScreen() {
               <View style={styles.bookingThumb} />
               <View style={styles.bookingInfo}>
                 <Text style={styles.bookingName}>Cassablanca Ground</Text>
-                <Text style={styles.bookingDate}>25 August 2023</Text>
-                <Text style={styles.bookingPrice}>${realixDiscoverProperty.nightlyPrice}</Text>
+                <Text style={styles.bookingDate}>{checkIn} - {checkOut} Aug | {guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
+                <Text style={styles.bookingPrice}>${nightlyPrice}/night</Text>
               </View>
             </View>
 
             <Text style={styles.detailTitle}>Detail</Text>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Room Fee</Text><Text style={styles.detailValue}>$150</Text></View>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Discount</Text><Text style={[styles.detailValue, styles.discount]}>-$38</Text></View>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Tax 10%</Text><Text style={styles.detailValue}>$34.9</Text></View>
-            <View style={[styles.detailRow, styles.totalRow]}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>$146.9</Text></View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Room Fee ({nights} night{nights !== 1 ? 's' : ''})</Text><Text style={styles.detailValue}>${roomFee}</Text></View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Discount (15%)</Text><Text style={[styles.detailValue, styles.discount]}>-${discount.toFixed(2)}</Text></View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Tax (10%)</Text><Text style={styles.detailValue}>${tax.toFixed(2)}</Text></View>
+            <View style={[styles.detailRow, styles.totalRow]}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>${total.toFixed(2)}</Text></View>
 
             <Text style={styles.payTitle}>Select Payment</Text>
             <Pressable style={styles.paymentHeader} onPress={() => setShowPaymentMethods((value) => !value)}>
@@ -191,7 +201,7 @@ export default function SelectDateScreen() {
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.priceLabel}>Price:</Text>
-          <Text style={styles.priceValue}>${realixDiscoverProperty.nightlyPrice}<Text style={styles.priceUnit}>/night</Text></Text>
+          <Text style={styles.priceValue}>{isSelectionComplete ? `$${total.toFixed(2)}` : `$${nightlyPrice}`}<Text style={styles.priceUnit}>{isSelectionComplete ? ' total' : '/night'}</Text></Text>
         </View>
         <Pressable
           style={[styles.confirmButton, !isSelectionComplete && styles.confirmDisabled]}
