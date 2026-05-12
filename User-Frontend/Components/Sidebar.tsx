@@ -24,7 +24,7 @@ const sections = [
   {
     title: "BUSINESS",
     items: [
-      { name: "Finance", path: "/dashboard/earnings" },
+      { name: "Finance", path: "/dashboard/finance" },
       { name: "Reports", path: "/dashboard/reports" },
       { name: "Settings", path: "/dashboard/settings" },
     ],

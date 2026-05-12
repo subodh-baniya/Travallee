@@ -7,6 +7,7 @@ const InitialNav = () => {
     { name: "About Us", to: "aboutus" },
     { name: "Our Services", to: "services" },
     { name: "Contact Us", to: "contactus" },
+    { name: "Pricing", to: "pricing" },
   ];
 
   return (

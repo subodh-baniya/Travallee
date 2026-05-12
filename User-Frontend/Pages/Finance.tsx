@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-/* ---------------- TYPES ---------------- */
-
 type Status = "SUCCESS" | "PENDING" | "CANCELLED";
 
 interface Transaction {
@@ -15,7 +13,6 @@ interface Transaction {
   remark: string;
 }
 
-/* ---------------- DATA ---------------- */
 
 const transactions: Transaction[] = [
   {
@@ -56,7 +53,6 @@ const transactions: Transaction[] = [
   },
 ];
 
-/* ---------------- STATUS STYLE ---------------- */
 
 const statusMap = {
   SUCCESS: "bg-emerald-50 text-emerald-600 border-emerald-100",
@@ -64,7 +60,6 @@ const statusMap = {
   CANCELLED: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
-/* ---------------- COMPONENT ---------------- */
 
 const Finance = () => {
   const [filter, setFilter] = useState<"ALL" | Status>("ALL");
@@ -83,7 +78,6 @@ const Finance = () => {
     return matchStatus && matchFrom && matchTo;
   });
 
-  /* --------- CALCULATIONS --------- */
 
   const totalIncome = filtered
     .filter((t) => t.status === "SUCCESS")
