@@ -153,18 +153,14 @@ const roomSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-
-    // Status & Ratings
     isActive: {
       type: Boolean,
       default: true,
     },
-
     isFeatured: {
       type: Boolean,
       default: false,
     },
-
     rating: {
       type: Number,
       default: 0,
@@ -177,8 +173,19 @@ const roomSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    status: {
+      type: String,
+      enum: ["AVAILABLE", "OCCUPIED", "MAINTENANCE"],
+      default: "AVAILABLE",
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const roomModel = mongoose.model("rooms", roomSchema);

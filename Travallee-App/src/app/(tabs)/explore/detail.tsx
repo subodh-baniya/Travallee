@@ -443,7 +443,7 @@ export default function HotelDetailScreen() {
             color={isFavorited ? '#e74c3c' : RealixColors.textSecondary}
           />
         </Pressable>
-        <Pressable style={styles.bookBtn}>
+        <Pressable style={styles.bookBtn} onPress={() => router.push('/(tabs)/explore/select-date')}>
           <Text style={styles.bookTxt}>Book Now</Text>
         </Pressable>
       </View>
