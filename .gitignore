@@ -7,7 +7,7 @@ __pycache__/
 env/
 venv/
 
-# Build outputs
+# Build outputs  
 dist/
 build/
 .next/
