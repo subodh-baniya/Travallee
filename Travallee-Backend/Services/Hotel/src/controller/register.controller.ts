@@ -525,6 +525,7 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error: Unable to search rooms");
   }
 });
+
 const getHotelInfo = asyncHandler(async (req: any, res: any) => {
   const userId = req.user?.id || req.user?._id;
   console.log("User from req.user:", req.user);

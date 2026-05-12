@@ -21,7 +21,7 @@ const authenticate = async (req: any, res: any, next: any) => {
     next();
   } catch (error: any) {
     console.error("Token verification error:", error.message);
-    return apiError(res, 401, "Invalid or expired token");
+    return apiError(res, 401, "Invalid or expired token11");
   }
 };
 
