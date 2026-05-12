@@ -168,4 +168,4 @@ const khaltiVerify = asyncHandler(async (req: any, res: any) => {
 
 })
 
-export { khaltiVerify,esewaSuccess }
+export { createBooking,khaltiVerify,esewaSuccess }

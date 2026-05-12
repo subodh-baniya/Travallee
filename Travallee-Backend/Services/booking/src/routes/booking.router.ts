@@ -1,10 +1,27 @@
 import Router from "express"
-import { esewaSuccess,createBooking } from "../controller/booking.controller.js";
+import { esewaSuccess,createBooking, khaltiVerify } from "../controller/booking.controller.js";
 
-const router=Router();
+import { 
+  loginUser,
+  logoutUser,
+  registerUser,
+  googleAuth,
+  deleteUserProfile,
+  updateUserProfile,
+  getUserProfile,
+  sendOTP,
+  verifyOTP,
+  getUserProfilePicture //@ts-ignore
+} from "@packages";
 
-router.route("/create_booking").post(createBooking)
+const router = Router();
 
-router.route("/esewasuccess").post(esewaSuccess)
+
+router.post("/esewa/success", esewaSuccess)
+
+router.post("/khalti/verify", khaltiVerify)
+
+router.post("/create-booking", createBooking)
+
 
 export default router
