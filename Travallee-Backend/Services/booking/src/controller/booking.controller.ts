@@ -22,21 +22,21 @@ const taxAmount = (totalAmount: number, taxRate: number) => {
 }   
 const createBooking = asyncHandler(async (req: any, res: any) => {
     try {
-        const { roomId,hotelId, checkIn, checkOut, guestCount } = req.body;
+        const { roomId,hotelId, checkIn, checkOut, guestCount } = req.query;
 
         if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount) {
-            return apiError(res, "All fields are required", 400);
+            return apiError(res, 400, "All fields are required");
         }
 
         const room = await roomModel.findById(roomId).populate("hotel");
         const hotelDiscount = await hotelModel.findById(hotelId).select("discount");
         if (!room) {
-            return apiError(res, "Room not found", 404);
+            return apiError(res, 404, "Room not found");
         }
 
         const hotel = await hotelModel.findById(hotelId);
         if (!hotel) {
-            return apiError(res, "Hotel not found", 404);
+            return apiError(res, 404, "Hotel not found");
         }
 
        const Checkavailability = await bookingModel.find({
@@ -51,7 +51,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
        })
 
         if (Checkavailability.length >= room.quantity) {
-            return apiError(res, "Room is fully booked for the selected dates", 400);
+            return apiError(res, 400, "Room is fully booked for the selected dates");
         }   
 
         const totalAmount = calulateTotalAmount(room.price, new Date(checkIn), new Date(checkOut), guestCount);
@@ -75,7 +75,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
         return apiResponse(res, "Booking created successfully", { bookingId: booking._id });
     } catch (error: any) {
-        return apiError(res, "Failed to create booking", 500);
+        return apiError(res, 500, "Failed to create booking");
     }
 })  
 const esewaSuccess = asyncHandler(async (req: any, res: any) => {
