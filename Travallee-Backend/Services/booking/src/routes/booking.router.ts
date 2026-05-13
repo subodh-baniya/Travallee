@@ -11,6 +11,7 @@ import {
   getUserProfile,
   sendOTP,
   verifyOTP,
+  authenticate,
   getUserProfilePicture //@ts-ignore
 } from "@packages";
 
@@ -21,7 +22,7 @@ router.post("/esewa/success", esewaSuccess)
 
 router.post("/khalti/verify", khaltiVerify)
 
-router.post("/create-booking", createBooking)
+router.post("/create-booking", authenticate,createBooking)
 
 
 export default router
