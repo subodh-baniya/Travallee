@@ -49,7 +49,7 @@ const bookingSchema = new mongoose.Schema({
     },
     paymentMethod:{
         type:String,
-        enum:["KHALTI","ESEWA"],
+        enum:["KHALTI","ESEWA","COD"],
         required:true
     },
 

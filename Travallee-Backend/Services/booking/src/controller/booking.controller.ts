@@ -22,7 +22,7 @@ const taxAmount = (totalAmount: number, taxRate: number) => {
 } 
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
-    try {
+   
         const { roomId,hotelId, checkIn, checkOut, guestCount } = req.body;
 
         if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount) {
@@ -75,10 +75,8 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         });
 
         return apiResponse(res, "Booking created successfully", { bookingId: booking._id });
-    } catch (error: any) {
-        return apiError(res, 500, "Failed to create booking");
-    }
-})
+    } 
+)
 
 
 const esewaSuccess = asyncHandler(async (req: any, res: any) => {
