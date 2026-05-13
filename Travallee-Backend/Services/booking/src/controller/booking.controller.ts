@@ -22,55 +22,74 @@ const taxAmount = (totalAmount: number, taxRate: number) => {
 } 
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
-   
-        const { roomId,hotelId, checkIn, checkOut, guestCount } = req.body;
+          const { roomId, hotelId, checkIn, checkOut, guestCount, paymentMethod } = req.body;
 
-        if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount) {
+        // Validation
+        if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount || !paymentMethod) {
             return apiError(res, 400, "All fields are required");
         }
 
-        const room = await roomModel.findById(roomId).populate("hotel");
-        const hotelDiscount = await hotelModel.findById(hotelId).select("discount");
+        // Parse and validate IDs
+        let roomObjectId, hotelObjectId;
+        try {
+            roomObjectId = new mongoose.Types.ObjectId(roomId);
+            hotelObjectId = new mongoose.Types.ObjectId(hotelId);
+        } catch (e) {
+            return apiError(res, 400, "Invalid room or hotel ID format");
+        }
+
+        // Fetch room and validate
+        const room = await roomModel.findById(roomObjectId);
         if (!room) {
             return apiError(res, 404, "Room not found");
         }
 
-        const hotel = await hotelModel.findById(hotelId);
+        // Verify room belongs to specified hotel
+        if (room.hotelId.toString() !== hotelObjectId.toString()) {
+            return apiError(res, 400, "Room does not belong to the specified hotel");
+        }
+
+        // Fetch hotel
+        const hotel = await hotelModel.findById(hotelObjectId);
         if (!hotel) {
             return apiError(res, 404, "Hotel not found");
         }
 
-       const Checkavailability = await bookingModel.find({
-            room: roomId,
-            hotel: hotelId,
+        // Check availability
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+        
+        const bookedDates = await bookingModel.find({
+            room: roomObjectId,
+            hotel: hotelObjectId,
             status: { $in: ["PENDING", "CONFIRMED"] },
+            bookingPayment: "PAID",
             $or: [
-                { checkIn: { $lt: new Date(checkOut), $gte: new Date(checkIn) } },
-                { checkOut: { $gt: new Date(checkIn), $lte: new Date(checkOut) } },
-                { checkIn: { $lte: new Date(checkIn) }, checkOut: { $gte: new Date(checkOut) } }
+                { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
             ]
-       })
+        });
 
-        if (Checkavailability.length >= room.quantity) {
-            return apiError(res, 400, "Room is fully booked for the selected dates");
-        }   
+        if (bookedDates.length > 0) {
+            return apiError(res, 400, "Room is not available for the selected dates");
+        }
 
-        const totalAmount = calulateTotalAmount(room.price, new Date(checkIn), new Date(checkOut), guestCount);
-        const discount = discountAmount(totalAmount, hotelDiscount.discount);
+        // Calculate pricing
+        const totalAmount = calulateTotalAmount(room.pricePerNight, checkInDate, checkOutDate, guestCount);
+        const discount = discountAmount(totalAmount, hotel.discount || 0);
         const tax = taxAmount(totalAmount - discount, taxrate);
         const finalAmount = totalAmount - discount + tax;
 
+      
         const booking = await bookingModel.create({
             user: req.user._id,
-            hotel: room.hotel._id,
-            room: room._id,
-            checkIn: new Date(checkIn), 
-            checkOut: new Date(checkOut),
-            guestCount,
-            totalAmount: finalAmount,
-            discount,
-            tax,
-            bookingPayment: "PENDING",
+            hotel: hotelObjectId,
+            room: roomObjectId,
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
+            guests: guestCount,
+            totalPrice: finalAmount,
+            bookingPayment: "NOTPAID",
+            paymentMethod: paymentMethod,
             status: "PENDING"
         });
 
