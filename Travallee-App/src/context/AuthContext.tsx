@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isAxiosError } from 'axios';
 import apiClient from '@/src/services/apiClient';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
+import { Socket } from 'socket.io-client';
 
 interface User {
   id: string;
@@ -18,6 +19,9 @@ interface AuthContextType {
   isSignOut: boolean; 
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  socket?: Socket;
+  socketId?: string;
+  setSocket: (socket: Socket | undefined) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSignOut, setIsSignOut] = useState(false);
+  const [socket, setSocketState] = useState<Socket>();
+  const [socketId, setSocketId] = useState<string>();
 
   const checkAuth = async () => {
     try {
@@ -35,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSignOut(true);
         return;
       }
-      // Token is automatically added by apiClient interceptor
+
       const response = await apiClient.get(API_ENDPOINTS_AUTH.USER_PROFILE);
 
       if (response.status === 200) {
@@ -47,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       const status = isAxiosError(error) ? error.response?.status : undefined;
 
-      // Only clear session for real auth failures (expired/invalid token).
       if (status === 401 || status === 403) {
         await SecureStore.deleteItemAsync('userToken');
         await SecureStore.deleteItemAsync('userData');
@@ -81,12 +86,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await SecureStore.deleteItemAsync('userToken');
       await SecureStore.deleteItemAsync('userData');
       await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('socketId');
       setUser(null);
       setIsSignOut(true);
+      if (socket) {
+        socket.disconnect();
+        setSocketState(undefined);
+        setSocketId(undefined);
+      }
     } catch (error: any) {
       console.error('Logout error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const setSocket = async (newSocket: Socket | undefined) => {
+    setSocketState(newSocket);
+    if (newSocket?.id) {
+      setSocketId(newSocket.id);
+      await AsyncStorage.setItem('socketId', newSocket.id);
+      console.log('Socket ID saved:', newSocket.id);
     }
   };
 
@@ -100,6 +120,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSignOut,
         logout,
         checkAuth,
+        socket,
+        socketId,
+        setSocket,
       }}
     >
       {children}

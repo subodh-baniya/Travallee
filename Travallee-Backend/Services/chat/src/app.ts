@@ -6,12 +6,8 @@ import { Server as SocketIOServer } from "socket.io";
 const app = express();
 
 const httpServer = new Server(app);
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+
+const io = new SocketIOServer(httpServer);
 
 
 io.on("connection", (socket) => {

@@ -20,6 +20,7 @@ import apiClient from '@/src/services/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/src/context/AuthContext';
+import { Socket, io } from 'socket.io-client';
 
 
 export default function SignIn() {
@@ -71,26 +72,51 @@ export default function SignIn() {
       setErrorMessage('Please enter username and password.');
       return;
     }
-
-  
-
     setLoading(true);
     setErrorMessage('');
 
     try {
       const payload = { Username: trimmedUsername, password: trimmedPassword };
-      // Token is automatically added by apiClient interceptor
+
       const response = await apiClient.post(API_SIGNIN, payload);
 
       if (response.status === 200) {
         const token :  string = response.data?.data?.token;
         await SecureStore.setItemAsync('userToken', token);
         await AsyncStorage.setItem('token', token);
+        
 
         const userData = response.data?.data?.data;
         if (userData) {
           await SecureStore.setItemAsync('userData', JSON.stringify(userData));
         }
+
+        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:6001', {
+          auth: {
+            token: token,
+          },
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: 5,
+        });
+
+        newSocket.on('connect', async () => {
+          console.log('Socket connected:', newSocket.id);
+          // Save socket to auth context
+          await useAuth().setSocket(newSocket);
+        });
+
+        newSocket.on('disconnect', () => {
+          console.log('Socket disconnected');
+        });
+
+        newSocket.on('connect_error', (error) => {
+          console.error('Socket connection error:', error);
+        });
+
+        await useAuth().setSocket(newSocket);
+
         router.replace('/(tabs)' as any);
       }
     } catch (error) {
