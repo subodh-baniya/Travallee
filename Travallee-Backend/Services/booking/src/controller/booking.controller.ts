@@ -93,7 +93,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
             status: "PENDING"
         });
 
-        return apiResponse(res, "Booking created successfully", { bookingId: booking._id });
+        return apiResponse(res, 201, true, "Booking created successfully",booking);
     } 
 )
 
