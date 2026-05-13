@@ -5,6 +5,7 @@ import {apiResponse} from "./Utils/response/api.response.js";
 import { UserModel } from "./Model/User.model.js";
 import { hotelModel } from "./Model/Hotel.model.js";
 import { BannerModel } from "./Model/banner.model.js";
+import { chatModel } from "./Model/Chat.model.js";
 import {
   authenticate,
   checkRole,
@@ -24,8 +25,8 @@ import {connectDB} from "./Utils/Func/connect.db.js"
 import { uploadToCloudinary } from "./Utils/Func/cloudinary.js";
 import { roomModel } from "./Model/Room.model.js";
 import { bookingModel } from "./Model/Booking.model.js";
-import { chatModel } from "./Model/Chat.model.js";
 import {upload} from "./middleware/mullter.middleware.js";
+
 
 
 
@@ -34,6 +35,7 @@ export {
     connectDB,
     UserModel,
     apiError,
+    chatModel,
     asyncHandler,
     apiResponse,
     hotelModel,
