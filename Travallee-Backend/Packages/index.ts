@@ -5,7 +5,7 @@ import {apiResponse} from "./Utils/response/api.response.js";
 import { UserModel } from "./Model/User.model.js";
 import { hotelModel } from "./Model/Hotel.model.js";
 import { BannerModel } from "./Model/banner.model.js";
-import { chatModel } from "./Model/Chat.model.js";
+import { chatModel } from "./Model/chat.model.js";
 import {
   authenticate,
   checkRole,
@@ -35,7 +35,6 @@ export {
     connectDB,
     UserModel,
     apiError,
-    chatModel,
     asyncHandler,
     apiResponse,
     hotelModel,

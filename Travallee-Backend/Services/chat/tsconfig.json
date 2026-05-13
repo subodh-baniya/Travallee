@@ -5,6 +5,10 @@
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
+    "paths": { 
+      "@packages": ["./Packages/index.ts"],
+      "@packages/*": ["./Packages/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -14,6 +18,7 @@
     "declarationMap": true,
     "sourceMap": true
   },
+  
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
