@@ -22,17 +22,18 @@ export default {
     
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.anonymous.travallee",
       infoPlist: {
         NSLocationWhenInUseUsageDescription: "We need your location to provide better services nearby.",
         NSLocationAlwaysAndWhenInUseUsageDescription: "We need your location to show nearby places and improve your experience.",
       },
     },
     android: {
+      package: "com.anonymous.travallee",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         
       },
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       permissions: [
         "android.permission.ACCESS_FINE_LOCATION",
