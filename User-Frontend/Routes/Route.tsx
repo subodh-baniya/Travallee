@@ -20,6 +20,7 @@ import Settings from "../Pages/Settings"
 import Finance from "../Pages/Finance"
 import ReviewsPage from "../Pages/Review"
 import RegisterHotel from "../Pages/Registerhotel"
+import ChatPage from "../Pages/Messages"
 
 const router=createBrowserRouter(
     createRoutesFromElements(
@@ -52,6 +53,7 @@ const router=createBrowserRouter(
           <Route path="settings" element={<Settings/>} />
            <Route path="reviews" element={<ReviewsPage/>} />
             <Route path="finance" element={<Finance/>} />
+            <Route path="messages" element={<ChatPage/>} />
 
         {/* </Route> */}
       </Route>

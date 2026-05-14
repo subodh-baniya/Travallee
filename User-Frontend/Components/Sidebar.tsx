@@ -11,7 +11,7 @@ const sections = [
     items: [
       { name: "Overview", path: "/dashboard/overview" },
       { name: "Bookings", path: "/dashboard/bookings" },
-      { name: "Guests", path: "/dashboard/guests" },
+      { name: "Guests", path: "/dashboard/guests" }
     ],
   },
   {
@@ -19,6 +19,7 @@ const sections = [
     items: [
       { name: "Rooms", path: "/dashboard/rooms" },
       { name: "Reviews", path: "/dashboard/reviews" },
+      { name: "Messages", path: "/dashboard/messages" },
     ],
   },
   {
