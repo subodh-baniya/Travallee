@@ -19,6 +19,7 @@ import Reports from "../Pages/Reports"
 import Settings from "../Pages/Settings" 
 import Finance from "../Pages/Finance"
 import ReviewsPage from "../Pages/Review"
+import RegisterHotel from "../Pages/Registerhotel"
 
 const router=createBrowserRouter(
     createRoutesFromElements(
@@ -26,6 +27,7 @@ const router=createBrowserRouter(
         <Route element={<Publicroute/>}>
         <Route path="/login"element={<Loginpage/>}/>
         <Route path="/register" element={<Register/>}/>
+         <Route path="/registerhotel" element={<RegisterHotel/>}/>
 
         <Route path="/" element={<Navigate to="/initialhome/herosection" replace/>}/>
         <Route path="/initialhome"element={<InitialHome/>}>
