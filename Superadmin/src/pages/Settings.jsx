@@ -1,4 +1,4 @@
-// src/pages/Settings.jsx
+
 import Toggle from "../components/Toggle";
 
 const systemToggles = [
@@ -11,7 +11,7 @@ const systemToggles = [
 export default function Settings() {
   return (
     <>
-      {/* Project settings */}
+      // settings
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Project Settings</span>
@@ -31,7 +31,7 @@ export default function Settings() {
         <button className="btn primary">Save Settings</button>
       </div>
 
-      {/* System controls */}
+      // system controls
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">System Controls</span>
@@ -47,7 +47,7 @@ export default function Settings() {
         ))}
       </div>
 
-      {/* Danger zone */}
+      // danger zone
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Danger Zone</span>

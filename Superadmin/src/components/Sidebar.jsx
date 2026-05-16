@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import { theme } from "../theme";
 
 const NAV = [

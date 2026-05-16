@@ -1,4 +1,3 @@
-// src/components/Topbar.jsx
 import { theme } from "../theme";
 
 const topbarCSS = `

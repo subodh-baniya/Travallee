@@ -11,7 +11,7 @@ export default function Website() {
 
   return (
     <>
-      {/* Homepage Content */}
+      // homepage components
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Homepage Content</span>
@@ -31,7 +31,7 @@ export default function Website() {
         <button className="btn primary">Save Content</button>
       </div>
 
-      {/* Page Visibility */}
+      // page visibility
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Page Visibility</span>
@@ -47,7 +47,7 @@ export default function Website() {
         ))}
       </div>
 
-      {/* Announcement Banner */}
+      //announcement banner
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Announcement Banner</span>
