@@ -1,4 +1,4 @@
-// src/pages/Dashboard.jsx
+
 import { theme } from "../theme";
 
 export default function Dashboard({ setPage }) {
@@ -37,7 +37,7 @@ export default function Dashboard({ setPage }) {
       </div>
 
       <div className="two-col">
-        {/* Activity feed */}
+        //activity feed
         <div className="panel">
           <div className="panel-hd">
             <span className="panel-title">Recent Activity</span>
@@ -53,7 +53,7 @@ export default function Dashboard({ setPage }) {
           ))}
         </div>
 
-        {/* Quick actions */}
+        //quick actions
         <div className="panel">
           <div className="panel-hd">
             <span className="panel-title">Quick Actions</span>
