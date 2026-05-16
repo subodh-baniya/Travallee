@@ -1,4 +1,3 @@
-// src/pages/Analytics.jsx
 import { theme } from "../theme";
 
 const stats = [
@@ -25,7 +24,7 @@ const topPages = [
 export default function Analytics() {
   return (
     <>
-      {/* Stats */}
+      // stats
       <div className="stat-grid">
         {stats.map((s) => (
           <div className="stat-card" key={s.label}>
@@ -36,7 +35,7 @@ export default function Analytics() {
         ))}
       </div>
 
-      {/* Bar charts */}
+      // barcharts
       <div className="two-col">
         {[
           { title: "Traffic by source", rows: traffic },
