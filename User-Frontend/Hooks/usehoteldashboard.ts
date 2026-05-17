@@ -1,15 +1,41 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { getDashboard } from "../Services/hotel.api";
+import { getHotelDashboard } from "../Services/hotel.api";
+
+export interface DashboardStats {
+  totalRevenue: number;
+  totalRooms: number;
+  occupiedRooms: number;
+  availableRooms: number;
+  todayCheckins: number;
+  averageRating?: number;
+}
+
+export interface DashboardRoom {
+  roomNumber: string;
+  floorNumber: number;
+  roomType: string;
+  status: "OCCUPIED" | "AVAILABLE" | "MAINTENANCE";
+  pricePerNight: number;
+}
+
+export interface DashboardCheckin {
+  guestName: string;
+  roomNumber: string;
+  checkInTime: string; // ISO format datetime
+}
+
+export interface DashboardHotel {
+  _id: string;
+  hotelName: string;
+  hotelLocation: string;
+}
 
 export const useHotelDashboard = () => {
-  const [statsData, setStatsData] = useState<any>({
-    totalRevenue: 0,
-    roomsOccupied: "0 / 0",
-    todayCheckins: 0,
-  });
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [checkins, setCheckins] = useState<any[]>([]);
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [rooms, setRooms] = useState<DashboardRoom[]>([]);
+  const [checkins, setCheckins] = useState<DashboardCheckin[]>([]);
+  const [hotel, setHotel] = useState<DashboardHotel | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -17,19 +43,17 @@ export const useHotelDashboard = () => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        const result = await getDashboard();
 
-        if (result.success && result.data) {
-          setStatsData(result.data.stats || {
-            totalRevenue: 0,
-            roomsOccupied: "0 / 0",
-            todayCheckins: 0,
-          });
-          setRooms(result.data.rooms || []);
-          setCheckins(result.data.checkins || []);
-        }
-      } catch (err: any) {
-        setError(err?.message || "Error loading dashboard");
+        const res = await getHotelDashboard();
+        const data = res.data;
+
+        setStatsData(data.stats);
+        setRooms(data.rooms);
+        setCheckins(data.checkins);
+        setHotel(data.hotel);
+      } catch (err: Error | unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Dashboard load failed";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -42,6 +66,7 @@ export const useHotelDashboard = () => {
     statsData,
     rooms,
     checkins,
+    hotel,
     loading,
     error,
   };

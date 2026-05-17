@@ -34,6 +34,6 @@ export const getRooms = (hotelId: string, page = 1, limit = 10) => {
     .then(res => res.data);
 };
 
-export const getDashboard = () => {
+export const getHotelDashboard = () => {
   return hotelClient.get("/dashboard").then(res => res.data);
 };

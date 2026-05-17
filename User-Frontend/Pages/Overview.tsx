@@ -1,23 +1,34 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { StatCard } from "../Components/Statcard";
-import { FaBed, FaCalendarCheck, FaDollarSign } from "react-icons/fa";
-import { useHotelDashboard } from "../Hooks/usehoteldashboard";
+import {
+  FaBed,
+  FaCalendarCheck,
+  FaDollarSign,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { useHotelDashboard } from "../Hooks/useHotelDashboard";
 
 const Overview = () => {
   const [floor, setFloor] = useState("all");
+
   const { statsData, rooms, checkins, loading } = useHotelDashboard();
 
   const stats = statsData
     ? [
         {
           title: "Total Revenue",
-          value: `Rs. ${statsData.totalRevenue}`,
+          value: `Rs. ${statsData.totalRevenue.toLocaleString()}`,
           icon: <FaDollarSign />,
         },
         {
           title: "Rooms Occupied",
-          value: statsData.roomsOccupied,
+          value: `${statsData.occupiedRooms} / ${statsData.totalRooms}`,
           icon: <FaBed />,
+        },
+        {
+          title: "Average Rating",
+          value: statsData.averageRating ? `${statsData.averageRating.toFixed(1)} / 5` : "0 / 5",
+          icon: <FaCheckCircle />,
         },
         {
           title: "Today's Check-ins",
@@ -25,147 +36,220 @@ const Overview = () => {
           icon: <FaCalendarCheck />,
         },
       ]
-    : [];
+    : [
+        {
+          title: "Total Revenue",
+          value: "Rs. 0",
+          icon: <FaDollarSign />,
+        },
+        {
+          title: "Rooms Occupied",
+          value: "0 / 0",
+          icon: <FaBed />,
+        },
+        {
+          title: "Average Rating",
+          value: "0 / 5",
+          icon: <FaCheckCircle />,
+        },
+        {
+          title: "Today's Check-ins",
+          value: "0",
+          icon: <FaCalendarCheck />,
+        },
+      ];
 
-  const miniStats = [
-    { label: "Restaurant Revenue Today", value: "Rs. 0" },
-    { label: "Average Guest Rating", value: "0 / 5" },
-  ];
+  // Dynamic floors from room data
+  const floors = useMemo(() => {
+    const set = new Set<string>();
+    rooms.forEach((r) => {
+      if (r.floorNumber !== undefined && r.floorNumber !== null) {
+        set.add(String(r.floorNumber));
+      }
+    });
+    return Array.from(set).sort((a, b) => Number(a) - Number(b));
+  }, [rooms]);
 
   const filteredRooms =
     floor === "all"
       ? rooms
-      : rooms.filter((r) => String(r.floor) === String(floor));
+      : rooms.filter((r) => String(r.floorNumber) === String(floor));
 
   const statusMap: Record<string, string> = {
-    Occupied: "bg-blue-50 text-blue-600 border-blue-100",
-    Available: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    Checkout: "bg-amber-50 text-amber-600 border-amber-100",
-    Maintenance: "bg-rose-50 text-rose-600 border-rose-100",
+    OCCUPIED: "bg-blue-50 text-blue-600 border-blue-100",
+    AVAILABLE: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    MAINTENANCE: "bg-rose-50 text-rose-600 border-rose-100",
   };
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
+
       {/* HEADER */}
       <div>
         <h1 className="text-lg font-semibold text-slate-900">Overview</h1>
         <p className="text-xs text-slate-500">Hotel operations summary</p>
       </div>
 
-      {/* LOADING */}
+      {/* STATS */}
       {loading ? (
-        <div className="text-sm text-slate-500 py-6">
+        <div className="text-center py-4 text-sm text-slate-500">
           Loading dashboard...
         </div>
       ) : (
         <>
-          {/* STATS */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {stats.map((s, i) => (
-              <StatCard
-                key={i}
-                title={s.title}
-                value={s.value}
-                icon={s.icon}
-              />
-            ))}
-          </div>
-
-          {/* MINI STATS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {miniStats.map((m, i) => (
               <div
                 key={i}
-                className="bg-white border border-slate-200 rounded-xl p-4"
+                className="transition hover:-translate-y-1 duration-200"
               >
-                <p className="text-xs text-slate-500">{m.label}</p>
-                <p className="text-lg font-semibold text-slate-900 mt-1">
-                  {m.value}
-                </p>
+                <StatCard title={s.title} value={s.value} icon={s.icon} />
               </div>
             ))}
           </div>
 
           {/* MAIN GRID */}
           <div className="grid lg:grid-cols-3 gap-5">
-            {/* ROOMS */}
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5">
-              <div className="flex justify-between mb-4">
+
+            {/* ROOM TABLE */}
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
+
+              <div className="flex items-center justify-between mb-4">
+
                 <h3 className="text-sm font-medium text-slate-700">
                   Room Overview
                 </h3>
 
+                {/* FLOOR FILTER */}
                 <select
                   value={floor}
                   onChange={(e) => setFloor(e.target.value)}
-                  className="text-xs border rounded-md px-2 py-1"
+                  className="
+                    text-xs border border-slate-200 rounded-md px-2 py-1
+                    bg-white text-slate-600
+                    focus:outline-none focus:ring-1 focus:ring-blue-500
+                    hover:border-blue-300 transition
+                  "
                 >
                   <option value="all">All Floors</option>
-                  <option value="1">Floor 1</option>
-                  <option value="2">Floor 2</option>
-                  <option value="3">Floor 3</option>
+                  {floors.map((f) => (
+                    <option key={f} value={f}>
+                      Floor {f}
+                    </option>
+                  ))}
                 </select>
+
               </div>
 
-              <table className="w-full text-sm">
-                <thead className="text-xs text-slate-400 bg-slate-50">
-                  <tr>
-                    <th className="text-left p-2">Room</th>
-                    <th className="text-left">Type</th>
-                    <th className="text-left">Guest</th>
-                    <th className="text-left">Status</th>
-                  </tr>
-                </thead>
+              <div className="overflow-hidden rounded-lg border border-slate-100">
 
-                <tbody>
-                  {filteredRooms.map((r, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-2 font-semibold text-blue-600">
-                        {r.room}
-                      </td>
-                      <td>{r.type}</td>
-                      <td>{r.guest === "—" ? "No guest" : r.guest}</td>
-                      <td>
-                        <span
-                          className={`text-xs px-2 py-1 rounded border ${
-                            statusMap[r.status]
-                          }`}
-                        >
-                          {r.status}
-                        </span>
-                      </td>
+                <table className="w-full text-sm">
+
+                  <thead className="bg-slate-50 text-xs text-slate-400">
+                    <tr>
+                      <th className="text-left py-3 px-3 font-medium">Room No.</th>
+                      <th className="text-left font-medium">Type</th>
+                      <th className="text-left font-medium">Floor</th>
+                      <th className="text-left font-medium">Price/Night</th>
+                      <th className="text-left font-medium">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100">
+
+                    {filteredRooms.length > 0 ? (
+                      filteredRooms.map((r, i) => (
+                        <tr
+                          key={i}
+                          className="transition hover:bg-slate-50 hover:scale-[1.01]"
+                        >
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                              <span className="font-semibold text-blue-600">
+                                {r.roomNumber}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="text-slate-600">{r.roomType}</td>
+
+                          <td className="text-slate-600">Floor {r.floorNumber}</td>
+
+                          <td className="text-slate-600">Rs. {r.pricePerNight}</td>
+
+                          <td>
+                            <span
+                              className={`text-xs px-2.5 py-1 rounded-full border ${
+                                statusMap[r.status] || "bg-gray-50 text-gray-600 border-gray-100"
+                              }`}
+                            >
+                              {r.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-500">
+                          No rooms found
+                        </td>
+                      </tr>
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
             </div>
 
             {/* CHECKINS */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
+
               <h3 className="text-sm font-medium text-slate-700 mb-4">
-                Today's Check-ins
+                Today's Check-ins ({checkins.length})
               </h3>
 
               <div className="space-y-3">
-                {checkins.map((c, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between p-2 hover:bg-slate-50 rounded"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{c.name}</p>
-                      <p className="text-xs text-slate-500">
-                        Room {c.room}
-                      </p>
+
+                {checkins.length > 0 ? (
+                  checkins.map((c, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">
+                          {c.guestName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Room {c.roomNumber}
+                        </p>
+                      </div>
+
+                      <span className="text-xs text-blue-600">
+                        {new Date(c.checkInTime).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
-                    <span className="text-xs text-blue-600">{c.time}</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500 text-center py-4">
+                    No check-ins today
+                  </p>
+                )}
+
               </div>
+
             </div>
+
           </div>
         </>
       )}
+
     </div>
   );
 };
