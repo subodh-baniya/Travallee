@@ -611,7 +611,6 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Failed to fetch resorts: " + error.message);
   }
 });
-
 const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
   try {
     const userId = req.user?.id || req.user?._id;
@@ -632,55 +631,58 @@ const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
 
     const totalRooms = rooms.length;
 
-    const occupiedRooms = rooms.filter((r: any) => r.isOccupied || false).length;
+    const occupiedRooms = rooms.filter((r) => r.status === "OCCUPIED").length;
+
+    const availableRooms = rooms.filter((r) => r.status === "AVAILABLE").length;
 
     const bookings = await bookingModel.find({ hotel: hotelId });
 
     const totalRevenue = bookings.reduce(
-      (sum: number, b: any) => sum + (b.totalPrice || 0),
+      (sum, b) => sum + (b.totalPrice || 0),
       0
     );
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todayCheckins = bookings.filter((b: any) => {
-      return new Date(b.checkIn) >= today;
-    });
+    const todayCheckins = bookings.filter((b) =>
+      new Date(b.checkIn) >= today
+    );
 
-    const roomData = rooms.map((r: any) => ({
-      room: r.roomNumber,
-      floor: r.floorNumber || "1",
-      type: r.roomType,
-      guest: r.currentGuest || "—",
-      status: r.isOccupied
-        ? "Occupied"
-        : r.isUnderMaintenance
-        ? "Maintenance"
-        : "Available",
+    const roomData = rooms.map((r) => ({
+      roomNumber: r.roomNumber,
+      floorNumber: r.floorNumber || 0,
+      roomType: r.roomType,
+      status: r.status,
+      pricePerNight: r.pricePerNight,
     }));
 
-    const checkins = todayCheckins.map((b: any) => ({
-      name: b.userName || "Guest",
-      room: b.roomNumber || "—",
-      time: new Date(b.checkIn).toLocaleTimeString(),
+    const checkins = todayCheckins.map((b) => ({
+      guestName: b.userName || "Guest",
+      roomNumber: b.roomNumber || "—",
+      checkInTime: new Date(b.checkIn).toISOString(),
     }));
 
     return apiResponse(res, 200, true, "Dashboard data", {
       stats: {
         totalRevenue,
-        roomsOccupied: `${occupiedRooms} / ${totalRooms}`,
+        totalRooms,
+        occupiedRooms,
+        availableRooms,
         todayCheckins: todayCheckins.length,
       },
       rooms: roomData,
       checkins,
-      hotel,
+      hotel: {
+        _id: hotel._id,
+        hotelName: hotel.hotelName,
+        hotelLocation: hotel.hotelLocation,
+      },
     });
   } catch (error: any) {
     return apiError(res, 500, "Dashboard error", error.message);
   }
 });
-
 export {
   registerHotel,
   createroom,
