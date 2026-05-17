@@ -21,7 +21,7 @@ export interface DashboardRoom {
 export interface DashboardCheckin {
   guestName: string;
   roomNumber: string;
-  checkInTime: string; // ISO format datetime
+  checkInTime: string; 
 }
 
 export interface DashboardHotel {

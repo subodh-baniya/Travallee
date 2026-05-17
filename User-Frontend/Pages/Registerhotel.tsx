@@ -1,4 +1,6 @@
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FaHotel,
@@ -30,6 +32,7 @@ interface HotelForm {
 }
 
 const RegisterHotel = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState<HotelForm>({
     ownerName: "",
     hotelName: "",
@@ -92,12 +95,12 @@ const RegisterHotel = () => {
         });
       }
 
-      await fetch("/api/hotel/register", {
-        method: "POST",
-        body: fd,
-      });
+     await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL_HOTEL}/register`,
+        fd
+      );
       
-      // Optionally reset form or show success message here
+      navigate("/login");
     } catch (error) {
       console.error("Failed to register hotel:", error);
     } finally {

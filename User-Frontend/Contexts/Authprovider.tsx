@@ -36,6 +36,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     );
 
     setUser(res.data.data);
+    return res.data.data;
   };
 
   const logout = async () => {
@@ -56,6 +57,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         logout,
         isAuthenticated,
         authChecked,
+        isHotelOwner: user?.isHotelOwner ?? false,
       }}
     >
       {children}

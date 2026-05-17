@@ -48,7 +48,7 @@ const Register = () => {
         rest
       );
 
-      navigateto("/login")
+      navigateto("/registerhotel")
 
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>

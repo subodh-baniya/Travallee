@@ -59,7 +59,6 @@ const Overview = () => {
         },
       ];
 
-  // Dynamic floors from room data
   const floors = useMemo(() => {
     const set = new Set<string>();
     rooms.forEach((r) => {

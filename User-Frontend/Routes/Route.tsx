@@ -9,6 +9,7 @@ import Loginpage from "../Pages/Loginpage"
 import Dashboard from "../Pages/Dashboard"
 import ProtectedRoute from "./ProtectedRoute"
 import Publicroute from "./Publicroute"
+import HotelOwnerRoute from "./HotelOwnerRoute"
 import Overview from "../Pages/Overview"
 import Bookings from "../Pages/Bookings"
 import Rooms from "../Pages/Rooms"
@@ -39,8 +40,10 @@ const router=createBrowserRouter(
           <Route path="pricing" element={<Pricing/>}/>
         </Route>
         </Route>
-{/* 
-          <Route element={<ProtectedRoute />}> */}
+
+
+         {/* <Route element={<ProtectedRoute/>}> */}
+        <Route element={<HotelOwnerRoute/>}>
         <Route path="/dashboard" element={<Dashboard />}>
              <Route index element={<Navigate to="overview" replace />}/>
           <Route path="overview" element={<Overview/>} />
@@ -54,10 +57,9 @@ const router=createBrowserRouter(
            <Route path="reviews" element={<ReviewsPage/>} />
             <Route path="finance" element={<Finance/>} />
             <Route path="messages" element={<ChatPage/>} />
-
+        </Route>
+        </Route>
         {/* </Route> */}
-      </Route>
-        
         </>
     )
 )
