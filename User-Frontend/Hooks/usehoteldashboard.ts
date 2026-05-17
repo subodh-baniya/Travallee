@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { getHotelInfo, getRooms } from "../Services/hotel.api";
+import { getDashboard } from "../Services/hotel.api";
 
 export const useHotelDashboard = () => {
-  const [hotel, setHotel] = useState<any>(null);
+  const [statsData, setStatsData] = useState<any>({
+    totalRevenue: 0,
+    roomsOccupied: "0 / 0",
+    todayCheckins: 0,
+  });
   const [rooms, setRooms] = useState<any[]>([]);
-  const [pagination, setPagination] = useState<any>(null);
-
+  const [checkins, setCheckins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -14,16 +17,17 @@ export const useHotelDashboard = () => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
+        const result = await getDashboard();
 
-        const hotelRes = await getHotelInfo();
-        const hotelData = hotelRes.data;
-
-        setHotel(hotelData);
-
-        const roomRes = await getRooms(hotelData._id);
-
-        setRooms(roomRes.data.rooms);
-        setPagination(roomRes.data.pagination);
+        if (result.success && result.data) {
+          setStatsData(result.data.stats || {
+            totalRevenue: 0,
+            roomsOccupied: "0 / 0",
+            todayCheckins: 0,
+          });
+          setRooms(result.data.rooms || []);
+          setCheckins(result.data.checkins || []);
+        }
       } catch (err: any) {
         setError(err?.message || "Error loading dashboard");
       } finally {
@@ -35,9 +39,9 @@ export const useHotelDashboard = () => {
   }, []);
 
   return {
-    hotel,
+    statsData,
     rooms,
-    pagination,
+    checkins,
     loading,
     error,
   };
