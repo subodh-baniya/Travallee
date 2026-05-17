@@ -4,6 +4,7 @@ import {
   apiResponse,
   hotelModel,
   roomModel,
+  bookingModel,
   uploadToCloudinary,
   passwordCheck, // @ts-ignore
 } from "@packages";
@@ -592,7 +593,7 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
-    return apiError(res, 500, "Failed to fetch hotels: " + error.message);
+    return apiError(res, 500, "Failed to fetch hotels: " + error.message); 
   }
 });
 
@@ -610,6 +611,76 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Failed to fetch resorts: " + error.message);
   }
 });
+
+const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return apiError(res, 401, "Unauthorized");
+    }
+
+    const hotel = await hotelModel.findOne({ userID: userId });
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found");
+    }
+
+    const hotelId = hotel._id;
+
+    const rooms = await roomModel.find({ hotelId });
+
+    const totalRooms = rooms.length;
+
+    const occupiedRooms = rooms.filter((r: any) => r.isOccupied || false).length;
+
+    const bookings = await bookingModel.find({ hotel: hotelId });
+
+    const totalRevenue = bookings.reduce(
+      (sum: number, b: any) => sum + (b.totalPrice || 0),
+      0
+    );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayCheckins = bookings.filter((b: any) => {
+      return new Date(b.checkIn) >= today;
+    });
+
+    const roomData = rooms.map((r: any) => ({
+      room: r.roomNumber,
+      floor: r.floorNumber || "1",
+      type: r.roomType,
+      guest: r.currentGuest || "—",
+      status: r.isOccupied
+        ? "Occupied"
+        : r.isUnderMaintenance
+        ? "Maintenance"
+        : "Available",
+    }));
+
+    const checkins = todayCheckins.map((b: any) => ({
+      name: b.userName || "Guest",
+      room: b.roomNumber || "—",
+      time: new Date(b.checkIn).toLocaleTimeString(),
+    }));
+
+    return apiResponse(res, 200, true, "Dashboard data", {
+      stats: {
+        totalRevenue,
+        roomsOccupied: `${occupiedRooms} / ${totalRooms}`,
+        todayCheckins: todayCheckins.length,
+      },
+      rooms: roomData,
+      checkins,
+      hotel,
+    });
+  } catch (error: any) {
+    return apiError(res, 500, "Dashboard error", error.message);
+  }
+});
+
 export {
   registerHotel,
   createroom,
@@ -623,4 +694,5 @@ export {
   highReviewedHotels,
   getAllHotels,
   getAllResortHotels,
+  getHotelDashboard
 };
