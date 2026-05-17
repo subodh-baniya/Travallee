@@ -8,7 +8,7 @@ export const registerHotel = (data: FormData) => {
     .then(res => res.data);
 };
 
-export const getHotelInfo=hotelClient.get('/my-hotel').then(res=>res.data);
+export const getHotelInfo=()=>{return hotelClient.get('/my-hotel').then(res=>res.data); }
 
 export const createRoom = (hotelId: string, data: FormData) => {
   return hotelClient
