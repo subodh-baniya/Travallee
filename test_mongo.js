@@ -67,6 +67,75 @@ async function insertHotels() {
             capacity: 5
           }
         ]
+      },
+      {
+        name: "Mountain View Resort",
+        location: "Nagarkot",
+        rating: 4.6,
+        pricePerNight: 100,
+
+        rooms: [
+          {
+            roomType: "Mountain Deluxe",
+            price: 150,
+            available: true,
+            beds: 2,
+            capacity: 3
+          },
+          {
+            roomType: "Premium Suite",
+            price: 230,
+            available: true,
+            beds: 2,
+            capacity: 4
+          }
+        ]
+      },
+      {
+        name: "Safari Jungle Camp",
+        location: "Chitwan",
+        rating: 4.4,
+        pricePerNight: 130,
+
+        rooms: [
+          {
+            roomType: "Safari Room",
+            price: 130,
+            available: true,
+            beds: 1,
+            capacity: 2
+          },
+          {
+            roomType: "Luxury Cottage",
+            price: 210,
+            available: false,
+            beds: 2,
+            capacity: 4
+          }
+        ]
+      },
+      {
+        name: "Heritage Palace Hotel",
+        location: "Bhaktapur",
+        rating: 4.7,
+        pricePerNight: 115,
+
+        rooms: [
+          {
+            roomType: "Heritage Room",
+            price: 115,
+            available: true,
+            beds: 1,
+            capacity: 2
+          },
+          {
+            roomType: "Royal Suite",
+            price: 280,
+            available: true,
+            beds: 3,
+            capacity: 5
+          }
+        ]
       }
     ];
 
