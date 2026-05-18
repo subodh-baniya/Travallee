@@ -21,4 +21,5 @@ RUN npm install
 COPY Travallee-Backend/Services/chat/ /app/
 
 EXPOSE 6001
+
 CMD ["npm", "run", "dev"]
