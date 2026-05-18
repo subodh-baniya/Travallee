@@ -3,6 +3,7 @@ import {
   apiError,
   apiResponse,
   hotelModel,
+  UserModel,
   roomModel,
   bookingModel,
   uploadToCloudinary,
@@ -16,7 +17,8 @@ import {
 import mongoose, { mongo } from "mongoose";
 
 const registerHotel = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user.id;
+  const userID = req.user.id||req.user._id;
+
   const files = req.files || [];
 
   if (!userID) {
@@ -88,22 +90,37 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
     const hotelData: HotelInput = parsedData.data;
     const newHotel = new hotelModel(hotelData);
     await newHotel.save();
-    return apiResponse(
-      res,
-      201,
-      true,
-      "Hotel registered successfully",
-      newHotel,
-    );
+     const authRes = await fetch("http://auth_service:3000/api/v1/users/internal/update-role", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userID, role: "hotelAdmin" }),
+    });
+
+    const authData = await authRes.json();
+
+    if (authData?.data?.token) {
+  res.cookie("token", authData.data.token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+}
+
+    return apiResponse(res, 201, true, "Hotel registered successfully", {
+      hotel: newHotel,
+      newToken: authData?.data?.token ?? null,
+    });
+
   } catch (error: any) {
-    console.error("Error registering hotel:", error);
     if (error.name === "ValidationError") {
       return apiError(res, 400, "Hotel validation failed", error.errors);
     }
+
     return apiError(
       res,
       500,
-      "Internal server error: Unable to register hotel",
+      "Internal server error: Unable to register hotel"
     );
   }
 });
