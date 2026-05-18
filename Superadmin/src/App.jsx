@@ -1,4 +1,5 @@
 
+
 import { useState } from "react";
 import { globalCSS } from "./theme";
 
@@ -7,13 +8,12 @@ import Topbar     from "./components/Topbar";
 
 import Dashboard  from "./pages/Dashboard";
 import Website    from "./pages/Website";
-//import AppPage    from "./pages/AppPage";
-//import Ads        from "./pages/Ads";
-//import ComingSoon from "./pages/ComingSoon";
-//import Users      from "./pages/Users";
+import AppPage    from "./pages/AppPage";
+import Ads        from "./pages/Ads";
+import ComingSoon from "./pages/ComingSoon";
+import Users      from "./pages/Users";
 import Analytics  from "./pages/Analytics";
 import Settings   from "./pages/Settings";
-
 
 export default function App() {
   const [page, setPage]         = useState("dashboard");
