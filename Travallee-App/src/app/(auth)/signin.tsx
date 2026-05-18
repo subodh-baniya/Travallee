@@ -91,7 +91,7 @@ export default function SignIn() {
           await SecureStore.setItemAsync('userData', JSON.stringify(userData));
         }
 
-        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:6001', {
+        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:6000', {
           auth: {
             token: token,
           },
