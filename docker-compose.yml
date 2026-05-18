@@ -86,21 +86,6 @@ services:
       - redis
     restart: unless-stopped
 
-  chat:
-    build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/chat/Dockerfile
-    ports:
-      - "6001:6001"
-    env_file:
-      - ./Travallee-Backend/Services/chat/.env
-    volumes:
-      - ./Travallee-Backend/Services/chat/src:/app/src
-      - /app/node_modules
-    depends_on:
-      - db
-      - redis
-    restart: unless-stopped
 
   db:
     image: mongo:7
