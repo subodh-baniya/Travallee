@@ -1,5 +1,5 @@
 
-import Toggle from "../components/Toggle";
+import Toggle from "../components/Toggle.jsx";
 
 const systemToggles = [
   { label: "Maintenance mode",       sub: "Disables public site access", on: false },
