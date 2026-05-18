@@ -138,6 +138,28 @@ async function insertHotels() {
           },
         ],
       },
+      {
+        name: "Chitwan MidTown Resort",
+        location: "Bharatpur",
+        rating: 4.7,
+        pricePerNight: 115,
+        rooms: [
+          {
+            roomType: "Heritage Room",
+            price: 115,
+            available: true,
+            beds: 1,
+            capacity: 2,
+          },
+          {
+            roomType: "Royal Suite",
+            price: 280,
+            available: true,
+            beds: 3,
+            capacity: 5,
+          },
+        ],
+      },
     ];
 
     // Prevent duplicate insertion
