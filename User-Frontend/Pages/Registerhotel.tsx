@@ -1,7 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
+import { registerHotel } from "../Services/hotel.api";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../Contexts/Authcontext";
 import {
   FaHotel,
   FaUser,
@@ -33,6 +34,13 @@ interface HotelForm {
 
 const RegisterHotel = () => {
   const navigate = useNavigate();
+
+   const auth = useAuth();
+    if (!auth) {
+      throw new Error("useAuth must be used within AuthProvider");
+    }
+
+  const { refreshUser } = auth;
   const [form, setForm] = useState<HotelForm>({
     ownerName: "",
     hotelName: "",
@@ -62,51 +70,66 @@ const RegisterHotel = () => {
     }));
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const fd = new FormData();
+const handleSubmit = async () => {
+  setIsSubmitting(true);
+  try {
+    const fd = new FormData();
 
-      Object.entries(form).forEach(([key, value]) => {
-        if (key === "facilities") {
-          fd.append(
-            "facilities",
-            JSON.stringify(
-              (value as string)
-                .split(",")
-                .map((f: string) => f.trim())
-                .filter(Boolean)
-            )
-          );
-        } else {
-          fd.append(key, String(value));
-        }
-      });
+    fd.append("ownerName", form.ownerName.trim());
+    fd.append("hotelName", form.hotelName.trim());
+    fd.append("hotelDescription", form.hotelDescription.trim());
+    fd.append("hotelLocation", form.hotelLocation.trim());
+    fd.append("propertyType", form.propertyType.trim());
+    fd.append("contactNumber", form.contactNumber.trim());
+    fd.append("checkinTime", form.checkinTime);
+    fd.append("checkoutTime", form.checkoutTime);
+    fd.append("pricePerNight", String(form.pricePerNight));
+    fd.append("isactive", String(form.isactive));
+    fd.append("isFeatured", String(form.isFeatured));
+    fd.append("verified", "false");
+    fd.append("rating", "0");
+    fd.append("numberOfReviews", "0");
 
-      if (hotelImages) {
-        Array.from(hotelImages).forEach((file) => {
-          fd.append("hotelImages", file);
-        });
-      }
+    // ✅ DO NOT append userID — backend sets it from req.user.id before Zod runs
 
-      if (docs) {
-        Array.from(docs).forEach((file) => {
-          fd.append("VerificationDocuments", file);
-        });
-      }
+    // ✅ Facilities as comma-separated string (matches your schema's .transform())
+    const facilitiesArray = form.facilities
+      .split(",")
+      .map((f) => f.trim())
+      .filter(Boolean);
 
-     await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL_HOTEL}/register`,
-        fd
-      );
-      
-      navigate("/login");
-    } catch (error) {
-      console.error("Failed to register hotel:", error);
-    } finally {
-      setIsSubmitting(false);
+    if (facilitiesArray.length === 0) {
+      alert("Please enter at least one facility.");
+      return;
     }
-  };
+    fd.append("facilities", facilitiesArray.join(","));
+
+    // ✅ Hotel images
+    if (!hotelImages || hotelImages.length === 0) {
+      alert("Please upload at least one hotel image.");
+      return;
+    }
+    Array.from(hotelImages).forEach((file) => fd.append("hotelImages", file));
+
+    // ✅ Verification docs
+    if (!docs || docs.length === 0) {
+      alert("Please upload at least one verification document.");
+      return;
+    }
+    Array.from(docs).forEach((file) => fd.append("VerificationDocuments", file));
+
+    await registerHotel(fd);
+    await refreshUser();
+    navigate("/dashboard");
+  } catch (error) {
+console.error("Failed:", error);
+  console.error("Validation issues:", error?.response?.data); // shows exact Zod errors from backend
+  alert("Registration failed. Please check all fields and try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const containerVariants = {
     hidden: { opacity: 0 },

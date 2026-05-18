@@ -49,6 +49,18 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
+      { withCredentials: true }
+    );
+    setUser(res.data.data);
+  } catch {
+    setUser(null);
+  }
+};
+
   return (
     <Authcontext.Provider
       value={{
@@ -57,7 +69,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         logout,
         isAuthenticated,
         authChecked,
-        isHotelOwner: user?.isHotelOwner ?? false,
+        refreshUser,
+        isHotelOwner: user?.role=="hotelAdmin",
       }}
     >
       {children}

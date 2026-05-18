@@ -29,7 +29,6 @@ const router=createBrowserRouter(
         <Route element={<Publicroute/>}>
         <Route path="/login"element={<Loginpage/>}/>
         <Route path="/register" element={<Register/>}/>
-         <Route path="/registerhotel" element={<RegisterHotel/>}/>
 
         <Route path="/" element={<Navigate to="/initialhome/herosection" replace/>}/>
         <Route path="/initialhome"element={<InitialHome/>}>
@@ -41,8 +40,8 @@ const router=createBrowserRouter(
         </Route>
         </Route>
 
-
-         {/* <Route element={<ProtectedRoute/>}> */}
+         <Route element={<ProtectedRoute/>}>
+          <Route path="/registerhotel" element={<RegisterHotel/>}/>
         <Route element={<HotelOwnerRoute/>}>
         <Route path="/dashboard" element={<Dashboard />}>
              <Route index element={<Navigate to="overview" replace />}/>
@@ -59,7 +58,7 @@ const router=createBrowserRouter(
             <Route path="messages" element={<ChatPage/>} />
         </Route>
         </Route>
-        {/* </Route> */}
+        </Route>
         </>
     )
 )

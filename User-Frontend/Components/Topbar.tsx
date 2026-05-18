@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { FiMenu } from "react-icons/fi";
@@ -9,7 +8,6 @@ interface TopbarProps {
 
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
-  const navigate = useNavigate();
 
   if (!auth) return null;
 
@@ -42,10 +40,10 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
         </motion.div>
 
         <motion.button
-          onClick={() => {
-            logout();
-            navigate("/", { replace: true });
-          }}
+          onClick={async () => {
+            window.location.href="/initialhome/herosection"
+              await logout();
+              }}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           className="
