@@ -99,8 +99,8 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1, // 1 day
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     };
     const token = user.generateJWT();
     user.refreshToken = token;
@@ -372,6 +372,28 @@ const history = asyncHandler(async (req: any, res: any) => {
   );
 });
 
+
+const updateUserRole = asyncHandler(async (req: any, res: any) => {
+  const { userID, role } = req.body;
+
+  const user = await UserModel.findByIdAndUpdate(
+    userID,
+    { role },
+    { returnDocument: "after" }
+  );
+
+  if (!user) {
+    return apiError(res, 404, "User not found");
+  }
+
+  const newToken = user.generateJWT();
+
+  return apiResponse(res, 200, true, "Role updated successfully", {
+    token: newToken,
+    role: user.role,
+  });
+});
+
 export {
   registerUser,
   loginUser,
@@ -386,4 +408,5 @@ export {
   updateUserProfilePicture,
   deleteAccount,
   history,
+  updateUserRole
 };

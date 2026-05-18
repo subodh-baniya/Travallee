@@ -9,7 +9,8 @@ import {
   getUserProfile,
   sendOTP,
   verifyOTP,
-  getUserProfilePicture
+  getUserProfilePicture,
+  updateUserRole
 } from "../Controllers/user.controller.js";
 
 import passport from "passport";
@@ -39,6 +40,7 @@ router.delete("/delete-profile", authenticate, deleteUserProfile);
 router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.get("/profile-picture", authenticate, getUserProfilePicture);
+router.patch("/internal/update-role", updateUserRole);
 
 
 

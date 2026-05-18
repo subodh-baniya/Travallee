@@ -6,15 +6,18 @@ export type user={
   Username:string,
   id:string,
   role:string,
-  token:string
+  token:string,
+  isHotelOwner?:boolean
 }
 
 export type AuthContextType = {
   isAuthenticated: boolean;
-  login: (form: { Username: string; password: string }) => Promise<void>;
+  login: (form: { Username: string; password: string }) => Promise<user>;
   logout: () => Promise<void>;
   user: user|null;
+  refreshUser: () => Promise<void>;
   authChecked:boolean;
+  isHotelOwner:boolean;
 }
 
 export const Authcontext = createContext<AuthContextType | null>(null);
