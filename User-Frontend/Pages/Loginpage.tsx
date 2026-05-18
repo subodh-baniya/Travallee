@@ -39,10 +39,14 @@ const Loginpage = () => {
         return;
       }
 
+      const loggedInUser = await login(form);
 
-      await login(form);
-
-      navigateto("/dashboard/overview");
+      // Check if user is hotel owner
+      if (loggedInUser?.isHotelOwner) {
+        navigateto("/dashboard/overview");
+      } else {
+        navigateto("/registerhotel");
+      }
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
       setError(err.response?.data?.message || "Login failed");

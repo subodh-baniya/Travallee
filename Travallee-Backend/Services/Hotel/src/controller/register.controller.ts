@@ -3,7 +3,9 @@ import {
   apiError,
   apiResponse,
   hotelModel,
+  UserModel,
   roomModel,
+  bookingModel,
   uploadToCloudinary,
   passwordCheck, // @ts-ignore
 } from "@packages";
@@ -15,7 +17,8 @@ import {
 import mongoose, { mongo } from "mongoose";
 
 const registerHotel = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user.id;
+  const userID = req.user.id||req.user._id;
+
   const files = req.files || [];
 
   if (!userID) {
@@ -87,22 +90,37 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
     const hotelData: HotelInput = parsedData.data;
     const newHotel = new hotelModel(hotelData);
     await newHotel.save();
-    return apiResponse(
-      res,
-      201,
-      true,
-      "Hotel registered successfully",
-      newHotel,
-    );
+     const authRes = await fetch("http://auth_service:3000/api/v1/users/internal/update-role", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userID, role: "hotelAdmin" }),
+    });
+
+    const authData = await authRes.json();
+
+    if (authData?.data?.token) {
+  res.cookie("token", authData.data.token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+}
+
+    return apiResponse(res, 201, true, "Hotel registered successfully", {
+      hotel: newHotel,
+      newToken: authData?.data?.token ?? null,
+    });
+
   } catch (error: any) {
-    console.error("Error registering hotel:", error);
     if (error.name === "ValidationError") {
       return apiError(res, 400, "Hotel validation failed", error.errors);
     }
+
     return apiError(
       res,
       500,
-      "Internal server error: Unable to register hotel",
+      "Internal server error: Unable to register hotel"
     );
   }
 });
@@ -592,7 +610,7 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
-    return apiError(res, 500, "Failed to fetch hotels: " + error.message);
+    return apiError(res, 500, "Failed to fetch hotels: " + error.message); 
   }
 });
 
@@ -610,6 +628,78 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Failed to fetch resorts: " + error.message);
   }
 });
+const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return apiError(res, 401, "Unauthorized");
+    }
+
+    const hotel = await hotelModel.findOne({ userID: userId });
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found");
+    }
+
+    const hotelId = hotel._id;
+
+    const rooms = await roomModel.find({ hotelId });
+
+    const totalRooms = rooms.length;
+
+    const occupiedRooms = rooms.filter((r) => r.status === "OCCUPIED").length;
+
+    const availableRooms = rooms.filter((r) => r.status === "AVAILABLE").length;
+
+    const bookings = await bookingModel.find({ hotel: hotelId });
+
+    const totalRevenue = bookings.reduce(
+      (sum, b) => sum + (b.totalPrice || 0),
+      0
+    );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayCheckins = bookings.filter((b) =>
+      new Date(b.checkIn) >= today
+    );
+
+    const roomData = rooms.map((r) => ({
+      roomNumber: r.roomNumber,
+      floorNumber: r.floorNumber || 0,
+      roomType: r.roomType,
+      status: r.status,
+      pricePerNight: r.pricePerNight,
+    }));
+
+    const checkins = todayCheckins.map((b) => ({
+      guestName: b.userName || "Guest",
+      roomNumber: b.roomNumber || "—",
+      checkInTime: new Date(b.checkIn).toISOString(),
+    }));
+
+    return apiResponse(res, 200, true, "Dashboard data", {
+      stats: {
+        totalRevenue,
+        totalRooms,
+        occupiedRooms,
+        availableRooms,
+        todayCheckins: todayCheckins.length,
+      },
+      rooms: roomData,
+      checkins,
+      hotel: {
+        _id: hotel._id,
+        hotelName: hotel.hotelName,
+        hotelLocation: hotel.hotelLocation,
+      },
+    });
+  } catch (error: any) {
+    return apiError(res, 500, "Dashboard error", error.message);
+  }
+});
 export {
   registerHotel,
   createroom,
@@ -623,4 +713,5 @@ export {
   highReviewedHotels,
   getAllHotels,
   getAllResortHotels,
+  getHotelDashboard
 };
