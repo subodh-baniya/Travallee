@@ -63,16 +63,12 @@ export default function PaymentScreen() {
         {realixPaymentMethods.map((method) => {
           const isActive = selectedMethod === method.id;
           return (
-            <Pressable key={method.id} style={styles.methodRow} onPress={() => setSelectedMethod(method.id)}>
-              <View style={[styles.payIcon, method.id === 'paypal' ? styles.paypalIcon : styles.masterIcon]}>
-                <Text style={method.id === 'paypal' ? styles.ppText : styles.mcText}>{method.shortCode}</Text>
-              </View>
+            <Pressable key={method.id} style={[styles.methodRow, isActive && styles.methodRowActive]} onPress={() => setSelectedMethod(method.id)}>
+              <Text style={styles.paymentIcon}>{method.icon}</Text>
               <Text style={styles.methodLabel}>{method.label}</Text>
-              <Ionicons
-                name={isActive ? 'radio-button-on' : 'radio-button-off'}
-                size={18}
-                color={isActive ? RealixColors.accentToggle : RealixColors.textCaption}
-              />
+              <View style={styles.radioButton}>
+                {isActive && <View style={styles.radioButtonInner} />}
+              </View>
             </Pressable>
           );
         })}
@@ -96,13 +92,8 @@ export default function PaymentScreen() {
         </Pressable>
       </View>
     </SafeAreaView>
-  );
-}
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: RealixColors.pageBackground },
-  header: {
-    paddingHorizontal: 20,
+          <Text style={styles.termsText}>
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -183,20 +174,29 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: 10,
   },
-  payIcon: {
-    width: 30,
-    height: 18,
-    borderRadius: 3,
+  methodRowActive: {
+    borderColor: RealixColors.accent,
+    backgroundColor: `${RealixColors.accent}15`,
+  },
+  paymentIcon: {
+    fontSize: 20,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: RealixColors.textMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  masterIcon: { backgroundColor: '#eb001b' },
-  paypalIcon: { backgroundColor: '#003087' },
-  mcText: { color: '#ffffff', fontSize: 8, fontWeight: '700' },
-  ppText: { color: '#009cde', fontSize: 8, fontWeight: '700' },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: RealixColors.accent,
+  },
   methodLabel: { flex: 1, fontSize: 12, color: RealixColors.textPrimary },
-  addPaymentRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addPaymentText: { fontSize: 12, color: RealixColors.textMuted },
   termsText: { fontSize: 10, lineHeight: 16, color: RealixColors.textMuted },
   bottomBar: {
     borderTopWidth: 1,

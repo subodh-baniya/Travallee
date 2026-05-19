@@ -354,14 +354,46 @@ export default function HotelDetailScreen() {
               </View>
               <View style={styles.roomsRow}>
                 {hotel.rooms.slice(0, 3).map((room, idx) => (
-                  <View key={idx} style={styles.roomCard}>
+                  <Pressable
+                    key={idx}
+                    style={styles.roomCard}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(tabs)/explore/select-date',
+                        params: {
+                          roomId: room._id,
+                          hotelId: hotel._id,
+                          hotelName: hotel.hotelName,
+                          roomType: room.roomType || `Room ${idx + 1}`,
+                          pricePerNight: room.pricePerNight || hotel.pricePerNight,
+                          maxGuests: room.maxGuests || 2,
+                        },
+                      })
+                    }
+                  >
                     <View style={styles.roomCardInner}>
-                      <Ionicons name="bed-outline" size={18} color={RealixColors.accent} />
-                      <Text style={styles.roomCardText}>
-                        {room.roomType || `Room ${idx + 1}`}
-                      </Text>
+                      <View style={styles.roomCardHeader}>
+                        <Ionicons name="bed-outline" size={18} color={RealixColors.accent} />
+                        <Text style={styles.roomCardText}>
+                          {room.roomType || `Room ${idx + 1}`}
+                        </Text>
+                      </View>
+                      <View style={styles.roomCardDetails}>
+                        <View style={styles.roomDetailItem}>
+                          <Ionicons name="people-outline" size={14} color={RealixColors.textMuted} />
+                          <Text style={styles.roomDetailText}>
+                            {room.maxGuests || 2} guests
+                          </Text>
+                        </View>
+                        <View style={styles.roomDetailItem}>
+                          <Ionicons name="pricetag-outline" size={14} color={RealixColors.accent} />
+                          <Text style={styles.roomDetailPrice}>
+                            ${room.pricePerNight || hotel.pricePerNight}/night
+                          </Text>
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </>
@@ -694,31 +726,50 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // ── Amenities ──
-  amenRow: {
+  // ── Rooms ──
+  roomsRow: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 6,
-    flexWrap: 'wrap',
+    gap: 10,
   },
-  amenity: {
-    alignItems: 'center',
-    width: '18%',
-    marginBottom: 4,
-  },
-  amenIcon: {
-    width: 44,
-    height: 44,
+  roomCard: {
+    flex: 1,
+    backgroundColor: RealixColors.cardBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
     borderRadius: 12,
-    backgroundColor: RealixColors.rowBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 5,
+    padding: 12,
   },
-  amenLabel: {
-    fontSize: 10,
+  roomCardInner: {
+    gap: 8,
+  },
+  roomCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  roomCardText: {
+    fontSize: 12,
+    color: RealixColors.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  roomCardDetails: {
+    gap: 6,
+  },
+  roomDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  roomDetailText: {
+    fontSize: 11,
     color: RealixColors.textMuted,
-    textAlign: 'center',
+  },
+  roomDetailPrice: {
+    fontSize: 11,
+    color: RealixColors.accent,
+    fontWeight: '600',
+  },
     lineHeight: 13,
   },
   allLink: {

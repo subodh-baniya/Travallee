@@ -1,13 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   RealixColors,
   realixDiscoverProperty,
+  realixPaymentMethods,
 } from '@/src/constants/screens/realix';
 import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
+import { createBooking } from '@/src/services/booking.service';
 
 type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
 
@@ -17,10 +20,24 @@ const firstWeekdayOffset = 1;
 
 export default function SelectDateScreen() {
   const { goBack } = useSafeNavigation();
+  const router = useRouter();
+  const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests } = useLocalSearchParams<{
+    roomId?: string;
+    hotelId?: string;
+    hotelName?: string;
+    roomType?: string;
+    pricePerNight?: string;
+    maxGuests?: string;
+  }>();
+  
+  const actualPrice = pricePerNight ? parseInt(pricePerNight) : realixDiscoverProperty.nightlyPrice;
+  const maxGuestCount = maxGuests ? parseInt(maxGuests) : 2;
   const [guestCount, setGuestCount] = useState(1);
   const [checkIn, setCheckIn] = useState<number | null>(null);
   const [checkOut, setCheckOut] = useState<number | null>(null);
   const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('esewa');
 
   const dayCells = useMemo<DayCell[]>(() => {
     const previousMonthDays = Array.from({ length: firstWeekdayOffset }, (_, index) => ({
@@ -59,13 +76,67 @@ export default function SelectDateScreen() {
 
   const isSelectionComplete = checkIn !== null && checkOut !== null;
 
+  // Format date to YYYY-MM-DD (assuming August 2026)
+  const formatBookingDate = (day: number): string => {
+    const date = new Date(2026, 7, day); // Month is 0-indexed, so 7 = August
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleCreateBooking = async () => {
+    if (!roomId || !hotelId || !checkIn || !checkOut) {
+      Alert.alert('Error', 'Missing required booking information');
+      return;
+    }
+
+    setIsCreatingBooking(true);
+
+    try {
+      const bookingPayload = {
+        roomId,
+        hotelId,
+        checkIn: formatBookingDate(checkIn),
+        checkOut: formatBookingDate(checkOut),
+        guestCount,
+        paymentMethod: selectedPaymentMethod.toUpperCase(),
+      };
+
+      const response = await createBooking(bookingPayload);
+
+      if (response.success) {
+        Alert.alert('Success', 'Booking created successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.push({
+                pathname: '/(tabs)/explore/payment',
+                params: {
+                  bookingId: response.data._id,
+                  checkIn: String(checkIn),
+                  checkOut: String(checkOut),
+                  guests: String(guestCount),
+                },
+              });
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create booking');
+      }
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      Alert.alert('Error', error.message || 'Failed to create booking. Please try again.');
+    } finally {
+      setIsCreatingBooking(false);
+    }
+  };
+
   // Calculate pricing
   const nights = isSelectionComplete ? checkOut - checkIn : 0;
-  const nightlyPrice = realixDiscoverProperty.nightlyPrice;
+  const nightlyPrice = actualPrice;
   const roomFee = nights * nightlyPrice;
   const discountPercentage = 0.15; // 15% discount
   const discount = roomFee * discountPercentage;
-  const taxRate = 0.1; // 10% tax
+  const taxRate = 0.13; // 13% tax rate
   const tax = (roomFee - discount) * taxRate;
   const total = roomFee - discount + tax;
 
@@ -110,8 +181,12 @@ export default function SelectDateScreen() {
               <Ionicons name="remove" size={14} color={RealixColors.textPrimary} />
             </Pressable>
             <Text style={styles.guestCount}>{guestCount}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => setGuestCount((value) => value + 1)}>
-              <Ionicons name="add" size={14} color={RealixColors.textPrimary} />
+            <Pressable
+              style={[styles.stepperBtn, guestCount >= maxGuestCount && styles.stepperBtnDisabled]}
+              disabled={guestCount >= maxGuestCount}
+              onPress={() => setGuestCount((value) => Math.min(maxGuestCount, value + 1))}
+            >
+              <Ionicons name="add" size={14} color={guestCount >= maxGuestCount ? RealixColors.textMuted : RealixColors.textPrimary} />
             </Pressable>
           </View>
         </View>
@@ -166,7 +241,8 @@ export default function SelectDateScreen() {
             <View style={styles.bookingTop}>
               <View style={styles.bookingThumb} />
               <View style={styles.bookingInfo}>
-                <Text style={styles.bookingName}>Cassablanca Ground</Text>
+                <Text style={styles.bookingName}>{hotelName || 'Hotel'}</Text>
+                <Text style={styles.bookingSubtitle}>{roomType || 'Room'}</Text>
                 <Text style={styles.bookingDate}>{checkIn} - {checkOut} Aug | {guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
                 <Text style={styles.bookingPrice}>${nightlyPrice}/night</Text>
               </View>
@@ -186,11 +262,27 @@ export default function SelectDateScreen() {
 
             {showPaymentMethods ? (
               <View style={styles.paymentOptionsWrap}>
-                <View style={styles.paymentRow}><View style={styles.mcIcon}><Text style={styles.mcText}>MC</Text></View><Text style={styles.payMethodText}>•••• •••• •••• 4242</Text></View>
-                <View style={styles.paymentRow}><View style={styles.ppIcon}><Text style={styles.ppText}>PP</Text></View><Text style={styles.payMethodText}>PayPal</Text></View>
-                <Pressable style={styles.addPaymentRow} onPress={() => router.push('/(tabs)/explore/add-card')}><Ionicons name="add" size={14} color={RealixColors.textMuted} /><Text style={styles.addPaymentText}>Add Payment</Text></Pressable>
+                {realixPaymentMethods.map((method) => (
+                  <Pressable
+                    key={method.id}
+                    style={[styles.paymentOptionItem, selectedPaymentMethod === method.id && styles.paymentOptionSelected]}
+                    onPress={() => setSelectedPaymentMethod(method.id)}
+                  >
+                    <Text style={styles.paymentMethodIcon}>
+                      {method.icon}
+                    </Text>
+                    <View style={styles.paymentMethodInfo}>
+                      <Text style={styles.paymentMethodLabel}>{method.label}</Text>
+                    </View>
+                    <View style={styles.radioButton}>
+                      {selectedPaymentMethod === method.id && (
+                        <View style={styles.radioButtonInner} />
+                      )}
+                    </View>
+                  </Pressable>
+                ))}
                 <Text style={styles.termsText}>
-                  By selecting buy it from below you agree to the House Rules, Cancellation Regulations, Privacy and Policy, and accept extra hotel terms.
+                  By selecting pay it from below you agree to the House Rules, Cancellation Regulations, Privacy and Policy, and accept extra hotel terms.
                 </Text>
               </View>
             ) : null}
@@ -205,15 +297,14 @@ export default function SelectDateScreen() {
         </View>
         <Pressable
           style={[styles.confirmButton, !isSelectionComplete && styles.confirmDisabled]}
-          disabled={!isSelectionComplete}
-          onPress={() =>
-            router.push({
-              pathname: '/(tabs)/explore/payment',
-              params: { checkIn: String(checkIn), checkOut: String(checkOut), guests: String(guestCount) },
-            })
-          }
+          disabled={!isSelectionComplete || isCreatingBooking}
+          onPress={handleCreateBooking}
         >
-          <Text style={styles.confirmText}>Confirm</Text>
+          {isCreatingBooking ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.confirmText}>Confirm</Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>
@@ -279,6 +370,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stepperBtnDisabled: {
+    opacity: 0.5,
+  },
   guestCount: { width: 18, textAlign: 'center', fontSize: 12, color: RealixColors.textPrimary, fontWeight: '600' },
   calendarCard: {
     backgroundColor: RealixColors.screenBackground,
@@ -330,6 +424,7 @@ const styles = StyleSheet.create({
   bookingInfo: { flex: 1, justifyContent: 'center' },
   bookingName: { fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
   bookingDate: { fontSize: 10, color: RealixColors.textMuted, marginTop: 2 },
+  bookingSubtitle: { fontSize: 10, color: RealixColors.accent, marginTop: 1 },
   bookingPrice: { fontSize: 11, fontWeight: '700', color: RealixColors.textPrimary, marginTop: 2 },
   detailTitle: { paddingHorizontal: 12, paddingTop: 10, fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
   detailRow: {
@@ -359,6 +454,50 @@ const styles = StyleSheet.create({
   },
   paymentHeaderText: { fontSize: 12, color: RealixColors.textSecondary },
   paymentOptionsWrap: { paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
+  paymentOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: RealixColors.inputBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.inputBorder,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  paymentOptionSelected: {
+    borderColor: RealixColors.accent,
+    backgroundColor: `${RealixColors.accent}15`,
+  },
+  paymentMethodIcon: {
+    fontSize: 24,
+  },
+  paymentMethodEmoji: {
+    fontSize: 20,
+  },
+  paymentMethodInfo: {
+    flex: 1,
+  },
+  paymentMethodLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: RealixColors.textPrimary,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: RealixColors.textMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: RealixColors.accent,
+  },
   paymentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   mcIcon: {
     width: 30,
