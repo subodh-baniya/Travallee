@@ -49,11 +49,9 @@ export default function SignInPhone() {
   };
 
   const handleGoogleSignIn = () => {
-    console.log('Google Sign In');
   };
 
   const handleFacebookSignIn = () => {
-    console.log('Facebook Sign In');
   };
 
   return (

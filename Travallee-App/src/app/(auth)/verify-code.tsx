@@ -49,15 +49,11 @@ export default function VerifyCode() {
     setErrorMessage("");
 
     try {
-      console.log("🔐 Verifying OTP...");
       const payload = email ? { email, otp } : { phone, otp };
       // Token is automatically added by apiClient interceptor
       const response = await apiClient.post(API_VERIFY_OTP, payload);
 
-      console.log("✅ OTP verified successfully");
-
       if (response.status === 200) {
-        console.log("🚀 Navigating to success page...");
         router.push("/(auth)/success" as any);
       } else {
         setErrorMessage(
@@ -65,7 +61,6 @@ export default function VerifyCode() {
         );
       }
     } catch (error: any) {
-      console.error("❌ Verification error:", error);
       let msg = "OTP verification failed. Please try again.";
       
       if (error.response?.data?.message) {

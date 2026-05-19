@@ -20,13 +20,13 @@ import apiClient from '@/src/services/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/src/context/AuthContext';
-import { Socket, io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 
 export default function SignIn() {
   const API_SIGNIN = API_ENDPOINTS_AUTH.LOGIN;
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, setSocket } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ export default function SignIn() {
           await SecureStore.setItemAsync('userData', JSON.stringify(userData));
         }
 
-        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:6000', {
+        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://192.168.1.142:6001', {
           auth: {
             token: token,
           },
@@ -103,8 +103,7 @@ export default function SignIn() {
 
         newSocket.on('connect', async () => {
           console.log('Socket connected:', newSocket.id);
-          // Save socket to auth context
-          await useAuth().setSocket(newSocket);
+          await setSocket(newSocket);
         });
 
         newSocket.on('disconnect', () => {
@@ -114,8 +113,6 @@ export default function SignIn() {
         newSocket.on('connect_error', (error) => {
           console.error('Socket connection error:', error);
         });
-
-        await useAuth().setSocket(newSocket);
 
         router.replace('/(tabs)' as any);
       }
@@ -136,12 +133,9 @@ export default function SignIn() {
   };
 
   const handleGoogleSignIn = () => {
-    console.log('Google Sign In');
-    console.log(API_SIGNIN)
   };
 
   const handleFacebookSignIn = () => {
-    console.log('Facebook Sign In');
   };
 
   return (

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors, realixFilterSortOptions, realixPropertyTypes } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function FilterPriceScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const [selectedSort, setSelectedSort] = useState(realixFilterSortOptions[0]);
   const [selectedType, setSelectedType] = useState(realixPropertyTypes[0]);
 
@@ -16,7 +16,7 @@ export default function FilterPriceScreen() {
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.back} onPress={() => router.back()}>
+          <Pressable style={styles.back} onPress={goBack}>
             <Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} />
           </Pressable>
           <Text style={styles.headerTitle}>Filter</Text>

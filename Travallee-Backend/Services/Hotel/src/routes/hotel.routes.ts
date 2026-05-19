@@ -10,7 +10,8 @@ import {
   getAllHotels,
   getAllResortHotels,
   RoomData,
-  getHotelDashboard
+  getHotelDashboard,
+  displayRooms
 } from "../controller/register.controller.js";
 
 import {
@@ -59,8 +60,12 @@ router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 
 router.get("/rooms/:hotelId", authenticate, RoomData);
 
+router.get("/display-rooms/:hotelId", authenticate, displayRooms);
+
 router.delete("/room/:hotelId/:roomId", authenticate, deleteRoom);
 
 router.get("/:hotelId", authenticate, HotelData);
+
+
 
 export default router;

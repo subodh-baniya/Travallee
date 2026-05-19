@@ -1,13 +1,14 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors, realixInboxThreads } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function VideoCallScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { thread } = useLocalSearchParams<{ thread?: string }>();
   const currentThread = realixInboxThreads.find((item) => item.id === thread) ?? realixInboxThreads[0];
 
@@ -25,7 +26,7 @@ export default function VideoCallScreen() {
       <View style={styles.actions}>
         <Pressable style={styles.action}><Ionicons name="mic-off-outline" size={18} color={RealixColors.textPrimary} /></Pressable>
         <Pressable style={styles.action}><Ionicons name="videocam-off-outline" size={18} color={RealixColors.textPrimary} /></Pressable>
-        <Pressable style={styles.actionDanger} onPress={() => router.back()}><Ionicons name="call" size={18} color="#ffffff" /></Pressable>
+        <Pressable style={styles.actionDanger} onPress={goBack}><Ionicons name="call" size={18} color="#ffffff" /></Pressable>
       </View>
     </SafeAreaView>
   );

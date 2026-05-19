@@ -1,20 +1,20 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function FilterSearchScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
+          <Pressable onPress={goBack}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
           <Text style={styles.title}>Filter</Text>
         </View>
         <Text style={styles.reset}>Reset</Text>
@@ -29,7 +29,7 @@ export default function FilterSearchScreen() {
 
       <View style={styles.footer}>
         <Pressable style={styles.outlineBtn}><Text style={styles.outlineText}>Reset</Text></Pressable>
-        <Pressable style={styles.applyBtn} onPress={() => router.back()}><Text style={styles.applyText}>Apply</Text></Pressable>
+        <Pressable style={styles.applyBtn} onPress={goBack}><Text style={styles.applyText}>Apply</Text></Pressable>
       </View>
     </SafeAreaView>
   );

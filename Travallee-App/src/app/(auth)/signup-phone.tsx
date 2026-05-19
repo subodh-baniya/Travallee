@@ -60,11 +60,9 @@ export default function SignUpPhone() {
   };
 
   const handleGoogleSignUp = () => {
-    console.log('Google Sign Up');
   };
 
   const handleFacebookSignUp = () => {
-    console.log('Facebook Sign Up');
   };
 
   return (

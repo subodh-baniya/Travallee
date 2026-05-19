@@ -22,30 +22,29 @@ import apiClient from "@/src/services/apiClient";
 import { API_ENDPOINTS_HOTEL } from "@/src/constants/api";
 import { API_ENDPOINTS_AUTH } from "@/src/constants/api";
 
-// ─── Nepal-inspired design tokens ────────────────────────────────────────────
+// ─── Design tokens mapped from RealixColors ───────────────────────────────────
 const N = {
-  // Warm earthy palette inspired by Himalayan landscapes & Nepali architecture
-  crimson:    "#B5282A",   // Pashupatinath temple red
-  crimsonSoft:"#C94B2B",   // Patan brick
-  saffron:    "#E8832A",   // Marigold garland
-  saffronPale:"#F5B86B",   // Sunrise over Everest
-  mustard:    "#D4941A",   // Mustard fields of Mustang
-  earthDark:  "#1C1008",   // Rich dark earth
-  earthMid:   "#2E1A0E",   // Dark timber
-  earthWarm:  "#3D2410",   // Carved wood
-  stoneDeep:  "#1A1410",   // Mountain stone
-  stoneMid:   "#2A211A",   // Temple stone
-  stoneSoft:  "#3C3028",   // Weathered stone
-  snowWhite:  "#FAF6F0",   // Himalayan snow (warm white)
-  snowMuted:  "#EDE5D8",   // Aged parchment
-  textPrimary:"#F5EFE6",   // Warm off-white
-  textSecond: "#C4B09A",   // Muted sand
-  textMuted:  "#8A7566",   // Faded earth
-  textDark:   "#1C1008",   // On-light text
-  divider:    "rgba(180,140,100,0.18)",
-  cardBg:     "#251A10",   // Dark warm card
-  cardBorder: "rgba(200,155,90,0.22)",
-  accentGlow: "rgba(232,131,42,0.15)",
+  crimson:    RealixColors.accent,           // #7ED321 — primary green accent
+  crimsonSoft:RealixColors.accentDark,       // #6abc18
+  saffron:    RealixColors.accent,           // #7ED321
+  saffronPale:RealixColors.accentBright,     // #8EE52A
+  mustard:    RealixColors.accentDark,       // #6abc18
+  earthDark:  RealixColors.screenBackground, // #111111
+  earthMid:   RealixColors.pageBackground,   // #1a1a1a
+  earthWarm:  RealixColors.sectionBackground,// #1a1a1a
+  stoneDeep:  RealixColors.screenBackground, // #111111
+  stoneMid:   RealixColors.cardBackground,   // #1e1e1e
+  stoneSoft:  RealixColors.rowBackground,    // #1c1c1c
+  snowWhite:  RealixColors.textPrimary,      // #f0f0f0
+  snowMuted:  RealixColors.textSecondary,    // #aaaaaa
+  textPrimary:RealixColors.textPrimary,      // #f0f0f0
+  textSecond: RealixColors.textSecondary,    // #aaaaaa
+  textMuted:  RealixColors.textMuted,        // #666666
+  textDark:   RealixColors.screenBackground, // #111111 — on-accent text
+  divider:    RealixColors.border,           // #2a2a2a
+  cardBg:     RealixColors.cardBackground,   // #1e1e1e
+  cardBorder: RealixColors.inputBorder,      // #333333
+  accentGlow: 'rgba(126,211,33,0.12)',
 };
 
 interface Hotel {
@@ -125,7 +124,7 @@ function HotelCard({ hotel, onPress }: { hotel: Hotel; onPress: () => void }) {
           <Ionicons
             name={saved ? "heart" : "heart-outline"}
             size={15}
-            color={saved ? N.crimson : N.snowWhite}
+            color={saved ? RealixColors.danger : N.snowWhite}
           />
         </Pressable>
       </View>
@@ -175,9 +174,9 @@ const card = StyleSheet.create({
     position: "absolute",
     bottom: 10,
     left: 12,
-    backgroundColor: "rgba(28,16,8,0.72)",
+    backgroundColor: "rgba(17,17,17,0.72)",
     borderWidth: 0.5,
-    borderColor: "rgba(200,155,90,0.4)",
+    borderColor: "rgba(126,211,33,0.4)",
     borderRadius: 20,
     paddingHorizontal: 9,
     paddingVertical: 3,
@@ -190,9 +189,9 @@ const card = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(28,16,8,0.55)",
+    backgroundColor: "rgba(17,17,17,0.55)",
     borderWidth: 0.5,
-    borderColor: "rgba(200,155,90,0.3)",
+    borderColor: "rgba(126,211,33,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -248,7 +247,7 @@ const pill = StyleSheet.create({
     borderColor: N.crimson,
   },
   text: { fontSize: 12, color: N.textSecond, fontWeight: "500" },
-  activeText: { color: N.snowWhite, fontWeight: "700" },
+  activeText: { color: N.textDark, fontWeight: "700" },
 });
 
 // ─── Stat chip (for hero banner) ─────────────────────────────────────────────
@@ -269,9 +268,9 @@ const stat = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(28,16,8,0.65)",
+    backgroundColor: "rgba(17,17,17,0.65)",
     borderWidth: 0.5,
-    borderColor: "rgba(200,155,90,0.3)",
+    borderColor: "rgba(126,211,33,0.3)",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 7,
@@ -296,7 +295,7 @@ export default function HomeScreen() {
   const [userName, setUserName] = useState<string>("Traveller");
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [locationPreferenceLoading, setLocationPreferenceLoading] = useState(true);
-  
+
   // Location hook - only used if location is enabled
   const { location, address, loading: locationLoading, permissionGranted, requestPermission } = useLocation();
 
@@ -307,7 +306,6 @@ export default function HomeScreen() {
         const saved = await SecureStore.getItemAsync('locationEnabled');
         setLocationEnabled(saved === 'true');
       } catch (err) {
-        console.error('Failed to load location preference:', err);
       } finally {
         setLocationPreferenceLoading(false);
       }
@@ -319,18 +317,14 @@ export default function HomeScreen() {
       try {
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
-        
-        // Token is automatically added by apiClient interceptor
         const res = await apiClient.get(API_PROFILE);
-        
         if (res.data.success && res.data.data) {
           setUserName(res.data.data.Name || "Traveller");
           setProfileImage(res.data.data.profileimage || null);
         }
       } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally { 
-        setProfileLoading(false); 
+      } finally {
+        setProfileLoading(false);
       }
     })();
   }, [API_PROFILE]);
@@ -338,7 +332,6 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       try {
-        // Token is automatically added by apiClient interceptor (if token exists)
         const r = await apiClient.get(FEATURED_HOTEL);
         if (r.data.success && r.data.data) setFeaturedHotels(r.data.data);
         else setError("No featured hotels available");
@@ -348,11 +341,9 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Fetch high-reviewed hotels for "Travelled Favourite" section
   useEffect(() => {
     (async () => {
       try {
-        // Token is automatically added by apiClient interceptor
         const response = await apiClient.get(HIGH_REVIEWED_HOTEL);
         if (response.data.success && response.data.data) {
           setHighReviewedHotels(response.data.data);
@@ -415,7 +406,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Location bar ── */}
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [s.locBar, pressed && { opacity: 0.8 }]}
           onPress={() => {
             if (!locationEnabled) {
@@ -680,10 +671,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "rgba(200,155,90,0.4)",
+    borderColor: "rgba(126,211,33,0.4)",
   },
   avatarImg: { width: 44, height: 44, borderRadius: 22 },
-  avatarText: { color: N.snowWhite, fontSize: 15, fontWeight: "700" },
+  avatarText: { color: N.textDark, fontSize: 15, fontWeight: "700" },
   headerCenter: { flex: 1, paddingHorizontal: 14 },
   greetingText: { fontSize: 11, color: N.textMuted, letterSpacing: 0.3 },
   greetingName: { fontSize: 17, fontWeight: "700", color: N.textPrimary },
@@ -735,13 +726,13 @@ const s = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: N.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(232,131,42,0.3)",
+    borderColor: "rgba(126,211,33,0.3)",
   },
   aiIconWrap: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "rgba(232,131,42,0.15)",
+    backgroundColor: "rgba(126,211,33,0.12)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -752,15 +743,15 @@ const s = StyleSheet.create({
   heroImg: { width: "100%", height: "100%", position: "absolute" },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15,8,2,0.45)",
+    backgroundColor: "rgba(17,17,17,0.5)",
     justifyContent: "space-between",
     padding: 20,
   },
   heroTopRow: { flexDirection: "row", justifyContent: "flex-end" },
   heroBadge: {
-    backgroundColor: "rgba(28,16,8,0.7)",
+    backgroundColor: "rgba(17,17,17,0.7)",
     borderWidth: 0.5,
-    borderColor: "rgba(200,155,90,0.5)",
+    borderColor: "rgba(126,211,33,0.5)",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -831,7 +822,7 @@ const s = StyleSheet.create({
   // Offer banner
   offerBanner: {
     borderRadius: 20,
-    backgroundColor: N.saffron,
+    backgroundColor: N.crimson,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -839,15 +830,15 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
   offerLeft: { flex: 1, gap: 4 },
-  offerEye: { fontSize: 9, color: "rgba(28,16,8,0.7)", fontWeight: "700", letterSpacing: 1.5 },
+  offerEye: { fontSize: 9, color: "rgba(17,17,17,0.7)", fontWeight: "700", letterSpacing: 1.5 },
   offerTitle: { fontSize: 22, fontWeight: "800", color: N.earthDark },
-  offerSub: { fontSize: 12, color: "rgba(28,16,8,0.7)", lineHeight: 17 },
+  offerSub: { fontSize: 12, color: "rgba(17,17,17,0.7)", lineHeight: 17 },
   offerCTA: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     marginTop: 8,
-    backgroundColor: "rgba(28,16,8,0.12)",
+    backgroundColor: "rgba(17,17,17,0.12)",
     alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -857,7 +848,7 @@ const s = StyleSheet.create({
   offerRight: { alignItems: "center", paddingLeft: 12 },
   offerEmoji: { fontSize: 24, marginBottom: 2 },
   offerPercent: { fontSize: 36, fontWeight: "900", color: N.earthDark, lineHeight: 36 },
-  offerOff: { fontSize: 13, fontWeight: "700", color: "rgba(28,16,8,0.65)" },
+  offerOff: { fontSize: 13, fontWeight: "700", color: "rgba(17,17,17,0.65)" },
 
   // Destinations
   destGrid: {
@@ -901,7 +892,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: N.crimson,
   },
-  promoBtnText: { fontSize: 13, fontWeight: "700", color: N.snowWhite },
+  promoBtnText: { fontSize: 13, fontWeight: "700", color: N.textDark },
   promoRight: { alignItems: "center", justifyContent: "center" },
   promoMountain: { fontSize: 56 },
 });

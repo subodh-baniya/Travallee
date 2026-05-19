@@ -1,20 +1,20 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function AddCardScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
+          <Pressable onPress={goBack}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
           <Text style={styles.title}>Add Credit Card</Text>
         </View>
       </View>
@@ -44,7 +44,7 @@ export default function AddCardScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Pressable style={styles.button} onPress={() => router.back()}><Text style={styles.buttonText}>Add Card</Text></Pressable>
+        <Pressable style={styles.button} onPress={goBack}><Text style={styles.buttonText}>Add Card</Text></Pressable>
       </View>
     </SafeAreaView>
   );

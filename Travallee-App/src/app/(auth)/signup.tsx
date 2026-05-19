@@ -125,11 +125,9 @@ export default function SignUp() {
   };
 
   const handleGoogleSignUp = () => {
-    console.log("Google Sign Up");
   };
 
   const handleFacebookSignUp = () => {
-    console.log("Facebook Sign Up");
 
   };
 

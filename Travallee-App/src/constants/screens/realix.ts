@@ -217,10 +217,9 @@ export const realixDiscoverProperty = {
 } as const;
 
 export const realixPaymentMethods = [
-  { id: 'esewa', label: 'eSewa', shortCode: 'ESW' },
-  { id: 'khalti', label: 'Khalti', shortCode: 'KHL' },
-  { id: 'mastercard', label: '•••• •••• •••• 4242', shortCode: 'MC' },
-  { id: 'bank-transfer', label: 'Bank Transfer', shortCode: 'BT' },
+  { id: 'esewa', label: 'eSewa', shortCode: 'ESW', icon: '📱' },
+  { id: 'khalti', label: 'Khalti', shortCode: 'KHL', icon: '📲' },
+  { id: 'cod', label: 'Cash on Delivery', shortCode: 'COD', icon: '💵' },
 ] as const;
 
 export const realixInboxThreads = [

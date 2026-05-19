@@ -5,11 +5,13 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 const numberRows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['', '0', '⌫']] as const;
 
 export default function PasscodeScreen() {
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const [digits, setDigits] = useState(['1', '2', '3', '4', '', '']);
 
   const pushDigit = (digit: string) => {
@@ -34,7 +36,7 @@ export default function PasscodeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="light" />
-      <View style={styles.header}><Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable><Text style={styles.headerTitle}>Passcode</Text></View>
+      <View style={styles.header}><Pressable onPress={goBack}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable><Text style={styles.headerTitle}>Passcode</Text></View>
       <View style={styles.body}>
         <Text style={styles.subTitle}>Neighbourhood</Text>
         <View style={styles.dotsRow}>{digits.map((digit, index) => <View key={index} style={[styles.dot, digit && styles.dotFilled]} />)}</View>

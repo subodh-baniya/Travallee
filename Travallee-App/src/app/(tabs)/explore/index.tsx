@@ -183,7 +183,6 @@ export default function ExploreScreen() {
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
         setFilteredData([]);
       } finally {
         setLoading(false);

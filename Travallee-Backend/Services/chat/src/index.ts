@@ -1,22 +1,20 @@
 import dotenv from 'dotenv';
-
+import httpServer from './app';
 import {
 connectDB //@ts-ignore
 } from "@packages"
 
-import mongoose from 'mongoose';
-import app from './app';
 
 const PORT = process.env.PORT || 6001;
+
 
 
 const startServer = async () => {
   try {
     await connectDB(process.env.MONGO_URI, process.env.MONGO_DB_NAME);
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    httpServer.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    }); 
   } catch (error) {
     console.error('Failed to connect to the database', error);
     process.exit(1);

@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import {
   Pressable,
   ScrollView,
@@ -65,13 +66,23 @@ export function RealixScreen({
 
 export function RealixHeader({ title, showBack, onBack, rightSlot }: RealixHeaderProps) {
   const router = useRouter();
+  const navigation = useNavigation();
+  const canGoBack = navigation?.canGoBack?.() ?? false;
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (canGoBack) {
+      router.back();
+    }
+  };
 
   return (
     <View style={styles.header}>
       <View style={styles.headerSide}>
-        {showBack ? (
+        {showBack && canGoBack ? (
           <Pressable
-            onPress={onBack ?? (() => router.back())}
+            onPress={handleBack}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
           >
             <Ionicons name="chevron-back" size={20} color={RealixColors.textPrimary} />

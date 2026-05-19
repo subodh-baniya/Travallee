@@ -13,7 +13,6 @@ import {
   Modal,
 } from 'react-native';
 import { useAuth } from '@/src/context/AuthContext';
-import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import apiClient from '@/src/services/apiClient';
@@ -24,10 +23,11 @@ import {
 } from '@/src/components/realix/screen-shell';
 import { RealixColors } from '@/src/constants/screens/realix';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function EditProfileScreen() {
   const { user } = useAuth();
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [number, setNumber] = useState('');
@@ -75,7 +75,6 @@ export default function EditProfileScreen() {
           }
         }
       } catch (err: any) {
-        console.error('Failed to load profile details', err.message);
         setError('Failed to load profile data');
       } finally {
         setLoading(false);
@@ -105,7 +104,6 @@ export default function EditProfileScreen() {
         await uploadPhoto(result.assets[0].uri);
       }
     } catch (err: any) {
-      console.error('Error taking photo:', err);
       Alert.alert('Error', 'Failed to take photo');
     }
   }, []);
@@ -131,7 +129,6 @@ export default function EditProfileScreen() {
         await uploadPhoto(result.assets[0].uri);
       }
     } catch (err: any) {
-      console.error('Error picking image:', err);
       Alert.alert('Error', 'Failed to pick image');
     }
   }, []);
@@ -166,7 +163,6 @@ export default function EditProfileScreen() {
         Alert.alert('Error', response.data.message || 'Failed to update photo');
       }
     } catch (err: any) {
-      console.error('Error uploading photo:', err);
       const errorMessage = err.response?.data?.message || 'Failed to upload photo';
       Alert.alert('Error', errorMessage);
     } finally {
@@ -207,13 +203,12 @@ export default function EditProfileScreen() {
         Alert.alert(
           'Success',
           'Profile updated successfully',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: goBack }]
         );
       } else {
         Alert.alert('Error', response.data.message || 'Failed to update profile');
       }
     } catch (err: any) {
-      console.error('Error updating profile:', err);
       const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
       Alert.alert('Error', errorMessage);
       setError(errorMessage);
