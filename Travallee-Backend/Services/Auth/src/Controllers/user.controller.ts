@@ -9,14 +9,12 @@ import {
 } from "@packages";
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
-import { Queue,  } from "bullmq";
-import { redisConnection } from "../config/redis.connection.js";
+import { Queue} from "bullmq";
 
-
-const connection = redisConnection(
-  process.env.REDIS_HOST as string,
-  Number(process.env.REDIS_PORT),
-);
+const connection = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: Number(process.env.REDIS_PORT) || 6379,
+}
 
 const registerEmailQueue = new Queue<RegisterEmailJobData>("Register", {
   connection,
