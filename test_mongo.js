@@ -25,7 +25,7 @@ const hotels = [
     rating: 4.7,
     numberOfReviews: 320,
     isFeatured: true,
-    roomIDs: [],
+    roomIDs: ["room_1a", "room_1b", "room_1c"],
   },
 
   {
@@ -50,7 +50,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 210,
     isFeatured: true,
-    roomIDs: [],
+    roomIDs: ["room_2a", "room_2b"],
   },
 
   {
@@ -75,7 +75,7 @@ const hotels = [
     rating: 4.3,
     numberOfReviews: 145,
     isFeatured: false,
-    roomIDs: [],
+    roomIDs: ["room_3a", "room_3b", "room_3c"],
   },
 
   {
@@ -101,7 +101,7 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 410,
     isFeatured: true,
-    roomIDs: [],
+    roomIDs: ["room_4a", "room_4b"],
   },
 
   {
@@ -117,7 +117,7 @@ const hotels = [
     ],
     propertyType: "Boutique Hotel",
     verified: true,
-    VerificationDocuments: ["NID", "Passport"],
+    VerificationDocuments: ["NID", "Citizenship","Passport"],
     contactNumber: "9807766554",
     isactive: true,
     facilities: ["Lake View", "Restaurant", "Free WiFi", "Boat Service", "Parking"],
@@ -127,7 +127,59 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: [],
+    roomIDs: ["room_5a", "room_5b", "room_5c"],
+  },
+
+  // Test entry covering union/string transform branches
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c06",
+    ownerName: "String Variant Hotel",
+    hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
+    hotelLocation: "Testville, Testland",
+    hotelName: "String Variant Inn",
+    // hotelImages: replaced with attached image URL placeholder (replace with actual URL or local path)
+    hotelImages: ["https://example.com/attached-hotel-image.jpg"],
+    propertyType: "Guest House",
+    // boolean-like fields as strings
+    verified: "true",
+    // VerificationDocuments as comma-separated string
+    VerificationDocuments: "NID, Citizenship, Passport",
+    contactNumber: "0123456789",
+    isactive: "false",
+    // facilities as comma-separated string
+    facilities: "Free WiFi,Parking,Breakfast",
+    checkinTime: "2:00 PM",
+    checkoutTime: "12:00 PM",
+    // numeric fields provided as strings (coerce will convert)
+    pricePerNight: "99",
+    rating: "4.2",
+    numberOfReviews: "10",
+    isFeatured: "false",
+    roomIDs: ["room_6a", "room_6b"],
+  },
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c07",
+    ownerName: "Bijaya Neupane",
+    hotelDescription: "Comfortable stay at Hotel Pauwa with easy access to Bharatpur amenities and nearby attractions.",
+    hotelLocation: "Bharatpur, Chitwan, Nepal",
+    hotelName: "Hotel Pauwa Bharatpur",
+    hotelImages: [
+      "https://example.com/pauwa-exterior.jpg",
+      "https://example.com/pauwa-lobby.jpg"
+    ],
+    propertyType: "Hotel",
+    verified: true,
+    VerificationDocuments: ["NID", "Citizenship"],
+    contactNumber: "9841239876",
+    isactive: true,
+    facilities: ["Free WiFi", "Parking", "Restaurant", "24/7 Front Desk"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "12:00 PM",
+    pricePerNight: 95,
+    rating: 4.4,
+    numberOfReviews: 128,
+    isFeatured: false,
+    roomIDs: ["room_7a", "room_7b"],
   },
 ];
 
