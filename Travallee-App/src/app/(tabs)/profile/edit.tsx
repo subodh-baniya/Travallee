@@ -13,7 +13,6 @@ import {
   Modal,
 } from 'react-native';
 import { useAuth } from '@/src/context/AuthContext';
-import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import apiClient from '@/src/services/apiClient';
@@ -24,10 +23,11 @@ import {
 } from '@/src/components/realix/screen-shell';
 import { RealixColors } from '@/src/constants/screens/realix';
 import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function EditProfileScreen() {
   const { user } = useAuth();
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [number, setNumber] = useState('');
@@ -207,7 +207,7 @@ export default function EditProfileScreen() {
         Alert.alert(
           'Success',
           'Profile updated successfully',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: goBack }]
         );
       } else {
         Alert.alert('Error', response.data.message || 'Failed to update profile');

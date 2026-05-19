@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -9,9 +9,10 @@ import {
   realixDiscoverProperty,
   realixPaymentMethods,
 } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function PaymentScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { checkIn, checkOut, guests } = useLocalSearchParams<{
     checkIn?: string;
     checkOut?: string;
@@ -25,7 +26,7 @@ export default function PaymentScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.headerIcon} onPress={() => router.back()}>
+          <Pressable style={styles.headerIcon} onPress={goBack}>
             <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Payment</Text>

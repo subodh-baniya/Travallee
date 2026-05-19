@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import {
   Pressable, ScrollView, StyleSheet, Text, View, Image,
   ActivityIndicator, PanResponder, Dimensions,
@@ -62,6 +63,8 @@ const RATING_PERCENTAGES = [60, 20, 10, 1, 5];
 
 export default function HotelDetailScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const canGoBack = navigation?.canGoBack?.() ?? false;
   const { hotelId } = useLocalSearchParams();
   const [hotel, setHotel] = useState<HotelDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +79,7 @@ export default function HotelDetailScreen() {
       onMoveShouldSetPanResponder: (_, gestureState) =>
         Math.abs(gestureState.dx) > 30 && Math.abs(gestureState.dy) < 10,
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < -50) router.back();
+        if (gestureState.dx < -50 && canGoBack) router.back();
       },
     })
   ).current;
@@ -127,7 +130,7 @@ export default function HotelDetailScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="auto" />
         <View style={styles.headerBar}>
-          <Pressable style={styles.headerBtn} onPress={() => router.back()}>
+          <Pressable style={styles.headerBtn} onPress={() => canGoBack && router.back()}>
             <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
           </Pressable>
         </View>
@@ -135,7 +138,7 @@ export default function HotelDetailScreen() {
           <Ionicons name="alert-circle-outline" size={48} color={RealixColors.textMuted} />
           <Text style={styles.errorTitle}>Something went wrong</Text>
           <Text style={styles.errorText}>{error || 'Hotel not found'}</Text>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => canGoBack && router.back()} style={styles.backButton}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </Pressable>
         </View>
@@ -153,7 +156,7 @@ export default function HotelDetailScreen() {
 
       {/* Header */}
       <View style={styles.headerBar}>
-        <Pressable style={styles.headerBtn} onPress={() => router.back()}>
+        <Pressable style={styles.headerBtn} onPress={() => canGoBack && router.back()}>
           <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
         </Pressable>
         <View style={styles.headerRight}>

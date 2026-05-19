@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   RealixColors,
   realixDiscoverProperty,
 } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
 
@@ -16,7 +16,7 @@ const daysInMonth = 31;
 const firstWeekdayOffset = 1;
 
 export default function SelectDateScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const [guestCount, setGuestCount] = useState(1);
   const [checkIn, setCheckIn] = useState<number | null>(null);
   const [checkOut, setCheckOut] = useState<number | null>(null);
@@ -75,7 +75,7 @@ export default function SelectDateScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.headerIcon} onPress={() => router.back()}>
+          <Pressable style={styles.headerIcon} onPress={goBack}>
             <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Select Date</Text>

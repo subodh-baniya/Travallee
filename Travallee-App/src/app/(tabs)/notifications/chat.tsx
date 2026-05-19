@@ -1,13 +1,14 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors, realixInboxThreads } from '@/src/constants/screens/realix';
+import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function InboxChatScreen() {
-  const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { thread } = useLocalSearchParams<{ thread?: string }>();
   const currentThread = realixInboxThreads.find((item) => item.id === thread) ?? realixInboxThreads[0];
 
@@ -16,7 +17,7 @@ export default function InboxChatScreen() {
       <StatusBar style="light" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable onPress={() => router.back()}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
+          <Pressable onPress={goBack}><Ionicons name="chevron-back" size={18} color={RealixColors.textSecondary} /></Pressable>
           <View style={styles.avatarWrap}><Text style={styles.avatarText}>{currentThread.avatar}</Text></View>
           <View>
             <Text style={styles.name}>{currentThread.name}</Text>
