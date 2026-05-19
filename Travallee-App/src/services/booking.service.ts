@@ -6,7 +6,7 @@ interface CreateBookingPayload {
   checkIn: string; // ISO date format: "2026-05-20"
   checkOut: string; // ISO date format: "2026-05-25"
   guestCount: number;
-  paymentMethod?: string;
+  paymentMethod: string; // "ESEWA" | "COD" | "KHALTI"
 }
 
 interface BookingResponse {
@@ -20,9 +20,19 @@ interface BookingResponse {
  */
 export const createBooking = async (payload: CreateBookingPayload): Promise<BookingResponse> => {
   try {
+    // Map frontend field names to backend field names
+    const bookingData = {
+      room: payload.roomId,
+      hotel: payload.hotelId,
+      guests: payload.guestCount,
+      checkIn: payload.checkIn,
+      checkOut: payload.checkOut,
+      paymentMethod: payload.paymentMethod,
+    };
+
     const response = await apiClient.post<BookingResponse>(
       'http://localhost:5002/api/v1/booking/create-booking',
-      payload
+      bookingData
     );
     return response.data;
   } catch (error: any) {

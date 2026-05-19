@@ -9,7 +9,6 @@ import {
   realixDiscoverProperty,
   realixPaymentMethods,
 } from '@/src/constants/screens/realix';
-import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 import { createBooking } from '@/src/services/booking.service';
 
 type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
@@ -19,8 +18,21 @@ const daysInMonth = 31;
 const firstWeekdayOffset = 1;
 
 export default function SelectDateScreen() {
-  const { goBack } = useSafeNavigation();
   const router = useRouter();
+  
+  // Safe navigation handler
+  const handleGoBack = () => {
+    try {
+      if (router.canGoBack?.()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/explore');
+      }
+    } catch (error) {
+      router.replace('/(tabs)/explore');
+    }
+  };
+
   const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests } = useLocalSearchParams<{
     roomId?: string;
     hotelId?: string;
@@ -58,6 +70,22 @@ export default function SelectDateScreen() {
 
   const inRange = (day: number) => checkIn !== null && checkOut !== null && day > checkIn && day < checkOut;
 
+  // Get current month and year for display
+  const getCurrentMonthYear = () => {
+    const today = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${monthNames[today.getMonth()]} ${today.getFullYear()}`;
+  };
+
+  // Get current month name for display
+  const getCurrentMonthName = () => {
+    const today = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return monthNames[today.getMonth()];
+  };
+
   const onSelectDay = (day: number) => {
     if (checkIn === null || (checkIn !== null && checkOut !== null)) {
       setCheckIn(day);
@@ -76,15 +104,25 @@ export default function SelectDateScreen() {
 
   const isSelectionComplete = checkIn !== null && checkOut !== null;
 
-  // Format date to YYYY-MM-DD (assuming August 2026)
+  // Format date to YYYY-MM-DD
   const formatBookingDate = (day: number): string => {
-    const date = new Date(2026, 7, day); // Month is 0-indexed, so 7 = August
+    // Get current month and year
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    const date = new Date(currentYear, currentMonth, day);
     return date.toISOString().split('T')[0];
   };
 
   const handleCreateBooking = async () => {
     if (!roomId || !hotelId || !checkIn || !checkOut) {
       Alert.alert('Error', 'Missing required booking information');
+      return;
+    }
+
+    if (guestCount < 1) {
+      Alert.alert('Error', 'Please select at least 1 guest');
       return;
     }
 
@@ -114,16 +152,20 @@ export default function SelectDateScreen() {
                   checkIn: String(checkIn),
                   checkOut: String(checkOut),
                   guests: String(guestCount),
+                  roomType,
+                  pricePerNight,
                 },
               });
             },
           },
         ]);
       } else {
-        Alert.alert('Error', response.message || 'Failed to create booking');
+        const errorMsg = response.message || 'Failed to create booking';
+        Alert.alert('Booking Error', errorMsg);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create booking. Please try again.');
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create booking. Please try again.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsCreatingBooking(false);
     }
@@ -145,7 +187,7 @@ export default function SelectDateScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.headerIcon} onPress={goBack}>
+          <Pressable style={styles.headerIcon} onPress={handleGoBack}>
             <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Select Date</Text>
@@ -161,13 +203,13 @@ export default function SelectDateScreen() {
           <View style={[styles.dateInput, checkIn !== null && styles.dateInputActive]}>
             <Text style={styles.dateLabel}>Check In</Text>
             <Text style={[styles.dateValue, checkIn === null && styles.placeholder]}>
-              {checkIn === null ? 'Check In' : `${checkIn} Aug`}
+              {checkIn === null ? 'Check In' : `${checkIn} ${getCurrentMonthName()}`}
             </Text>
           </View>
           <View style={[styles.dateInput, checkOut !== null && styles.dateInputActive]}>
             <Text style={styles.dateLabel}>Check Out</Text>
             <Text style={[styles.dateValue, checkOut === null && styles.placeholder]}>
-              {checkOut === null ? 'Check Out' : `${checkOut} Aug`}
+              {checkOut === null ? 'Check Out' : `${checkOut} ${getCurrentMonthName()}`}
             </Text>
           </View>
         </View>
@@ -193,7 +235,7 @@ export default function SelectDateScreen() {
         <View style={styles.calendarCard}>
           <View style={styles.calendarNav}>
             <Pressable><Text style={styles.navArrow}>‹</Text></Pressable>
-            <Text style={styles.monthTitle}>Aug 2023</Text>
+            <Text style={styles.monthTitle}>{getCurrentMonthYear()}</Text>
             <Pressable><Text style={styles.navArrow}>›</Text></Pressable>
           </View>
 
@@ -242,7 +284,7 @@ export default function SelectDateScreen() {
               <View style={styles.bookingInfo}>
                 <Text style={styles.bookingName}>{hotelName || 'Hotel'}</Text>
                 <Text style={styles.bookingSubtitle}>{roomType || 'Room'}</Text>
-                <Text style={styles.bookingDate}>{checkIn} - {checkOut} Aug | {guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
+                <Text style={styles.bookingDate}>{checkIn} - {checkOut} {getCurrentMonthName()} | {guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
                 <Text style={styles.bookingPrice}>${nightlyPrice}/night</Text>
               </View>
             </View>
