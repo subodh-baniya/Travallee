@@ -1,566 +1,521 @@
-# Backend Services Setup Guide
+# 🔧 Backend - Microservices Architecture
 
-Complete guide to setting up and running the Travallee backend microservices.
+The backend is organized as a **microservices architecture** where each service runs independently and communicates via REST APIs. All services share common utilities and middleware through the Packages module.
 
-## Quick Start
+## 📋 Overview
 
-### Option 1: Docker Compose (Recommended - Single Command)
+The Travallee Backend consists of:
+- **Packages** - Shared utilities, middleware, models, and authentication logic
+- **Services** - Independent microservices for different business domains
+
+Each service is containerized with Docker and orchestrated via Docker Compose.
+
+---
+
+## 🏗️ Architecture
+
+```
+┌────────────────────────────────────────────────────┐
+│         MICROSERVICES LAYER                        │
+│  ┌───────┐ ┌────────┐ ┌────────┐ ┌─────────────┐ │
+│  │Auth   │ │Hotel   │ │Booking │ │Admin/Chat   │ │
+│  │:3000  │ │:3001   │ │:5002   │ │:4001+       │ │
+│  └───────┘ └────────┘ └────────┘ └─────────────┘ │
+│  ┌────────────────────────────────────────────────┤ │
+│  │Shared Packages (Utilities, Models, Auth)      │ │
+│  └────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────┘
+                        ↓
+┌────────────────────────────────────────────────────┐
+│       DATA LAYER (Databases & Cache)              │
+│  ┌──────────────────┐  ┌──────────────────────┐  │
+│  │ MongoDB          │  │ Redis Cache          │  │
+│  │ (Primary DB)     │  │ (Sessions, Cache)    │  │
+│  └──────────────────┘  └──────────────────────┘  │
+└────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📂 Directory Structure
+
+```
+Travallee-Backend/
+├── Packages/                   # Shared code
+│   ├── index.ts               # Main export
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── middleware/            # Shared middleware
+│   ├── Model/                 # Database models
+│   ├── Utils/                 # Utility functions
+│   └── README.md              # Packages documentation
+│
+└── Services/                  # Microservices
+    ├── Auth/                  # Authentication service
+    │   ├── package.json
+    │   ├── tsconfig.json
+    │   ├── src/
+    │   │   ├── Controllers/
+    │   │   ├── Routes/
+    │   │   ├── Models/
+    │   │   ├── Services/
+    │   │   └── app.ts
+    │   └── README.md
+    │
+    ├── Hotel/                 # Hotel & room management
+    │   ├── src/
+    │   │   ├── Controllers/
+    │   │   ├── Routes/
+    │   │   ├── Models/
+    │   │   └── app.ts
+    │   └── README.md
+    │
+    ├── booking/               # Booking management
+    │   ├── src/
+    │   └── README.md
+    │
+    ├── admin/                 # Admin operations
+    │   ├── src/
+    │   └── README.md
+    │
+    ├── chat/                  # Real-time messaging
+    │   ├── src/
+    │   └── README.md
+    │
+    ├── notifications/         # Email & push notifications
+    │   ├── src/
+    │   └── README.md
+    │
+    └── payments/              # Payment processing
+        ├── src/
+        └── README.md
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| **Runtime** | Node.js 18+ |
+| **Framework** | Express.js 5.2 |
+| **Language** | TypeScript 5.9 |
+| **Database** | MongoDB 7.2 |
+| **Caching** | Redis 5.10 |
+| **Container** | Docker & Docker Compose |
+| **Authentication** | JWT, bcrypt 6.0 |
+| **Validation** | Zod |
+| **Job Queue** | BullMQ |
+| **ORM/ODM** | Mongoose 9.2 |
+
+---
+
+## 🔧 Services Overview
+
+### Auth Service (Port 3000)
+- User registration and login
+- JWT token generation
+- OAuth integration (Google)
+- Role-based access control (RBAC)
+- Password hashing and validation
+
+**Location:** [Services/Auth/](Services/Auth/)
+**Docs:** [Auth Service README](Services/Auth/README.md)
+
+### Hotel Service (Port 3001)
+- Hotel management
+- Room inventory
+- Pricing management
+- Hotel search and filtering
+- Floor/wing management
+
+**Location:** [Services/Hotel/](Services/Hotel/)
+**Docs:** [Hotel Service README](Services/Hotel/README.md)
+
+### Booking Service (Port 5002)
+- Create and manage bookings
+- Check-in/check-out management
+- Availability checking
+- Booking history
+- Cancellation policies
+
+**Location:** [Services/booking/](Services/booking/)
+**Docs:** [Booking Service README](Services/booking/README.md)
+
+### Admin Service (Port 4001)
+- User management
+- Analytics and reporting
+- System configuration
+- Audit logs
+- Admin operations
+
+**Location:** [Services/admin/](Services/admin/)
+**Docs:** [Admin Service README](Services/admin/README.md)
+
+### Notifications Service (Port 6000)
+- Email notifications
+- SMS messages
+- Push notifications
+- Notification templates
+- Delivery tracking
+
+**Location:** [Services/notifications/](Services/notifications/)
+**Docs:** [Notifications Service README](Services/notifications/README.md)
+
+### Chat Service
+- Real-time messaging
+- Guest-staff communication
+- Message history
+- Presence detection
+- Typing indicators
+
+**Location:** [Services/chat/](Services/chat/)
+**Docs:** [Chat Service README](Services/chat/README.md)
+
+### Payment Service
+- Payment processing
+- Invoice generation
+- Refund management
+- Payment history
+- Reconciliation
+
+**Location:** [Services/payments/](Services/payments/)
+**Docs:** [Payment Service README](Services/payments/README.md)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ and npm
+- Docker & Docker Compose
+- Git
+- MongoDB 7.2+ (if running without Docker)
+- Redis 5.10+ (if running without Docker)
+
+### Quick Start with Docker
 
 ```bash
-cd Travallee-Backend
+# Navigate to project root
+cd Travalee
+
+# Start all services with Docker Compose
 docker-compose up -d
-
-# View all logs
-docker-compose logs -f
-
-# View specific service
-docker-compose logs -f auth
-
-# Stop all services
-docker-compose down
-```
-
-**Services started:**
-- Auth Service: `http://localhost:3000`
-- Admin Service: `http://localhost:4001`
-- Booking Service: `http://localhost:5002`
-- Hotel Service: `http://localhost:5003`
-- MongoDB: `mongodb://localhost:27017`
-
-### Option 2: Manual Setup (Individual Services)
-
-```bash
-# Terminal 1: Auth Service
-cd Travallee-Backend/Services/Auth
-npm install
-npm run dev
-
-# Terminal 2: Admin Service
-cd ../admin
-npm install
-npm run dev
-
-# Terminal 3: Booking Service
-cd ../booking
-npm install
-npm run dev
-
-# Terminal 4: Hotel Service
-cd ../Hotel
-npm install
-npm run dev
-```
-
----
-
-## Services Overview
-
-### Architecture
-
-```
-┌──────────────────────────────────────────┐
-│         Frontend Layer                   │
-│  ┌─────────────────────┐                │
-│  │  Admin Dashboard    │                │
-│  │  User Website       │                │
-│  │  Mobile App (Expo)  │                │
-│  └─────────────────────┘                │
-└──────────────────────────────────────────┘
-           ↓ API Calls
-┌──────────────────────────────────────────┐
-│    API Gateway / Load Balancer           │
-│    (Optional - Route requests)           │
-└──────────────────────────────────────────┘
-           ↓
-┌──────────────────────────────────────────┐
-│       Microservices Layer                │
-│  ┌─────────────────────────────────────┐ │
-│  │  Auth Service (Port 3000)           │ │
-│  │  - User registration/login          │ │
-│  │  - JWT token generation             │ │
-│  │  - OAuth integration                │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Admin Service (Port 4001)          │ │
-│  │  - User & staff management          │ │
-│  │  - System settings                  │ │
-│  │  - Analytics & reporting            │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Hotel Service (Port 5003)          │ │
-│  │  - Room management                  │ │
-│  │  - Pricing & availability           │ │
-│  │  - Inventory tracking               │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Booking Service (Port 5002)        │ │
-│  │  - Reservations                     │ │
-│  │  - Check-in/out                     │ │
-│  │  - Booking history                  │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Notification Service (Optional)    │ │
-│  │  - Email notifications              │ │
-│  │  - SMS alerts                       │ │
-│  │  - Push notifications               │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Payment Service (Optional)         │ │
-│  │  - Stripe integration               │ │
-│  │  - PayPal / Razorpay                │ │
-│  │  - Transaction logging              │ │
-│  └─────────────────────────────────────┘ │
-└──────────────────────────────────────────┘
-           ↓ Database queries
-┌──────────────────────────────────────────┐
-│       Data Layer                         │
-│  ┌─────────────────────────────────────┐ │
-│  │  MongoDB / SQL Database             │ │
-│  │  (Shared or Service-specific DB)    │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  Redis Cache (Optional)             │ │
-│  │  (Availability, rates, sessions)    │ │
-│  └─────────────────────────────────────┘ │
-└──────────────────────────────────────────┘
-```
-
----
-
-## Individual Service Setup
-
-### Auth Service
-
-**Purpose:** Handle user authentication, registration, JWT tokens
-
-**Location:** `Travallee-Backend/Services/Auth/`
-
-**Dependencies:**
-- MongoDB (for user storage)
-- Email service (SMTP for password reset)
-
-**Setup:**
-```bash
-cd Travallee-Backend/Services/Auth
-
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.sample .env
-
-# Configure in .env:
-NODE_ENV=development
-PORT=3000
-DB_URI=mongodb://localhost:27017/travallee
-JWT_SECRET=your-secret-key-here
-
-# Start development server
-npm run dev
-
-# Alternative: npm start (production mode)
-```
-
-**API Endpoints:**
-```
-POST   /api/v1/auth/register        - Create account
-POST   /api/v1/auth/login           - Get JWT token
-POST   /api/v1/auth/refresh         - Refresh token
-GET    /api/v1/auth/profile         - Get user profile
-POST   /api/v1/auth/logout          - Invalid token
-POST   /api/v1/auth/forgot-password - Reset password
-```
-
-**Test Credentials:**
-```
-Email: admin@travallee.com
-Password: admin123
-```
-
----
-
-### Admin Service
-
-**Purpose:** Admin dashboard backend, user management, analytics
-
-**Location:** `Travallee-Backend/Services/admin/`
-
-**Setup:**
-```bash
-cd Travallee-Backend/Services/admin
-
-npm install
-cp .env.sample .env
-
-# Configure .env:
-NODE_ENV=development
-PORT=4001
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-
-npm run dev
-```
-
-**API Endpoints:**
-```
-GET    /api/v1/admin/dashboard      - Dashboard metrics
-GET    /api/v1/admin/users          - List users
-POST   /api/v1/admin/users          - Create user
-PUT    /api/v1/admin/users/:id      - Update user
-DELETE /api/v1/admin/users/:id      - Delete user
-GET    /api/v1/admin/analytics      - Analytics data
-```
-
----
-
-### Hotel Service
-
-**Purpose:** Room management, pricing, availability tracking
-
-**Location:** `Travallee-Backend/Services/Hotel/`
-
-**Setup:**
-```bash
-cd Travallee-Backend/Services/Hotel
-
-npm install
-cp .env.sample .env
-
-# Configure .env:
-NODE_ENV=development
-PORT=5003
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-REDIS_HOST=localhost
-
-npm run dev
-```
-
-**API Endpoints:**
-```
-GET    /api/v1/hotel/rooms          - List all rooms
-GET    /api/v1/hotel/rooms/:id      - Get room details
-POST   /api/v1/hotel/rooms          - Create room
-PUT    /api/v1/hotel/rooms/:id      - Update room
-DELETE /api/v1/hotel/rooms/:id      - Delete room
-GET    /api/v1/hotel/availability   - Check availability
-GET    /api/v1/hotel/pricing        - Get prices
-```
-
----
-
-### Booking Service
-
-**Purpose:** Handle reservations, check-in/out, booking history
-
-**Location:** `Travallee-Backend/Services/booking/`
-
-**Setup:**
-```bash
-cd Travallee-Backend/Services/booking
-
-npm install
-cp .env.sample .env
-
-# Configure .env:
-NODE_ENV=development
-PORT=5002
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-HOTEL_SERVICE_URL=http://localhost:5003/api/v1
-
-npm run dev
-```
-
-**API Endpoints:**
-```
-GET    /api/v1/bookings             - List bookings
-POST   /api/v1/bookings             - Create booking
-GET    /api/v1/bookings/:id         - Get booking
-PUT    /api/v1/bookings/:id         - Update booking
-DELETE /api/v1/bookings/:id         - Cancel booking
-POST   /api/v1/bookings/:id/checkin - Check in
-POST   /api/v1/bookings/:id/checkout- Check out
-```
-
----
-
-## Environment Variables
-
-See [ENV.md](../ENV.md) for comprehensive environment variable documentation.
-
-Quick setup:
-```bash
-# Auth Service
-cat > Travallee-Backend/Services/Auth/.env << 'EOF'
-NODE_ENV=development
-PORT=3000
-DB_URI=mongodb://localhost:27017/travallee
-JWT_SECRET=your-super-secret-key-change-this
-CORS_ORIGIN=http://localhost:5173,http://localhost:5174
-EOF
-
-# Admin Service
-cat > Travallee-Backend/Services/admin/.env << 'EOF'
-NODE_ENV=development
-PORT=4001
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-DB_URI=mongodb://localhost:27017/travallee_admin
-JWT_SECRET=your-super-secret-key-change-this
-EOF
-
-# Hotel Service
-cat > Travallee-Backend/Services/Hotel/.env << 'EOF'
-NODE_ENV=development
-PORT=5003
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-DB_URI=mongodb://localhost:27017/travallee_hotel
-REDIS_HOST=localhost
-EOF
-
-# Booking Service
-cat > Travallee-Backend/Services/booking/.env << 'EOF'
-NODE_ENV=development
-PORT=5002
-AUTH_SERVICE_URL=http://localhost:3000/api/v1
-HOTEL_SERVICE_URL=http://localhost:5003/api/v1
-DB_URI=mongodb://localhost:27017/travallee_bookings
-EOF
-```
-
----
-
-## Database Setup
-
-### MongoDB (Recommended for Development)
-
-**Option 1: Docker**
-```bash
-docker run -d \
-  --name travallee-mongodb \
-  -p 27017:27017 \
-  -e MONGO_INITDB_ROOT_USERNAME=admin \
-  -e MONGO_INITDB_ROOT_PASSWORD=password \
-  mongo:7.0
-
-# Connect with MongoDB Compass at:
-# mongodb://admin:password@localhost:27017
-```
-
-**Option 2: Local Installation**
-```bash
-# macOS
-brew install mongodb-community
-brew services start mongodb-community
-
-# Linux
-sudo apt-get install -y mongodb
-sudo systemctl start mongodb
-
-# Windows
-# Download and run installer from https://www.mongodb.com/try/download/community
-```
-
-**Option 3: MongoDB Atlas (Cloud)**
-```
-1. Create account at https://www.mongodb.com/cloud/atlas
-2. Create cluster
-3. Get connection string: mongodb+srv://user:pass@cluster.mongodb.net/
-4. Update DB_URI in .env files
-```
-
-### PostgreSQL (Alternative)
-
-```bash
-# Docker
-docker run -d \
-  --name travallee-postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=travallee \
-  -p 5432:5432 \
-  postgres:16
-
-# Local
-brew install postgresql
-brew services start postgresql
-```
-
----
-
-## Running with Docker Compose
-
-### Full Stack (All Services + Database)
-
-**File:** `docker-compose.yml`
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View status
-docker-compose ps
 
 # View logs
 docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Remove volumes (careful - deletes data!)
-docker-compose down -v
-
-# Rebuild images after code changes
-docker-compose up -d --build
 ```
 
-### Service-Specific Commands
+### Manual Setup (One Service)
 
 ```bash
-# Start only specific services
-docker-compose up -d auth hotel
+# Navigate to backend
+cd Travallee-Backend
 
-# Restart single service
-docker-compose restart auth
+# Install Packages dependencies
+cd Packages && npm install && cd ..
 
-# View service logs
-docker-compose logs -f auth
-docker-compose logs -f booking
-docker-compose logs -f hotel
+# Install Auth Service
+cd Services/Auth
+npm install
+cp .env.example .env
 
-# Access service shell
-docker-compose exec auth bash
-docker-compose exec mongodb mongosh
-```
-
----
-
-## Troubleshooting
-
-### Port Already in Use
-
-**Problem:** `Port 3000 is already in use`
-
-**Solutions:**
-```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
-
-# Use different port
-PORT=3001 npm run dev
-
-# Check what's using the port
-lsof -i :3000
-```
-
-### MongoDB Connection Refused
-
-**Problem:** `Error: connect ECONNREFUSED 127.0.0.1:27017`
-
-**Solutions:**
-```bash
-# Start MongoDB
-# macOS
-brew services start mongodb-community
-
-# Linux
-sudo systemctl start mongodb
-
-# Docker
-docker start travallee-mongodb
-
-# Or let docker-compose handle it
-docker-compose up -d
-```
-
-### Service Can't Reach Other Services
-
-**Problem:** `Error: connect ECONNREFUSED when calling other service`
-
-**In Docker Compose:**
-- Services communicate via service name: `http://auth:3000`
-- Not `http://localhost:3000`
-
-**Locally:**
-- Make sure all services are running
-- Use `http://localhost:PORT`
-
-**Cross-network:**
-- Use actual IP address
-- Update service URLs in .env files
-- Example: `http://192.168.1.100:3000`
-
-### Environment Variables Not Loaded
-
-**Problem:** `process.env.JWT_SECRET is undefined`
-
-**Solutions:**
-```bash
-# Restart application after editing .env
+# Start service
 npm run dev
-
-# Verify .env file exists
-ls -la .env
-
-# Check variable is set
-cat .env | grep JWT_SECRET
-
-# Ensure no spaces around = sign
-# ✅ Correct: JWT_SECRET=value
-# ❌ Wrong: JWT_SECRET = value
 ```
 
 ---
 
-## Development Best Practices
+## 📋 Shared Packages
 
-### Logging
+Located in [Packages/](Packages/), provides shared code for all services:
 
-```javascript
-// Use appropriate log levels
-console.log('Info message');      // Info
-console.error('Error message');   // Error
-console.warn('Warning message');  // Warning
-console.debug('Debug message');   // Debug
+### Middleware
+- Authentication middleware (JWT validation)
+- Error handling middleware
+- CORS configuration
+- Rate limiting
+- Request logging
 
-// In production, use logger library
-import logger from './utils/logger';
-logger.info('User login', { userId: 123 });
-logger.error('Payment failed', { error: err });
+### Models
+- User model
+- Hotel model
+- Booking model
+- Payment model
+- Notification model
+
+### Utils
+- Database utilities
+- Validation helpers
+- Error handling
+- Token generation
+- File upload utilities
+
+### Usage in Services
+
+```typescript
+// Import from shared Packages
+import { authMiddleware, User, ValidationError } from '@packages';
+
+app.use(authMiddleware);
+
+app.get('/users/:id', async (req, res) => {
+  const user = await User.findById(req.params.id);
+  res.json(user);
+});
 ```
 
-### Error Handling
+---
 
-```javascript
-// Always return proper HTTP status codes
-200 - OK
-201 - Created
-400 - Bad Request
-401 - Unauthorized
-403 - Forbidden
-404 - Not Found
-500 - Server Error
+## 🔌 Inter-Service Communication
 
-// Example
-try {
-  const user = await User.findById(id);
-  if (!user) return res.status(404).json({ error: 'Not found' });
-  res.status(200).json(user);
-} catch (err) {
-  res.status(500).json({ error: err.message });
+Services communicate via REST APIs:
+
+```
+Service A → Service B
+  (HTTP Request)
+    ↓
+Service B → Response
+  (JSON Data)
+```
+
+Example:
+```typescript
+// Booking Service calling Hotel Service
+import axios from 'axios';
+
+const hotelService = axios.create({
+  baseURL: 'http://hotel:3001/api'
+});
+
+async function checkAvailability(roomId, dates) {
+  const response = await hotelService.get(
+    `/rooms/${roomId}/availability`,
+    { params: { dates } }
+  );
+  return response.data;
 }
 ```
 
-### Testing
+---
+
+## 🗄️ Database & Caching
+
+### MongoDB
+- Primary database for all services
+- Centralized data storage
+- Collections per domain:
+  - `users` - User accounts
+  - `hotels` - Hotel information
+  - `bookings` - Reservations
+  - `payments` - Transactions
+  - etc.
+
+### Redis
+- Session storage
+- Cache layer
+- Real-time data (online users)
+- Job queue (BullMQ)
+- Rate limiting
+
+---
+
+## 🔐 Authentication & Security
+
+### JWT Flow
+1. User logs in via Auth Service
+2. JWT token generated with user ID and role
+3. Token sent to frontend
+4. Frontend includes token in all API requests
+5. Auth middleware validates token
+6. Request proceeds or rejected
+
+### Security Features
+- ✅ Password hashing with bcrypt
+- ✅ JWT expiration
+- ✅ Refresh token rotation
+- ✅ CORS protection
+- ✅ Rate limiting
+- ✅ Input validation with Zod
+- ✅ SQL injection prevention
+
+---
+
+## 📦 Environment Variables
+
+Each service needs a `.env` file:
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/travalee
+
+# Cache
+REDIS_URL=redis://localhost:6379
+
+# Authentication
+JWT_SECRET=your_secret_key
+JWT_EXPIRATION=7d
+
+# External Services
+CLOUDINARY_URL=cloudinary://key:secret@cloud
+RESEND_API_KEY=re_xxxxx
+
+# Mail
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+```
+
+---
+
+## 🐳 Docker Setup
+
+### Docker Compose Services
+
+```yaml
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  mongo:
+    image: mongo:7.2
+    ports:
+      - "27017:27017"
+  
+  auth:
+    build: ./Services/Auth
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - mongo
+  
+  hotel:
+    build: ./Services/Hotel
+    ports:
+      - "3001:3001"
+    depends_on:
+      - redis
+      - mongo
+```
+
+### Build and Run
 
 ```bash
-# Run tests
-npm run test
+# Build all services
+docker-compose build
 
-# Watch mode
-npm run test:watch
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f service-name
+
+# Stop all services
+docker-compose down
+```
+
+---
+
+## 📚 API Documentation
+
+### Base URLs
+```
+Auth Service:      http://localhost:3000/api
+Hotel Service:     http://localhost:3001/api
+Booking Service:   http://localhost:5002/api
+Admin Service:     http://localhost:4001/api
+Notifications:     http://localhost:6000/api
+Chat Service:      http://localhost:*/api
+Payment Service:   http://localhost:*/api
+```
+
+### Common Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data
+  },
+  "error": null
+}
+```
+
+### Authentication Header
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+---
+
+## 🚀 Running Services
+
+### Development Mode
+
+```bash
+cd Travallee-Backend/Services/Auth
+npm run dev    # Auto-restart on changes
+```
+
+### Production Mode
+
+```bash
+npm run build
+npm start
+```
+
+### Watch Mode
+
+```bash
+npm run watch
+```
+
+---
+
+## 🐛 Debugging
+
+### Enable Debug Logging
+
+```bash
+DEBUG=travallee:* npm run dev
+```
+
+### Check Service Health
+
+```bash
+# Service is running and responsive
+curl http://localhost:3000/api/health
+```
+
+### View Logs
+
+```bash
+# Real-time logs
+docker-compose logs -f auth
+
+# Last 100 lines
+docker-compose logs --tail=100
+```
+
+---
+
+## 📊 Testing
+
+```bash
+# Run unit tests
+npm test
+
+# Run integration tests
+npm run test:integration
 
 # Coverage
 npm run test:coverage
@@ -568,116 +523,55 @@ npm run test:coverage
 
 ---
 
-## Monitoring & Debugging
+## 🔄 Deployment
 
-### Health Checks
-
+### Staging
 ```bash
-# Check service is running
-curl http://localhost:3000/health
-
-# Expected response:
-# {"status": "ok", "service": "auth", "uptime": 1234}
+docker-compose -f docker-compose.staging.yml up -d
 ```
 
-### Performance Monitoring
-
+### Production
 ```bash
-# View CPU and memory usage
-docker-compose stats
+# Build optimized images
+docker build -t travallee-auth:prod Services/Auth
+docker build -t travallee-hotel:prod Services/Hotel
 
-# Or locally
-npm install -g clinic
-clinic doctor -- npm run dev
-```
+# Push to registry (optional)
+docker push travallee-auth:prod
 
-### Request Logging
-
-Enable request logging in development:
-```javascript
-import morgan from 'morgan';
-app.use(morgan('dev')); // Logs all HTTP requests
+# Deploy via orchestration (K8s, Docker Swarm, etc.)
 ```
 
 ---
 
-## Deployment
+## 📚 Related Documentation
 
-### Build Docker Images
-
-```bash
-# Build single service
-cd Travallee-Backend/Services/Auth
-docker build -t travallee-auth:latest .
-
-# Build all services
-docker-compose build
-
-# Push to registry
-docker push your-registry/travallee-auth:latest
-```
-
-### Deploy to Production
-
-```bash
-# Using Docker
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Using Kubernetes
-kubectl apply -f k8s/
-
-# Using AWS ECS, Google Cloud Run, etc.
-# Follow provider-specific instructions
-```
+- [Root README](../README.md) - Project overview
+- [Setup Guide](../docs/SETUP.md) - Full setup
+- [Architecture Guide](../docs/ARCHITECTURE.md) - System design
+- Individual Service READMEs in each service directory
 
 ---
 
-## Service Communication
+## 🤝 Contributing
 
-### Inter-Service Calls
-
-**From Admin Service to Auth Service:**
-```javascript
-const response = await fetch(
-  `${process.env.AUTH_SERVICE_URL}/api/v1/auth/verify`,
-  {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ token })
-  }
-);
-```
-
-### Message Queue Setup (Optional)
-
-For async operations (emails, notifications):
-```bash
-# Start RabbitMQ
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
-
-# Access management UI
-# http://localhost:15672
-# Default: guest / guest
-```
+1. Create feature branch: `git checkout -b feature/name`
+2. Follow TypeScript and code standards
+3. Add tests for new features
+4. Commit: `git commit -am 'Add feature'`
+5. Push: `git push origin feature/name`
+6. Create Pull Request
 
 ---
 
-## Resources
+## 📞 Support
 
-- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
-- [REST API Design Guide](https://restfulapi.net/)
-- [MongoDB Docs](https://docs.mongodb.com/)
-- [Express.js Guide](https://expressjs.com/)
-- [Docker Documentation](https://docs.docker.com/)
+- Check service-specific README files
+- Review API documentation in `/docs`
+- Check Docker logs for errors
+- Verify environment variables
+- Ensure databases are running
 
 ---
 
-## Next Steps
-
-1. [Setup Environment Variables](../ENV.md)
-2. [Frontend Setup](../Admin-Frontend/SETUP.md)
-3. [Architecture Overview](../docs/ARCHITECTURE.md)
-4. [Contributing Guidelines](../CONTRIBUTING.md)
+**Backend Infrastructure of Travallee Hotel Management System**

@@ -17,14 +17,17 @@ io.on("connection", (socket) => {
 
   // Example of listening to a custom event from frontend
   socket.on("chat_message", (msg) => {
-    console.log(`Message from ${socket.id}:`, msg);
-    socket.broadcast.emit("global_message", msg); 
+    console.log("Received message:", msg);
+    // Broadcast the message to all connected clients
+    io.emit("chat_message", msg);
   });
 
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
   });
 });
+
+
 
 
 export default httpServer;
