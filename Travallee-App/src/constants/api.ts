@@ -40,7 +40,7 @@ const API_ENDPOINTS_HOTEL: ApiEndpoints = {
 
 
 // for booking service
-const API_BOOKING = `${API_URL}:3002/api/booking`;
+const API_BOOKING = `${API_URL}:5002/api/v1/booking`;
 
 const API_ENDPOINTS_BOOKING: ApiEndpoints = {
   GET_BOOKINGS: `${API_BOOKING}`,

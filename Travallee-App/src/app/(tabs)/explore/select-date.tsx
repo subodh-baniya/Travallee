@@ -4,14 +4,35 @@ import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { isAxiosError } from 'axios';
 import {
   RealixColors,
   realixDiscoverProperty,
   realixPaymentMethods,
 } from '@/src/constants/screens/realix';
-import { createBooking } from '@/src/services/booking.service';
+import { API_ENDPOINTS_BOOKING } from '@/src/constants/api';
+import apiClient from '@/src/services/apiClient';
 
 type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
+
+interface BookingRequestPayload {
+  roomId: string;
+  hotelId: string;
+  checkIn: string;
+  checkOut: string;
+  guestCount: number;
+  paymentMethod: 'KHALTI' | 'ESEWA' | 'COD';
+}
+
+interface BookingRecord {
+  _id: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
 
 const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as const;
 const daysInMonth = 31;
@@ -127,20 +148,22 @@ export default function SelectDateScreen() {
     }
 
     setIsCreatingBooking(true);
-
     try {
-      const bookingPayload = {
+      const bookingPayload: BookingRequestPayload = {
         roomId,
         hotelId,
         checkIn: formatBookingDate(checkIn),
         checkOut: formatBookingDate(checkOut),
         guestCount,
-        paymentMethod: selectedPaymentMethod.toUpperCase(),
+        paymentMethod: selectedPaymentMethod.toUpperCase() as BookingRequestPayload['paymentMethod'],
       };
 
-      const response = await createBooking(bookingPayload);
+      const { data } = await apiClient.post<ApiResponse<BookingRecord>>(
+        API_ENDPOINTS_BOOKING.CREATE_BOOKING,
+        bookingPayload,
+      );
 
-      if (response.success) {
+      if (data.success && data.data?._id) {
         Alert.alert('Success', 'Booking created successfully!', [
           {
             text: 'OK',
@@ -148,7 +171,7 @@ export default function SelectDateScreen() {
               router.push({
                 pathname: '/(tabs)/explore/payment',
                 params: {
-                  bookingId: response.data._id,
+                  bookingId: data.data._id,
                   checkIn: String(checkIn),
                   checkOut: String(checkOut),
                   guests: String(guestCount),
@@ -159,13 +182,15 @@ export default function SelectDateScreen() {
             },
           },
         ]);
-      } else {
-        const errorMsg = response.message || 'Failed to create booking';
-        Alert.alert('Booking Error', errorMsg);
+        return;
       }
-    } catch (error: any) {
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create booking. Please try again.';
-      Alert.alert('Error', errorMessage);
+
+      Alert.alert('Booking Error', data.message || 'Failed to create booking');
+    } catch (error) {
+      const errorMsg = isAxiosError(error)
+        ? error.response?.data?.message || error.message || 'Failed to create booking'
+        : 'Failed to create booking';
+      Alert.alert('Booking Error', errorMsg);
     } finally {
       setIsCreatingBooking(false);
     }

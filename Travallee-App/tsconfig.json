@@ -3,6 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "rootDir": "./src",
     "paths": {
       "@/*": [
         "./*"
@@ -14,5 +16,11 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ]
+  ,
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist"
   ]
 }
