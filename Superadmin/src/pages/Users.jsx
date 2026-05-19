@@ -1,4 +1,3 @@
-// src/pages/Users.jsx
 import { theme } from "../theme";
 
 const users = [

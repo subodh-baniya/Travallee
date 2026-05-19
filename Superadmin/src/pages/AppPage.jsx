@@ -1,4 +1,4 @@
-// src/pages/AppPage.jsx
+
 import Toggle from "../components/Toggle";
 
 export default function AppPage() {

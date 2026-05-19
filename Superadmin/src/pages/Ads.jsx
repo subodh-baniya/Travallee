@@ -1,4 +1,4 @@
-// src/pages/Ads.jsx
+
 import { theme } from "../theme";
 
 const campaigns = [
@@ -35,7 +35,7 @@ export default function Ads() {
         ))}
       </div>
 
-      {/* Create Quick Promo */}
+      {/* Create Quick Promo  */}
       <div className="full-panel">
         <div className="panel-hd">
           <span className="panel-title">Create Quick Promo</span>
