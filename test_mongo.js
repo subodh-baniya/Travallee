@@ -1,186 +1,160 @@
-const { MongoClient } = require("mongodb");
+import { MongoClient } from "mongodb";
+
+// 🔥 HOTELS DATA
+const hotels = [
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c01",
+    ownerName: "Ram Sharma",
+    hotelDescription:
+      "A premium resort in Chitwan offering luxury rooms, jungle safari experiences, and peaceful surroundings.",
+    hotelLocation: "Bharatpur, Chitwan, Nepal",
+    hotelName: "CMT Resort",
+    hotelImages: [
+      "https://www.cmthotel.com/gallery/1.jpg",
+      "https://www.cmthotel.com/gallery/2.jpg"
+    ],
+    propertyType: "Resort",
+    verified: true,
+    VerificationDocuments: ["Citizenship", "Passport"],
+    contactNumber: "9841234567",
+    isactive: true,
+    facilities: ["Free WiFi", "Swimming Pool", "Restaurant", "Parking", "Safari Tour"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "12:00 PM",
+    pricePerNight: 140,
+    rating: 4.7,
+    numberOfReviews: 320,
+    isFeatured: true,
+    roomIDs: [],
+  },
+
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c02",
+    ownerName: "Sita Karki",
+    hotelDescription: "A heritage-style luxury hotel located in Bhaktapur.",
+    hotelLocation: "Bhaktapur, Nepal",
+    hotelName: "Heritage Palace Hotel",
+    hotelImages: [
+      "https://example.com/heritage-palace-1.jpg",
+      "https://example.com/heritage-palace-2.jpg"
+    ],
+    propertyType: "Hotel",
+    verified: true,
+    VerificationDocuments: ["Driving License", "NID"],
+    contactNumber: "9851122334",
+    isactive: true,
+    facilities: ["Free Breakfast", "Restaurant", "Free WiFi", "Parking", "Conference Hall"],
+    checkinTime: "1:00 PM",
+    checkoutTime: "11:00 AM",
+    pricePerNight: 110,
+    rating: 4.5,
+    numberOfReviews: 210,
+    isFeatured: true,
+    roomIDs: [],
+  },
+
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c03",
+    ownerName: "Bikash Thapa",
+    hotelDescription: "Safari Jungle Camp in Chitwan with jungle safari experience.",
+    hotelLocation: "Sauraha, Chitwan, Nepal",
+    hotelName: "Safari Jungle Camp",
+    hotelImages: [
+      "https://example.com/safari-jungle-room.jpg",
+       "https://example.com/safari-jungle-pool.jpg"
+    ],
+    propertyType: "Jungle Camp",
+    verified: true,
+    VerificationDocuments: ["NID", "Passport"],
+    contactNumber: "9865544332",
+    isactive: true,
+    facilities: ["Jungle Safari", "Free WiFi"],
+    checkinTime: "12:00 PM",
+    checkoutTime: "10:00 AM",
+    pricePerNight: 85,
+    rating: 4.3,
+    numberOfReviews: 145,
+    isFeatured: false,
+    roomIDs: [],
+  },
+
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c04",
+    ownerName: "Nabin Adhikari",
+    hotelDescription:
+      "A peaceful mountain resort famous for sunrise and Himalayan views.",
+    hotelLocation: "Nagarkot, Nepal",
+    hotelName: "Mountain View Resort",
+    hotelImages: [
+      "https://example.com/mountain-view-resort-1.jpg",
+      "https://example.com/mountain-view-resort-2.jpg"
+    ],
+    propertyType: "Resort",
+    verified: true,
+    VerificationDocuments: ["Citizenship", "Driving License"],
+    contactNumber: "9819988776",
+    isactive: true,
+    facilities: ["Mountain View", "Bonfire", "Restaurant", "Free WiFi", "Parking"],
+    checkinTime: "3:00 PM",
+    checkoutTime: "12:00 PM",
+    pricePerNight: 170,
+    rating: 4.8,
+    numberOfReviews: 410,
+    isFeatured: true,
+    roomIDs: [],
+  },
+
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c05",
+    ownerName: "Anita Gurung",
+    hotelDescription:
+      "A relaxing lakeside retreat with modern rooms and scenic views of Phewa Lake.",
+    hotelLocation: "Pokhara, Nepal",
+    hotelName: "Lakeside Retreat",
+    hotelImages: [
+      "https://example.com/lakeside-retreat-1.jpg",
+      "https://example.com/lakeside-retreat-2.jpg"
+    ],
+    propertyType: "Boutique Hotel",
+    verified: true,
+    VerificationDocuments: ["NID", "Passport"],
+    contactNumber: "9807766554",
+    isactive: true,
+    facilities: ["Lake View", "Restaurant", "Free WiFi", "Boat Service", "Parking"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "11:00 AM",
+    pricePerNight: 125,
+    rating: 4.6,
+    numberOfReviews: 275,
+    isFeatured: true,
+    roomIDs: [],
+  },
+];
 
 const url =
   "mongodb+srv://kcprabin2063_db_user:rambabu123@data.pstsfqw.mongodb.net/test?retryWrites=true&w=majority";
 
-async function insertHotels() {
+async function run() {
   const client = new MongoClient(url);
 
   try {
-    // Connect to MongoDB
     await client.connect();
-    console.log("Successfully connected to MongoDB!");
+    console.log("Connected to MongoDB");
 
-    // Database and collection
     const db = client.db("test");
     const collection = db.collection("hotels");
 
-    // Hotel Data
-    const hotelsData = [
-      {
-        name: "The Grand Everest",
-        location: "Kathmandu",
-        rating: 4.8,
-        pricePerNight: 120,
-        rooms: [
-          {
-            roomType: "Standard Room",
-            price: 120,
-            available: true,
-            beds: 1,
-            capacity: 2,
-          },
-          {
-            roomType: "Deluxe Room",
-            price: 180,
-            available: true,
-            beds: 2,
-            capacity: 3,
-          },
-          {
-            roomType: "Suite",
-            price: 250,
-            available: false,
-            beds: 2,
-            capacity: 4,
-          },
-        ],
-      },
+    await collection.deleteMany({});
+    console.log("Old data deleted");
 
-      {
-        name: "Lakeside Retreat",
-        location: "Pokhara",
-        rating: 4.5,
-        pricePerNight: 85,
-        rooms: [
-          {
-            roomType: "Standard Room",
-            price: 85,
-            available: true,
-            beds: 1,
-            capacity: 2,
-          },
-          {
-            roomType: "Family Room",
-            price: 140,
-            available: true,
-            beds: 3,
-            capacity: 5,
-          },
-        ],
-      },
-
-      {
-        name: "Mountain View Resort",
-        location: "Nagarkot",
-        rating: 4.6,
-        pricePerNight: 100,
-        rooms: [
-          {
-            roomType: "Mountain Deluxe",
-            price: 150,
-            available: true,
-            beds: 2,
-            capacity: 3,
-          },
-          {
-            roomType: "Premium Suite",
-            price: 230,
-            available: true,
-            beds: 2,
-            capacity: 4,
-          },
-        ],
-      },
-
-      {
-        name: "Safari Jungle Camp",
-        location: "Chitwan",
-        rating: 4.4,
-        pricePerNight: 130,
-        rooms: [
-          {
-            roomType: "Safari Room",
-            price: 130,
-            available: true,
-            beds: 1,
-            capacity: 2,
-          },
-          {
-            roomType: "Luxury Cottage",
-            price: 210,
-            available: false,
-            beds: 2,
-            capacity: 4,
-          },
-        ],
-      },
-
-      {
-        name: "Heritage Palace Hotel",
-        location: "Bhaktapur",
-        rating: 4.7,
-        pricePerNight: 115,
-        rooms: [
-          {
-            roomType: "Heritage Room",
-            price: 115,
-            available: true,
-            beds: 1,
-            capacity: 2,
-          },
-          {
-            roomType: "Royal Suite",
-            price: 280,
-            available: true,
-            beds: 3,
-            capacity: 5,
-          },
-        ],
-      },
-      {
-        name: "Chitwan MidTown Resort",
-        location: "Bharatpur",
-        rating: 4.7,
-        pricePerNight: 115,
-        rooms: [
-          {
-            roomType: "Heritage Room",
-            price: 115,
-            available: true,
-            beds: 1,
-            capacity: 2,
-          },
-          {
-            roomType: "Royal Suite",
-            price: 280,
-            available: true,
-            beds: 3,
-            capacity: 5,
-          },
-        ],
-      },
-    ];
-
-    // Prevent duplicate insertion
-    for (const hotel of hotelsData) {
-      const exists = await collection.findOne({ name: hotel.name });
-
-      if (!exists) {
-        await collection.insertOne(hotel);
-        console.log(`${hotel.name} inserted`);
-      } else {
-        console.log(`${hotel.name} already exists`);
-      }
-    }
-
-    console.log("Hotel insertion process completed!");
-  } catch (error) {
-    console.error("Operation failed:", error);
+    await collection.insertMany(hotels);
+    console.log("New data inserted successfully");
+  } catch (err) {
+    console.log("Error:", err);
   } finally {
     await client.close();
-    console.log("Connection closed.");
+    console.log("Connection closed");
   }
 }
 
-insertHotels();
+run();
