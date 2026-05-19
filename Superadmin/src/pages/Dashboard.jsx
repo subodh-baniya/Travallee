@@ -37,7 +37,7 @@ export default function Dashboard({ setPage }) {
       </div>
 
       <div className="two-col">
-        //activity feed
+       
         <div className="panel">
           <div className="panel-hd">
             <span className="panel-title">Recent Activity</span>
@@ -53,7 +53,7 @@ export default function Dashboard({ setPage }) {
           ))}
         </div>
 
-        //quick actions
+        
         <div className="panel">
           <div className="panel-hd">
             <span className="panel-title">Quick Actions</span>
@@ -72,4 +72,4 @@ export default function Dashboard({ setPage }) {
       </div>
     </>
   );
-}S
+}

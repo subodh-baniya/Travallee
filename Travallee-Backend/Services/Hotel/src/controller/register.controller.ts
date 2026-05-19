@@ -648,25 +648,25 @@ const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
 
     const totalRooms = rooms.length;
 
-    const occupiedRooms = rooms.filter((r) => r.status === "OCCUPIED").length;
+    const occupiedRooms = rooms.filter((r: any) => r.status === "OCCUPIED").length;
 
-    const availableRooms = rooms.filter((r) => r.status === "AVAILABLE").length;
+    const availableRooms = rooms.filter((r: any) => r.status === "AVAILABLE").length;
 
     const bookings = await bookingModel.find({ hotel: hotelId });
 
     const totalRevenue = bookings.reduce(
-      (sum, b) => sum + (b.totalPrice || 0),
+      (sum: number, b: any) => sum + (b.totalPrice || 0),
       0
     );
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todayCheckins = bookings.filter((b) =>
+    const todayCheckins = bookings.filter((b: any) =>
       new Date(b.checkIn) >= today
     );
 
-    const roomData = rooms.map((r) => ({
+    const roomData = rooms.map((r: any) => ({
       roomNumber: r.roomNumber,
       floorNumber: r.floorNumber || 0,
       roomType: r.roomType,
@@ -674,7 +674,7 @@ const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
       pricePerNight: r.pricePerNight,
     }));
 
-    const checkins = todayCheckins.map((b) => ({
+    const checkins = todayCheckins.map((b: any) => ({
       guestName: b.userName || "Guest",
       roomNumber: b.roomNumber || "—",
       checkInTime: new Date(b.checkIn).toISOString(),

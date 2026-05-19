@@ -1,5 +1,5 @@
 
-import Toggle from "../components/Toggle";
+import Toggle from "../components/Toggle.jsx";
 
 export default function Website() {
   const pageToggles = [
