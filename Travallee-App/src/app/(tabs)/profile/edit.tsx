@@ -75,7 +75,6 @@ export default function EditProfileScreen() {
           }
         }
       } catch (err: any) {
-        console.error('Failed to load profile details', err.message);
         setError('Failed to load profile data');
       } finally {
         setLoading(false);
@@ -105,7 +104,6 @@ export default function EditProfileScreen() {
         await uploadPhoto(result.assets[0].uri);
       }
     } catch (err: any) {
-      console.error('Error taking photo:', err);
       Alert.alert('Error', 'Failed to take photo');
     }
   }, []);
@@ -131,7 +129,6 @@ export default function EditProfileScreen() {
         await uploadPhoto(result.assets[0].uri);
       }
     } catch (err: any) {
-      console.error('Error picking image:', err);
       Alert.alert('Error', 'Failed to pick image');
     }
   }, []);
@@ -166,7 +163,6 @@ export default function EditProfileScreen() {
         Alert.alert('Error', response.data.message || 'Failed to update photo');
       }
     } catch (err: any) {
-      console.error('Error uploading photo:', err);
       const errorMessage = err.response?.data?.message || 'Failed to upload photo';
       Alert.alert('Error', errorMessage);
     } finally {
@@ -213,7 +209,6 @@ export default function EditProfileScreen() {
         Alert.alert('Error', response.data.message || 'Failed to update profile');
       }
     } catch (err: any) {
-      console.error('Error updating profile:', err);
       const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
       Alert.alert('Error', errorMessage);
       setError(errorMessage);

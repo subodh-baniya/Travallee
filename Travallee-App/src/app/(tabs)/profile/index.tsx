@@ -38,7 +38,6 @@ export default function ProfileScreen() {
         const saved = await SecureStore.getItemAsync('locationEnabled');
         setLocationEnabled(saved === 'true');
       } catch (err) {
-        console.error('Failed to load location preference:', err);
       } finally {
         setLocationLoading(false);
       }

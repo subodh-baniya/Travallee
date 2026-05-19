@@ -133,12 +133,9 @@ export default function SignIn() {
   };
 
   const handleGoogleSignIn = () => {
-    console.log('Google Sign In');
-    console.log(API_SIGNIN)
   };
 
   const handleFacebookSignIn = () => {
-    console.log('Facebook Sign In');
   };
 
   return (

@@ -306,7 +306,6 @@ export default function HomeScreen() {
         const saved = await SecureStore.getItemAsync('locationEnabled');
         setLocationEnabled(saved === 'true');
       } catch (err) {
-        console.error('Failed to load location preference:', err);
       } finally {
         setLocationPreferenceLoading(false);
       }
@@ -324,7 +323,6 @@ export default function HomeScreen() {
           setProfileImage(res.data.data.profileimage || null);
         }
       } catch (err) {
-        console.error("Error fetching profile:", err);
       } finally {
         setProfileLoading(false);
       }

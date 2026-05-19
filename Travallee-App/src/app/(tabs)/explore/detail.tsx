@@ -116,21 +116,16 @@ export default function HotelDetailScreen() {
   const fetchRoomData = async (hotelId: string) => {
     try {
       setRoomsLoading(true);
-      // Use the full endpoint URL constructed from constants
-      const roomsEndpoint = `${API_ENDPOINTS_HOTEL.GET_ROOMS}`.replace(':hotelId', hotelId);
+      // Use the display-rooms endpoint
+      const roomsEndpoint = `${API_ENDPOINTS_HOTEL.DISPLAY_ROOMS}`.replace(':hotelId', hotelId);
       console.log('Fetching rooms from:', roomsEndpoint);
       
       const response = await apiClient.get(roomsEndpoint);
-      const roomData = response.data?.data?.rooms || response.data?.rooms || [];
+      // Response.data is directly the array of rooms
+      const roomData = Array.isArray(response.data) ? response.data : response.data?.data || [];
       console.log('Rooms fetched successfully:', roomData.length, 'rooms');
       setRooms(roomData);
     } catch (err: any) {
-      console.error('Error fetching rooms:', {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-        config: err.config?.url,
-      });
       setRooms([]);
     } finally {
       setRoomsLoading(false);

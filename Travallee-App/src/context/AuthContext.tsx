@@ -95,7 +95,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSocketId(undefined);
       }
     } catch (error: any) {
-      console.error('Logout error:', error);
     } finally {
       setIsLoading(false);
     }

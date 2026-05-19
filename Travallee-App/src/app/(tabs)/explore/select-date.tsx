@@ -123,7 +123,6 @@ export default function SelectDateScreen() {
         Alert.alert('Error', response.message || 'Failed to create booking');
       }
     } catch (error: any) {
-      console.error('Booking error:', error);
       Alert.alert('Error', error.message || 'Failed to create booking. Please try again.');
     } finally {
       setIsCreatingBooking(false);
