@@ -3,6 +3,7 @@ import { registerHotel } from "../Services/hotel.api";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
+import axios, { AxiosError } from "axios";
 import {
   FaHotel,
   FaUser,
@@ -122,9 +123,10 @@ const handleSubmit = async () => {
     await refreshUser();
     navigate("/dashboard");
   } catch (error) {
-console.error("Failed:", error);
-  console.error("Validation issues:", error?.response?.data); // shows exact Zod errors from backend
-  alert("Registration failed. Please check all fields and try again.");
+    const axiosError = error as AxiosError;
+    console.error("Failed:", error);
+    console.error("Validation issues:", axiosError?.response?.data); // shows exact Zod errors from backend
+    alert("Registration failed. Please check all fields and try again");
   } finally {
     setIsSubmitting(false);
   }
