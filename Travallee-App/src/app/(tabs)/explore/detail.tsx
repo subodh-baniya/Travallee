@@ -67,7 +67,9 @@ export default function HotelDetailScreen() {
   const canGoBack = navigation?.canGoBack?.() ?? false;
   const { hotelId } = useLocalSearchParams();
   const [hotel, setHotel] = useState<HotelDetail | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roomsLoading, setRoomsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -93,12 +95,12 @@ export default function HotelDetailScreen() {
           return;
         }
         const url = API_ENDPOINTS_HOTEL.GET_HOTEL_BY_ID.replace(':id', hotelId as string);
-        // Token is automatically added by apiClient interceptor (if token exists)
         const response = await apiClient.get(url);
-        // Handle both { success, data } and direct object response shapes
         const data = response.data?.success ? response.data.data : response.data;
         if (data?._id) {
           setHotel(data);
+          // Fetch room data for this hotel
+          fetchRoomData(hotelId as string);
         } else {
           setError('Failed to load hotel data');
         }
@@ -110,6 +112,30 @@ export default function HotelDetailScreen() {
     };
     fetchHotelData();
   }, [hotelId]);
+
+  const fetchRoomData = async (hotelId: string) => {
+    try {
+      setRoomsLoading(true);
+      // Use the full endpoint URL constructed from constants
+      const roomsEndpoint = `${API_ENDPOINTS_HOTEL.GET_ROOMS}`.replace(':hotelId', hotelId);
+      console.log('Fetching rooms from:', roomsEndpoint);
+      
+      const response = await apiClient.get(roomsEndpoint);
+      const roomData = response.data?.data?.rooms || response.data?.rooms || [];
+      console.log('Rooms fetched successfully:', roomData.length, 'rooms');
+      setRooms(roomData);
+    } catch (err: any) {
+      console.error('Error fetching rooms:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        config: err.config?.url,
+      });
+      setRooms([]);
+    } finally {
+      setRoomsLoading(false);
+    }
+  };
 
   // ─── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -346,17 +372,17 @@ export default function HotelDetailScreen() {
           </View>
 
           {/* Rooms */}
-          {hotel.rooms?.length > 0 && (
+          {rooms.length > 0 && !roomsLoading && (
             <>
               <View style={styles.revHead}>
                 <Text style={styles.secTitle}>Available Rooms</Text>
-                <Text style={styles.revAll}>{hotel.rooms.length} rooms</Text>
+                <Text style={styles.revAll}>{rooms.length} rooms</Text>
               </View>
-              <View style={styles.roomsRow}>
-                {hotel.rooms.slice(0, 3).map((room, idx) => (
+              <View style={styles.roomsContainer}>
+                {rooms.map((room, idx) => (
                   <Pressable
-                    key={idx}
-                    style={styles.roomCard}
+                    key={room._id || idx}
+                    style={styles.roomDetailCard}
                     onPress={() =>
                       router.push({
                         pathname: '/(tabs)/explore/select-date',
@@ -364,32 +390,90 @@ export default function HotelDetailScreen() {
                           roomId: room._id,
                           hotelId: hotel._id,
                           hotelName: hotel.hotelName,
-                          roomType: room.roomType || `Room ${idx + 1}`,
-                          pricePerNight: room.pricePerNight || hotel.pricePerNight,
-                          maxGuests: room.maxGuests || 2,
+                          roomType: room.roomType,
+                          pricePerNight: room.pricePerNight,
+                          maxGuests: room.maxOccupancy || room.capacity,
                         },
                       })
                     }
                   >
-                    <View style={styles.roomCardInner}>
-                      <View style={styles.roomCardHeader}>
-                        <Ionicons name="bed-outline" size={18} color={RealixColors.accent} />
-                        <Text style={styles.roomCardText}>
-                          {room.roomType || `Room ${idx + 1}`}
-                        </Text>
-                      </View>
-                      <View style={styles.roomCardDetails}>
-                        <View style={styles.roomDetailItem}>
-                          <Ionicons name="people-outline" size={14} color={RealixColors.textMuted} />
-                          <Text style={styles.roomDetailText}>
-                            {room.maxGuests || 2} guests
-                          </Text>
+                    {/* Room Image */}
+                    {room.roomImages?.length > 0 && (
+                      <Image
+                        source={{ uri: room.roomImages[0] }}
+                        style={styles.roomDetailImage}
+                        resizeMode="cover"
+                      />
+                    )}
+
+                    {/* Room Info */}
+                    <View style={styles.roomDetailInfo}>
+                      <View style={styles.roomDetailHeader}>
+                        <View style={styles.roomDetailTitleContainer}>
+                          <Text style={styles.roomDetailTitle}>{room.roomType}</Text>
+                          <Text style={styles.roomDetailNumber}>Room {room.roomNumber}</Text>
                         </View>
-                        <View style={styles.roomDetailItem}>
-                          <Ionicons name="pricetag-outline" size={14} color={RealixColors.accent} />
-                          <Text style={styles.roomDetailPrice}>
-                            ${room.pricePerNight || hotel.pricePerNight}/night
+                        {room.isFeatured && (
+                          <View style={styles.featuredBadge}>
+                            <Ionicons name="star" size={12} color="#b55a00" />
+                            <Text style={styles.featuredBadgeText}>Featured</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Description */}
+                      <Text style={styles.roomDetailDesc} numberOfLines={2}>
+                        {room.roomDescription}
+                      </Text>
+
+                      {/* Room Stats */}
+                      <View style={styles.roomStatsRow}>
+                        <View style={styles.roomStat}>
+                          <Ionicons name="people-outline" size={14} color={RealixColors.accent} />
+                          <Text style={styles.roomStatText}>{room.maxOccupancy || room.capacity} guests</Text>
+                        </View>
+                        <View style={styles.roomStat}>
+                          <Ionicons name="bed-outline" size={14} color={RealixColors.accent} />
+                          <Text style={styles.roomStatText}>{room.bedType}</Text>
+                        </View>
+                        <View style={styles.roomStat}>
+                          <Ionicons name="pin-outline" size={14} color={RealixColors.accent} />
+                          <Text style={styles.roomStatText}>Floor {room.floorNumber}</Text>
+                        </View>
+                      </View>
+
+                      {/* Amenities */}
+                      {room.amenities?.length > 0 && (
+                        <View style={styles.roomAmenitiesRow}>
+                          {room.amenities.slice(0, 4).map((amenity: string, aidx: number) => (
+                            <Text key={aidx} style={styles.roomAmenityTag}>
+                              {amenity}
+                            </Text>
+                          ))}
+                          {room.amenities.length > 4 && (
+                            <Text style={styles.roomAmenityTag}>+{room.amenities.length - 4}</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Price & Status */}
+                      <View style={styles.roomDetailFooter}>
+                        <View>
+                          <Text style={styles.roomDetailStatusLabel}>
+                            {room.status === 'AVAILABLE' ? '✓ Available' : room.status}
                           </Text>
+                          <Text style={styles.roomDetailPrice}>${room.pricePerNight}/night</Text>
+                        </View>
+                        <View style={styles.roomDetailRating}>
+                          {room.rating > 0 ? (
+                            <>
+                              <Ionicons name="star" size={14} color="#FFB800" />
+                              <Text style={styles.roomDetailRatingText}>{room.rating.toFixed(1)}</Text>
+                              <Text style={styles.roomDetailReviewCount}>({room.numberOfReviews})</Text>
+                            </>
+                          ) : (
+                            <Text style={styles.roomDetailNoRating}>No ratings</Text>
+                          )}
                         </View>
                       </View>
                     </View>
@@ -397,6 +481,13 @@ export default function HotelDetailScreen() {
                 ))}
               </View>
             </>
+          )}
+
+          {roomsLoading && (
+            <View style={styles.roomsLoadingContainer}>
+              <ActivityIndicator size="small" color={RealixColors.accent} />
+              <Text style={styles.roomsLoadingText}>Loading rooms...</Text>
+            </View>
           )}
 
           {/* Contact */}
@@ -726,6 +817,33 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+  // ── Amenities ──
+  amenRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  amenity: {
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    minWidth: '30%',
+  },
+  amenIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#EAF5D6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amenLabel: {
+    fontSize: 11,
+    color: RealixColors.textSecondary,
+    textAlign: 'center',
+  },
+
   // ── Rooms ──
   roomsRow: {
     flexDirection: 'row',
@@ -765,12 +883,136 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: RealixColors.textMuted,
   },
-  roomDetailPrice: {
+  roomsContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  roomDetailCard: {
+    backgroundColor: RealixColors.cardBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  roomDetailImage: {
+    width: '100%',
+    height: 180,
+    backgroundColor: RealixColors.rowBackground,
+  },
+  roomDetailInfo: {
+    padding: 12,
+    gap: 10,
+  },
+  roomDetailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  roomDetailTitleContainer: {
+    flex: 1,
+  },
+  roomDetailTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: RealixColors.textPrimary,
+  },
+  roomDetailNumber: {
+    fontSize: 12,
+    color: RealixColors.textMuted,
+    marginTop: 2,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: '#FFF3E0',
+  },
+  featuredBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#b55a00',
+  },
+  roomDetailDesc: {
+    fontSize: 12,
+    color: RealixColors.textSecondary,
+    lineHeight: 16,
+  },
+  roomStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roomStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  roomStatText: {
     fontSize: 11,
-    color: RealixColors.accent,
+    color: RealixColors.textMuted,
+  },
+  roomAmenitiesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  roomAmenityTag: {
+    fontSize: 10,
+    backgroundColor: '#EAF5D6',
+    color: '#3B6D11',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  roomDetailFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: RealixColors.border,
+  },
+  roomDetailStatusLabel: {
+    fontSize: 10,
+    color: '#3B6D11',
     fontWeight: '600',
   },
-    lineHeight: 13,
+  roomDetailPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: RealixColors.accent,
+    marginTop: 2,
+  },
+  roomDetailRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  roomDetailRatingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: RealixColors.textPrimary,
+  },
+  roomDetailReviewCount: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+  },
+  roomDetailNoRating: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+  },
+  roomsLoadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  roomsLoadingText: {
+    fontSize: 12,
+    color: RealixColors.textMuted,
   },
   allLink: {
     fontSize: 12,
@@ -872,34 +1114,6 @@ const styles = StyleSheet.create({
   mapLabel: {
     fontSize: 11,
     color: RealixColors.textMuted,
-  },
-
-  // ── Rooms ──
-  roomsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  roomCard: {
-    flex: 1,
-    height: 80,
-    borderRadius: 10,
-    backgroundColor: RealixColors.rowBackground,
-    overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: RealixColors.border,
-  },
-  roomCardInner: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  roomCardText: {
-    fontSize: 11,
-    color: RealixColors.textSecondary,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 
   // ── Contact ──

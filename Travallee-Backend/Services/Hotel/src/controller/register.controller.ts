@@ -700,6 +700,19 @@ const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Dashboard error", error.message);
   }
 });
+
+const displayRooms = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params; 
+  try {    const rooms = await roomModel.find({ hotelId });
+    if (rooms.length === 0) {
+      return apiError(res, 404, "No rooms found for this hotel");
+    }   return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
+  } catch (error: any) {
+    return apiError(res, 500, "Internal server error: Unable to retrieve rooms. Please try again later.", error.message);
+  }
+});
+
+
 export {
   registerHotel,
   createroom,
@@ -713,5 +726,7 @@ export {
   highReviewedHotels,
   getAllHotels,
   getAllResortHotels,
-  getHotelDashboard
+  getHotelDashboard,
+  displayRooms,
 };
+

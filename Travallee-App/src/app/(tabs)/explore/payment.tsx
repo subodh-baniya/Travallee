@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -13,12 +13,13 @@ import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
 
 export default function PaymentScreen() {
   const { goBack } = useSafeNavigation();
+  const router = useRouter();
   const { checkIn, checkOut, guests } = useLocalSearchParams<{
     checkIn?: string;
     checkOut?: string;
     guests?: string;
   }>();
-  const [selectedMethod, setSelectedMethod] = useState(realixPaymentMethods[0].id);
+  const [selectedMethod, setSelectedMethod] = useState<string>(realixPaymentMethods[0].id);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -92,8 +93,14 @@ export default function PaymentScreen() {
         </Pressable>
       </View>
     </SafeAreaView>
+  );
+}
 
-          <Text style={styles.termsText}>
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -196,7 +203,14 @@ export default function PaymentScreen() {
     borderRadius: 5,
     backgroundColor: RealixColors.accent,
   },
-  methodLabel: { flex: 1, fontSize: 12, color: RealixColors.textPrimary },
+  methodLabel: { flex: 1, fontSize: 12, color: RealixColors.textSecondary },
+  addPaymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+  },
+  addPaymentText: { fontSize: 12, color: RealixColors.textSecondary },
   termsText: { fontSize: 10, lineHeight: 16, color: RealixColors.textMuted },
   bottomBar: {
     borderTopWidth: 1,
