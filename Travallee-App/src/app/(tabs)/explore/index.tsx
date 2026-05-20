@@ -136,6 +136,9 @@ const UPCOMING_FESTIVALS = [
   { id: '3', name: 'Holi', date: 'Mar 2027', desc: 'Festival of colors' },
 ];
 
+const getHotelImageUri = (prop: any) =>
+  prop.hotelImages?.[0] || prop.image || 'https://via.placeholder.com/300';
+
 type TabType = 'explore' | 'trekking' | 'favorites' | 'bookings';
 
 const TABS: Array<{ id: TabType; label: string; icon: string }> = [
@@ -318,23 +321,23 @@ export default function ExploreScreen() {
               >
                 {filteredData.length > 0 ? (
                   filteredData.map((prop: any) => (
-                    <Pressable
-                      key={prop._id || prop.id}
-                      style={styles.featuredCard}
-                      onPress={() =>
-                        router.replace({
-                          pathname: '/(tabs)/explore/detail',
-                          params: { hotelId: prop._id || prop.id },
-                        })
-                      }
-                    >
-                      <Image
-                        source={{ uri: prop.image || prop.hotelImages?.[0] || 'https://via.placeholder.com/300' }}
-                        style={styles.featuredImg}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.featuredTag}>
-                        <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
+                      <Pressable
+                        key={prop._id || prop.id}
+                        style={styles.featuredCard}
+                        onPress={() =>
+                          router.replace({
+                            pathname: '/(tabs)/explore/detail',
+                            params: { hotelId: prop._id || prop.id },
+                          })
+                        }
+                      >
+                        <Image
+                          source={{ uri: getHotelImageUri(prop) }}
+                          style={styles.featuredImg}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.featuredTag}>
+                          <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
                           {prop.tag || (prop.isFeatured ? 'Featured' : prop.propertyType || 'Hotel')}
                         </Text>
                       </View>

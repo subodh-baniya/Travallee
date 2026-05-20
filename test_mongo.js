@@ -10,8 +10,8 @@ const hotels = [
     hotelLocation: "Bharatpur, Chitwan, Nepal",
     hotelName: "CMT Resort",
     hotelImages: [
-      "https://www.cmthotel.com/gallery/1.jpg",
-      "https://www.cmthotel.com/gallery/2.jpg"
+      "https://www.cmthotel.com/images/gallery/galleryimages/fLw6W-davnj-room8-min.jpg",
+      "https://www.cmthotel.com/images/gallery/galleryimages/GzyLG-apmgw-room7-min.jpg"
     ],
     propertyType: "Resort",
     verified: true,
@@ -35,8 +35,8 @@ const hotels = [
     hotelLocation: "Bhaktapur, Nepal",
     hotelName: "Heritage Palace Hotel",
     hotelImages: [
-      "https://example.com/heritage-palace-1.jpg",
-      "https://example.com/heritage-palace-2.jpg"
+      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+1",
+      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+2"
     ],
     propertyType: "Hotel",
     verified: true,
@@ -60,8 +60,8 @@ const hotels = [
     hotelLocation: "Sauraha, Chitwan, Nepal",
     hotelName: "Safari Jungle Camp",
     hotelImages: [
-      "https://example.com/safari-jungle-room.jpg",
-       "https://example.com/safari-jungle-pool.jpg"
+      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+1",
+      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+2"
     ],
     propertyType: "Jungle Camp",
     verified: true,
@@ -86,8 +86,8 @@ const hotels = [
     hotelLocation: "Nagarkot, Nepal",
     hotelName: "Mountain View Resort",
     hotelImages: [
-      "https://example.com/mountain-view-resort-1.jpg",
-      "https://example.com/mountain-view-resort-2.jpg"
+      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+1",
+      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+2"
     ],
     propertyType: "Resort",
     verified: true,
@@ -112,8 +112,8 @@ const hotels = [
     hotelLocation: "Pokhara, Nepal",
     hotelName: "Lakeside Retreat",
     hotelImages: [
-      "https://example.com/lakeside-retreat-1.jpg",
-      "https://example.com/lakeside-retreat-2.jpg"
+      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+1",
+      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+2"
     ],
     propertyType: "Boutique Hotel",
     verified: true,
@@ -138,7 +138,9 @@ const hotels = [
     hotelLocation: "Testville, Testland",
     hotelName: "String Variant Inn",
     // hotelImages: replaced with attached image URL placeholder (replace with actual URL or local path)
-    hotelImages: ["https://example.com/attached-hotel-image.jpg"],
+    hotelImages: [
+      "https://via.placeholder.com/1200x800.png?text=String+Variant+Inn"
+    ],
     propertyType: "Guest House",
     // boolean-like fields as strings
     verified: "true",
@@ -164,8 +166,8 @@ const hotels = [
     hotelLocation: "Bharatpur, Chitwan, Nepal",
     hotelName: "Hotel Pauwa Bharatpur",
     hotelImages: [
-      "https://example.com/pauwa-exterior.jpg",
-      "https://example.com/pauwa-lobby.jpg"
+      "https://cms.hotelpauwa.com/wp-content/uploads/2025/10/hotel_pauwa_0_4.jpg",
+      "https://cms.hotelpauwa.com/wp-content/uploads/2025/10/pauwa-hotel-124.jpg"
     ],
     propertyType: "Hotel",
     verified: true,
