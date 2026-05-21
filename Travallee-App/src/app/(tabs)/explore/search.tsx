@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, TextInput, ActivityIndic
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors, realixSearchResults } from '@/src/constants/screens/realix';
 import apiClient from '@/src/services/apiClient';
+import { API_URL } from '@/src/constants/env';
 
 export default function ExploreSearchScreen() {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function ExploreSearchScreen() {
       setLoading(true);
       setNoResults(false);
       
-      const response = await apiClient.get(`/api/v1/hotels/location/${location}`);
+      const url = `${API_URL}:3001/api/v1/hotels/location/${location}`;
+      const response = await apiClient.get(url);
       
       if (response.data.success && response.data.data) {
         setSearchResults(response.data.data);

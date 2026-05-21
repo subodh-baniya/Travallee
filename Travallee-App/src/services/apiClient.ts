@@ -2,16 +2,10 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use localhost or your backend URL
-// For Android emulator: http://10.0.2.2:YOUR_PORT
-// For iOS simulator: http://localhost:YOUR_PORT
-// For physical device: http://YOUR_MACHINE_IP:YOUR_PORT
-const API_BASE_URL = 'http://10.0.2.2:3000'; // Change this to your backend URL
-
-// Create axios instance
+// Create axios instance - NO base URL, use full URLs from constants
+// API endpoints already include full URLs with correct ports
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   withCredentials: true,
 });
 

@@ -13,7 +13,8 @@ import {
   realixDiscoverProperty,
 } from '@/src/constants/screens/realix';
 import apiClient from '@/src/services/apiClient';
-import { API_ENDPOINTS_HOTEL } from '@/src/constants/api';
+import { API_ENDPOINTS_HOTEL, API_ENDPOINTS_AUTH } from '@/src/constants/api';
+import { API_URL } from '@/src/constants/env';
 
 // ─── Nepal Data ──────────────────────────────────────────────────────────────
 
@@ -157,7 +158,8 @@ export default function ExploreScreen() {
   const handleDestinationPress = async (location: string) => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/v1/hotels/location/${location}`);
+      const url = `${API_URL}:3001/api/v1/hotels/location/${location}`;
+      const response = await apiClient.get(url);
       
       if (response.data.success && Array.isArray(response.data.data)) {
         // Navigate to results page with the location data
