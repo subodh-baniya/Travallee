@@ -140,7 +140,6 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
 })
 
 const khaltiVerify = asyncHandler(async (req: any, res: any) => {
-
     try {
         const { pidx, purchase_order_id } = req.query;
 

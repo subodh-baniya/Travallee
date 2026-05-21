@@ -17,7 +17,7 @@ import {
 import mongoose, { mongo } from "mongoose";
 
 const registerHotel = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user.id||req.user._id;
+  const userID = req.user.id || req.user._id;
 
   const files = req.files || [];
 
@@ -90,7 +90,7 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
     const hotelData: HotelInput = parsedData.data;
     const newHotel = new hotelModel(hotelData);
     await newHotel.save();
-     const authRes = await fetch("http://auth_service:3000/api/v1/users/internal/update-role", {
+    const authRes = await fetch("http://auth_service:3000/api/v1/users/internal/update-role", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userID, role: "hotelAdmin" }),
@@ -99,13 +99,13 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
     const authData = await authRes.json();
 
     if (authData?.data?.token) {
-  res.cookie("token", authData.data.token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-}
+      res.cookie("token", authData.data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+    }
 
     return apiResponse(res, 201, true, "Hotel registered successfully", {
       hotel: newHotel,
@@ -578,30 +578,30 @@ const getHotelInfo = asyncHandler(async (req: any, res: any) => {
 
 const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
 
-    const hotels = await hotelModel
-      .find({ rating: { $gte: 4.0 } })
-      .select(
-        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
-      )
-      .sort({ rating: -1, numberOfReviews: -1 });
+  const hotels = await hotelModel
+    .find({ rating: { $gte: 4.0 } })
+    .select(
+      "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
+    )
+    .sort({ rating: -1, numberOfReviews: -1 });
 
-    if (hotels.length === 0) {
-      return apiError(res, 404, "No highly reviewed hotels found");
-    }
+  if (hotels.length === 0) {
+    return apiError(res, 404, "No highly reviewed hotels found");
+  }
 
-    return apiResponse(
-      res,
-      200,
-      true,
-      "Highly reviewed hotels retrieved successfully",
-      hotels,
-    );
-  
+  return apiResponse(
+    res,
+    200,
+    true,
+    "Highly reviewed hotels retrieved successfully",
+    hotels,
+  );
+
 });
 
 const getAllHotels = asyncHandler(async (req: any, res: any) => {
   try {
-    const hotels = await hotelModel.find({ }).limit(10);
+    const hotels = await hotelModel.find({}).limit(10);
     if (hotels.length === 0) {
       console.log("No active hotels found in database");
       return apiResponse(res, 200, true, "No hotels available", []);
@@ -610,7 +610,7 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
-    return apiError(res, 500, "Failed to fetch hotels: " + error.message); 
+    return apiError(res, 500, "Failed to fetch hotels: " + error.message);
   }
 });
 
@@ -702,31 +702,54 @@ const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
 });
 
 const displayRooms = asyncHandler(async (req: any, res: any) => {
-  const { hotelId } = req.params; 
-  try {    const rooms = await roomModel.find({ hotelId });
+  const { hotelId } = req.params;
+  try {
+    const rooms = await roomModel.find({ hotelId });
     if (rooms.length === 0) {
       return apiError(res, 404, "No rooms found for this hotel");
-    }   return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
+    } return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
   } catch (error: any) {
     return apiError(res, 500, "Internal server error: Unable to retrieve rooms. Please try again later.", error.message);
   }
 });
 
+const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
+  const { location } = req.params;
+  if (!location) {
+    return apiError(res, 400, "Location parameter is required");
+  }
+  try {
+    const hotels = await hotelModel.find({
+      hotelLocation: { $regex: location, $options: "i" },
+    }).select(
+      "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured"
+    );
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No hotels found in this location");
+    }
+    return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
+  } catch (error: any) {
+    console.error("Error fetching hotels by location:", error);
+    return apiError(res, 500, "Internal server error: Unable to fetch hotels by location");
+  }
+});
 
-export {
-  registerHotel,
-  createroom,
-  deleteRoom,
-  featuredHotels,
-  HotelData,
-  RoomData,
-  searchHotels,
-  searchRooms,
-  getHotelInfo,
-  highReviewedHotels,
-  getAllHotels,
-  getAllResortHotels,
-  getHotelDashboard,
-  displayRooms,
-};
+
+  export {
+    registerHotel,
+    createroom,
+    deleteRoom,
+    featuredHotels,
+    HotelData,
+    RoomData,
+    searchHotels,
+    searchRooms,
+    getHotelInfo,
+    highReviewedHotels,
+    getAllHotels,
+    getAllResortHotels,
+    getHotelDashboard,
+    displayRooms,
+    getHotelByLocation,
+  };
 

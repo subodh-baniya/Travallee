@@ -11,7 +11,8 @@ import {
   getAllResortHotels,
   RoomData,
   getHotelDashboard,
-  displayRooms
+  displayRooms,
+  getHotelByLocation
 } from "../controller/register.controller.js";
 
 import {
@@ -55,6 +56,8 @@ router.get("/high-reviewed", authenticate, highReviewedHotels);
 router.get("/hotels", authenticate, getAllHotels);
 
 router.get("/resorts", authenticate, getAllResortHotels);
+
+router.get("/location/:location", getHotelByLocation);
 
 router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 

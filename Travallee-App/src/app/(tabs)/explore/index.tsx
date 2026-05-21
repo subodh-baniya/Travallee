@@ -136,11 +136,10 @@ const UPCOMING_FESTIVALS = [
   { id: '3', name: 'Holi', date: 'Mar 2027', desc: 'Festival of colors' },
 ];
 
-type TabType = 'explore' | 'trekking' | 'favorites' | 'bookings';
+type TabType = 'explore' | 'favorites' | 'bookings';
 
 const TABS: Array<{ id: TabType; label: string; icon: string }> = [
   { id: 'explore',   label: 'Explore',   icon: 'compass-outline' },
-  { id: 'trekking',  label: 'Trekking',  icon: 'trail-sign-outline' },
   { id: 'favorites', label: 'Saved',     icon: 'bookmark-outline' },
   { id: 'bookings',  label: 'Bookings',  icon: 'calendar-outline' },
 ];
@@ -153,6 +152,29 @@ export default function ExploreScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Handle destination card press - fetch hotels by location
+  const handleDestinationPress = async (location: string) => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get(`/api/v1/hotels/location/${location}`);
+      
+      if (response.data.success && Array.isArray(response.data.data)) {
+        // Navigate to results page with the location data
+        router.push({
+          pathname: '/(tabs)/explore/destination-results',
+          params: { 
+            location,
+            hotels: JSON.stringify(response.data.data)
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching hotels by location:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch hotels or resorts based on filter
   useEffect(() => {
@@ -247,20 +269,6 @@ export default function ExploreScreen() {
         {/* ══════════════════════════════════════════════ EXPLORE TAB */}
         {activeTab === 'explore' && (
           <>
-            {/* Search Bar */}
-            <Pressable
-              style={styles.searchBar}
-              onPress={() => router.push('/(tabs)/explore/search')}
-            >
-              <View style={styles.searchInner}>
-                <Ionicons name="search" size={16} color={RealixColors.textMuted} />
-                <Text style={styles.searchText}>Hotels, cities, landmarks…</Text>
-              </View>
-              <View style={styles.filterBtn}>
-                <Ionicons name="options-outline" size={16} color={RealixColors.accent} />
-              </View>
-            </Pressable>
-
             {/* Season Banner */}
             <View style={styles.seasonBanner}>
               <View>
@@ -380,7 +388,7 @@ export default function ExploreScreen() {
                 <Pressable
                   key={dest.id}
                   style={[styles.destCard, { backgroundColor: dest.color }]}
-                  onPress={() => router.push('/(tabs)/explore/search')}
+                  onPress={() => handleDestinationPress(dest.city)}
                 >
                   <Text style={styles.destEmoji}>{dest.emoji}</Text>
                   <Text style={styles.destCity}>{dest.city}</Text>
@@ -469,67 +477,6 @@ export default function ExploreScreen() {
               <Pressable style={styles.currencyBtn}>
                 <Text style={styles.currencyBtnText}>Convert</Text>
               </Pressable>
-            </View>
-          </>
-        )}
-
-        {/* ══════════════════════════════════════════════ TREKKING TAB */}
-        {activeTab === 'trekking' && (
-          <>
-            <View style={styles.trekkingHero}>
-              <Text style={styles.trekkingHeroTitle}>Nepal Trekking</Text>
-              <Text style={styles.trekkingHeroSub}>
-                From Everest Base Camp to the Annapurna Circuit — find lodges along every route.
-              </Text>
-            </View>
-
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Popular Routes</Text>
-            </View>
-
-            {TREKKING_PACKAGES.map((pkg) => (
-              <Pressable key={pkg.id} style={styles.trekkingCard}>
-                <View style={styles.trekkingCardLeft}>
-                  <Ionicons name="trail-sign-outline" size={20} color={RealixColors.accent} />
-                  <View style={{ gap: 2 }}>
-                    <Text style={styles.trekkingName}>{pkg.name}</Text>
-                    <Text style={styles.trekkingRegion}>{pkg.region} Region</Text>
-                    <Text style={styles.trekkingDays}>{pkg.days} days avg.</Text>
-                  </View>
-                </View>
-                <View style={styles.trekkingRight}>
-                  <Text style={styles.trekkingFrom}>From</Text>
-                  <Text style={styles.trekkingPrice}>${pkg.from}</Text>
-                  <Ionicons name="chevron-forward" size={14} color={RealixColors.textMuted} />
-                </View>
-              </Pressable>
-            ))}
-
-            <View style={styles.trekkingInfoCard}>
-              <Ionicons name="information-circle-outline" size={18} color="#1565C0" />
-              <Text style={styles.trekkingInfoText}>
-                TIMS card and ACAP/SAARC permits required for most trekking routes.
-                Our lodges include permit guidance.
-              </Text>
-            </View>
-
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Trek Essentials</Text>
-            </View>
-            <View style={styles.essGrid}>
-              {[
-                { icon: 'bed-outline',       label: 'Tea Houses',   color: '#E8F5E9', tc: '#2E7D32' },
-                { icon: 'medkit-outline',     label: 'First Aid',    color: '#FCE4EC', tc: '#880E4F' },
-                { icon: 'cloud-outline',      label: 'Weather',      color: '#E3F2FD', tc: '#1565C0' },
-                { icon: 'people-outline',     label: 'Guides',       color: '#FFF3E0', tc: '#E65100' },
-              ].map((item) => (
-                <Pressable key={item.label} style={styles.essCard}>
-                  <View style={[styles.essIcon, { backgroundColor: item.color }]}>
-                    <Ionicons name={item.icon as any} size={18} color={item.tc} />
-                  </View>
-                  <Text style={styles.essLabel}>{item.label}</Text>
-                </Pressable>
-              ))}
             </View>
           </>
         )}
@@ -696,24 +643,26 @@ const styles = StyleSheet.create({
   // ── Season Banner ──
   seasonBanner: {
     backgroundColor: '#EAF5D6',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: '#C5E49A',
+    gap: 12,
   },
   seasonTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '700',
     color: '#2E5A0E',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   seasonSub: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#3B6D11',
+    fontWeight: '500',
   },
   seasonBtn: {
     backgroundColor: RealixColors.accent,
