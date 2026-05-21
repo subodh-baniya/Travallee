@@ -119,7 +119,7 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
     });
   }
   if (type === "register") {
-    registerRedis.get(`otp:${email}`, (err: any, result: any) => {
+     await registerRedis.get(`otp:${email}`, (err: any, result: any) => {
       if (err) {
         console.error("Error retrieving OTP from Redis:", err);
         return apiError(res, 500, "Internal server error");
@@ -130,7 +130,7 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
       if (result !== otp.toString()) {
         return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
       }
-      registerRedis.del(`otp:${email}`);
+        registerRedis.del(`otp:${email}`);
     });
     registerRedis.get(`pendingUser:${email}`, async (err: any, result: any) => {
       if (err) {
@@ -145,13 +145,13 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
       await newUser.save();
 
 
-      registerEmailQueue.add("SendWelcomeEmail", {
+      await registerEmailQueue.add("SendWelcomeEmail", {
         userName: newUser.Name.toUpperCase(),
         to: newUser.email,
         userId: newUser._id.toString(),
       });
       console.log(userData);
-      registerRedis.del(`pendingUser:${email}`);
+      await registerRedis.del(`pendingUser:${email}`);
     });
   }
   ;
@@ -181,18 +181,13 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     res.setHeader("Authorization", `Bearer ${token}`);
     res.cookie("token", token, options);
     UserProfileRedis.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3); // Cache token for 3 days
-    const userResponse = {
-      id: user._id,
-      Username: user.Username,
-      role: user.role,
-      token: token,
-    };
+    console.log(`User ${user} logged in successfully`);
     return apiResponse(
       res,
       200,
       true,
       "User logged in successfully",
-      userResponse,
+      user,
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {

@@ -5,6 +5,9 @@ import Services from "../Pages/Services"
 import ContactUs from "../Pages/ContactUs"
 import Herosection from "../Components/Herosection"
 import Register from "../Pages/Register"
+import VerifyOTP from "../Pages/VerifyOTP"
+import HotelRegistration from "../Pages/HotelRegistration"
+import HotelPayment from "../Pages/HotelPayment"
 import Loginpage from "../Pages/Loginpage"
 import Dashboard from "../Pages/Dashboard"
 import ProtectedRoute from "./ProtectedRoute"
@@ -29,6 +32,9 @@ const router=createBrowserRouter(
         <Route element={<Publicroute/>}>
         <Route path="/login"element={<Loginpage/>}/>
         <Route path="/register" element={<Register/>}/>
+        <Route path="/verify-otp" element={<VerifyOTP/>}/>
+        <Route path="/hotel-registration" element={<HotelRegistration/>}/>
+        <Route path="/hotel-payment" element={<HotelPayment/>}/>
 
         <Route path="/" element={<Navigate to="/initialhome/herosection" replace/>}/>
         <Route path="/initialhome"element={<InitialHome/>}>
