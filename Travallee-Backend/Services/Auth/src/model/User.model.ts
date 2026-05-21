@@ -42,9 +42,9 @@ const UserSchema = new mongoose.Schema<UserType, UserModel, UserMethods>({
   profileimage: { type: String },
   role: { type: String ,
     default: "user",
-     enum: ["user", "admin" , "superadmin", "hotelAdmin"]
+     enum: ["user", "superadmin", "hotelAdmin"]
    },
-  hotelId: { type: String },
+  hotelId: { type: mongoose.Schema.Types.ObjectId, ref: "hotels" },
   googleId: { type: String },
   isVerified: { type: Boolean },
   otp: { type: Number },

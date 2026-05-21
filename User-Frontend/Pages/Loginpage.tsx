@@ -41,11 +41,11 @@ const Loginpage = () => {
 
       const loggedInUser = await login(form);
 
-      // Check if user is hotel owner
+      // Hotel owners go to dashboard, regular users choose next step
       if (loggedInUser?.isHotelOwner) {
         navigateto("/dashboard/overview");
       } else {
-        navigateto("/registerhotel");
+        navigateto("/choose");
       }
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
