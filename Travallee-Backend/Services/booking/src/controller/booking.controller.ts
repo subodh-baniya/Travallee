@@ -3,15 +3,28 @@ import { asyncHandler, apiError, apiResponse, roomModel, hotelModel, bookingMode
 import mongoose from "mongoose";
 import * as crypto from "crypto";
 import axios from "axios"
+import { BookingConfirmationJobData, createBookingSchema } from "../schema/bokingschems.js"
+import { z } from "zod";
+import {Queue} from "bullmq"
+import redis from "ioredis";
+//@ts-ignore
+const bookingRedis = new redis(connection);
 
+const connection = {
+    host: process.env.REDIS_HOST as string,
+    port: Number(process.env.REDIS_PORT)
+}
+const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("BookingConfirmation", {
+    connection
+})
 
 const taxrate = 13
 
-const calulateTotalAmount = (roomPrice: number, checkIn: Date, checkOut: Date ,guestCount: number) => {
+const calulateTotalAmount = (roomPrice: number, checkIn: Date, checkOut: Date, guestCount: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
     const nights = Math.round(Math.abs((checkOut.getTime() - checkIn.getTime()) / oneDay));
-    return roomPrice * nights ;
-}   
+    return roomPrice * nights;
+}
 
 const discountAmount = (totalAmount: number, discountPercentage: number) => {
     return totalAmount * (discountPercentage / 100);
@@ -19,82 +32,81 @@ const discountAmount = (totalAmount: number, discountPercentage: number) => {
 
 const taxAmount = (totalAmount: number, taxRate: number) => {
     return totalAmount * (taxRate / 100);
-} 
+}
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
-          const { roomId, hotelId, checkIn, checkOut, guestCount, paymentMethod } = req.body;
+    const userId = req.user.id;
 
-        // Validation
-        if (!roomId || !hotelId || !checkIn || !checkOut || !guestCount || !paymentMethod) {
-            return apiError(res, 400, "All fields are required");
+    let validated: any;
+
+    try {
+        validated = createBookingSchema.parse(req.body);
+    } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            const formattedErrors = error.issues.map((issue) => ({
+                field: issue.path.join("."),
+                message: issue.message,
+            }));
+            return apiError(res, 400, "Validation Error", formattedErrors);
         }
+        return apiError(res, 400, "Invalid request data");
+    }
 
-        // Parse and validate IDs
-        let roomObjectId, hotelObjectId;
-        try {
-            roomObjectId = new mongoose.Types.ObjectId(roomId);
-            hotelObjectId = new mongoose.Types.ObjectId(hotelId);
-        } catch (e) {
-            return apiError(res, 400, "Invalid room or hotel ID format");
-        }
+    let roomObjectId, hotelObjectId;
+    try {
+        roomObjectId = new mongoose.Types.ObjectId(validated.roomId);
+        hotelObjectId = new mongoose.Types.ObjectId(validated.hotelId);
+    } catch (e) {
+        return apiError(res, 400, "Invalid room or hotel ID format");
+    }
+    const room = await roomModel.findById(roomObjectId);
+    if (!room) {
+        return apiError(res, 404, "Room not found");
+    }
 
-        // Fetch room and validate
-        const room = await roomModel.findById(roomObjectId);
-        if (!room) {
-            return apiError(res, 404, "Room not found");
-        }
+    if (room.hotelId.toString() !== hotelObjectId.toString()) {
+        return apiError(res, 400, "Room does not belong to the specified hotel");
+    }
 
-        // Verify room belongs to specified hotel
-        if (room.hotelId.toString() !== hotelObjectId.toString()) {
-            return apiError(res, 400, "Room does not belong to the specified hotel");
-        }
+    const hotel = await hotelModel.findById(hotelObjectId);
+    if (!hotel) {
+        return apiError(res, 404, "Hotel not found");
+    }
 
-        // Fetch hotel
-        const hotel = await hotelModel.findById(hotelObjectId);
-        if (!hotel) {
-            return apiError(res, 404, "Hotel not found");
-        }
+    const checkInDate = new Date(validated.checkIn);
+    const checkOutDate = new Date(validated.checkOut);
 
-        // Check availability
-        const checkInDate = new Date(checkIn);
-        const checkOutDate = new Date(checkOut);
-        
-        const bookedDates = await bookingModel.find({
-            room: roomObjectId,
-            hotel: hotelObjectId,
-            status: { $in: ["PENDING", "CONFIRMED"] },
-            bookingPayment: "PAID",
-            $or: [
-                { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
-            ]
-        });
+    const bookedDates = await bookingModel.find({
+        room: roomObjectId,
+        hotel: hotelObjectId,
+        status: { $in: ["PENDING", "CONFIRMED"] },
+        bookingPayment: "PAID",
+        $or: [
+            { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
+        ]
+    });
 
-        if (bookedDates.length > 0) {
-            return apiError(res, 400, "Room is not available for the selected dates");
-        }
+    if (bookedDates.length > 0) {
+        return apiError(res, 400, "Room is not available for the selected dates");
+    }
 
-        // Calculate pricing
-        const totalAmount = calulateTotalAmount(room.pricePerNight, checkInDate, checkOutDate, guestCount);
-        const discount = discountAmount(totalAmount, hotel.discount || 0);
-        const tax = taxAmount(totalAmount - discount, taxrate);
-        const finalAmount = totalAmount - discount + tax;
+    const calculatedTotalAmount = calulateTotalAmount(room.pricePerNight, checkInDate, checkOutDate, validated.guests);
+    const discount = discountAmount(calculatedTotalAmount, hotel.discount || 0);
+    const tax = taxAmount(calculatedTotalAmount - discount, taxrate);
+    const finalAmount = calculatedTotalAmount - discount + tax;
 
-      
-        const booking = await bookingModel.create({
-            user: req.user._id,
-            hotel: hotelObjectId,
-            room: roomObjectId,
-            checkIn: checkInDate,
-            checkOut: checkOutDate,
-            guests: guestCount,
-            totalPrice: finalAmount,
-            bookingPayment: "NOTPAID",
-            paymentMethod: paymentMethod,
-            status: "PENDING"
-        });
+    bookingRedis.set(`booking:${userId}`, JSON.stringify({ ...validated, finalAmount }), "EX", 15 * 60);
 
-        return apiResponse(res, 201, true, "Booking created successfully",booking);
-    } 
+
+    
+    
+    
+
+
+
+
+    return apiResponse(res, 201, true, "Booking created successfully", );
+}
 )
 
 
@@ -134,7 +146,7 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
         })
 
         return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-    } catch (error: any ) {
+    } catch (error: any) {
         return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
     }
 })
@@ -187,4 +199,4 @@ const khaltiVerify = asyncHandler(async (req: any, res: any) => {
 
 })
 
-export { createBooking,khaltiVerify,esewaSuccess }
+export { createBooking, khaltiVerify, esewaSuccess }

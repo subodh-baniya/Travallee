@@ -28,6 +28,10 @@ const registerEmailQueue = new Queue<RegisterEmailJobData>("Register", {
 const otpQueue = new Queue<OTPEmailJobData>("OTP", {
   connection,
 });
+const deleteAccountOtpQueue = new Queue<OTPEmailJobData>("DeleteAccountOTP", {
+  connection,
+});
+
 
 interface OTPEmailJobData {
   email: string;
@@ -306,7 +310,7 @@ const deleteAccount = asyncHandler(async (req: any, res: any) => {
   const otp = Math.floor(1000 + Math.random() * 9000);
   registerRedis.set(`deleteOtp:${user.email}`, otp, "EX", 10 * 60);
   try {
-    otpQueue.add("OTP", {
+    deleteAccountOtpQueue.add("DeleteAccountOTP", {
       email: user.email,
       Name: user.Name.toUpperCase(),
       otp,

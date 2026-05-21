@@ -117,6 +117,32 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   }
 );
 
+const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
+  "DeleteAccountOTP",
+  async (job: Job<OTPEmailJobData>) => {
+    try {
+      const { Name, otp , email } = job.data;
+      console.log(`Processing Delete Account OTP email job #${job.id} for user: ${Name}`);
+      const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
+      await sendEmail(email, "Your OTP Code for Account Deletion", getTwoFactorAuthTemplate({
+        user_name: Name,
+        otp_code: otp.toString(),
+        security_link: `${appLink}/security`,
+        unsubscribe_link: `${appLink}/unsubscribe`,
+        preferences_link: `${appLink}/preferences`,
+        view_online_link: `${appLink}/view-online`
+      }));
+      console.log(`Delete Account OTP email successfully sent to ${email} for user ${Name}`); 
+    } catch (error: any) {
+      console.error(`Error sending Delete Account OTP email:`, error);
+      throw error;
+    }
+  },
+  {
+    connection,
+  }
+);
+
 const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
   "BookingConfirmation",
   async (job: Job<BookingConfirmationJobData>) => {
