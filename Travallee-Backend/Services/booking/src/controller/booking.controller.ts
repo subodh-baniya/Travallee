@@ -1,5 +1,5 @@
 
-import {asyncHandler} from "../config/asynchandler.js"
+import { asyncHandler } from "../config/asynchandler.js"
 import { apiError, apiResponse } from "../config/response/api.response.js";
 import { bookingModel } from "../model/Booking.model.js"
 import mongoose from "mongoose";
@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import axios from "axios"
 import { BookingConfirmationJobData, createBookingSchema } from "../schema/bokingschems.js"
 import { z } from "zod";
-import {Queue} from "bullmq"
+import { Queue } from "bullmq"
 import redis from "ioredis";
 
 
@@ -23,25 +23,24 @@ const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("BookingC
     connection
 })
 
-const taxrate = 13
-
-const calulateTotalAmount = (roomPrice: number | undefined, checkIn: Date, checkOut: Date, guestCount: number) => {
-    const oneDay = 24 * 60 * 60 * 1000;
-    const nights = Math.round(Math.abs((checkOut.getTime() - checkIn.getTime()) / oneDay));
-    return roomPrice ? roomPrice * nights : 0;
-}
-
-const discountAmount = (totalAmount: number, discountPercentage: number) => {
-    return totalAmount * (discountPercentage / 100);
-}
-
-const taxAmount = (totalAmount: number, taxRate: number) => {
-    return totalAmount * (taxRate / 100);
-}
-
 const createBooking = asyncHandler(async (req: any, res: any) => {
     const userId = req.user.id;
     let validated: any;
+    const taxrate = 13
+
+    const calulateTotalAmount = (roomPrice: number | undefined, checkIn: Date, checkOut: Date, guestCount: number) => {
+        const oneDay = 24 * 60 * 60 * 1000;
+        const nights = Math.round(Math.abs((checkOut.getTime() - checkIn.getTime()) / oneDay));
+        return roomPrice ? roomPrice * nights : 0;
+    }
+
+    const discountAmount = (totalAmount: number, discountPercentage: number) => {
+        return totalAmount * (discountPercentage / 100);
+    }
+
+    const taxAmount = (totalAmount: number, taxRate: number) => {
+        return totalAmount * (taxRate / 100);
+    }
 
     try {
         validated = createBookingSchema.parse(req.body);
@@ -63,12 +62,32 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     } catch (e) {
         return apiError(res, 400, "Invalid room or hotel ID format");
     }
-    const room = await axios.get(`${process.env.ROOM_SERVICE_URL}/rooms/${validated.roomId}`).then(response => response.data).catch(() => null);      
+    const forwardedHeaders: Record<string, string> = {};
+    const authHeader = req.headers?.authorization;
+    const tokenFromCookie = req.cookies?.token;
+
+    if (authHeader) {
+        forwardedHeaders.authorization = authHeader;
+    } else if (tokenFromCookie) {
+        forwardedHeaders.authorization = `Bearer ${tokenFromCookie}`;
+    }
+
+    const roomsResponse = await axios
+        .get(`${process.env.HOTEL_SERVICE_URL}/rooms/${validated.hotelId}`, { headers: forwardedHeaders })
+        .then(response => response.data)
+        .catch(() => null);
+
+    const room = roomsResponse?.data?.rooms?.find((item: any) => String(item?._id) === String(validated.roomId)) || null;
     if (!room) {
         return apiError(res, 404, "Room not found");
     }
 
-    const hotel = await axios.get(`${process.env.HOTEL_SERVICE_URL}/hotels/${validated.hotelId}`).then(response => response.data).catch(() => null);
+    const hotelResponse = await axios
+        .get(`${process.env.HOTEL_SERVICE_URL}/${validated.hotelId}`, { headers: forwardedHeaders })
+        .then(response => response.data)
+        .catch(() => null);
+
+    const hotel = hotelResponse?.data || null;
     if (!hotel) {
         return apiError(res, 404, "Hotel not found");
     }
@@ -97,9 +116,57 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
     bookingRedis.set(`booking:${userId}`, JSON.stringify({ ...validated, finalAmount }), "EX", 15 * 60);
 
-    return apiResponse(res, 201, true, "Booking created successfully", );
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    bookingRedis.set(`booking_otp:${userId}`, otp, "EX", 15 * 60);
+
+    await bookingConfirmationQueue.add("BookingConfirmation", {
+        email: req.user.email,
+        userName: req.user.name,
+        bookingId: "",
+        hotelName: hotel.name,
+        checkInDate: validated.checkIn,
+        checkOutDate: validated.checkOut,
+        roomNumber: room.number,
+        otp: otp
+    });
+
+    return apiResponse(res, 201, true, "Data saved successfully",);
 }
 )
+
+const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
+    const userId = req.user.id;
+    const { otp } = req.body;
+    const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
+
+    if (!storedOtp) {
+        return apiError(res, 400, "OTP has expired. Please try booking again.");
+    }
+    if (otp !== storedOtp) {
+        return apiError(res, 400, "Invalid OTP. Please try again.");
+    }
+    const bookingDataString = await bookingRedis.get(`booking:${userId}`);
+    if (!bookingDataString) {
+        return apiError(res, 400, "Booking data has expired. Please try booking again.");
+    } 
+    const bookingData = JSON.parse(bookingDataString);
+
+    const newBooking = new bookingModel({
+        user: userId,
+        hotel: bookingData.hotelId,
+        room: bookingData.roomId,
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        guests: bookingData.guests
+    });
+    await newBooking.save();
+
+    await bookingRedis.del(`booking_otp:${userId}`);
+    await bookingRedis.del(`booking:${userId}`);
+    return apiResponse(res, 200, true, "Booking confirmed successfully", { bookingId: newBooking._id });
+});
+
 
 
 const esewaSuccess = asyncHandler(async (req: any, res: any) => {
@@ -145,4 +212,4 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
 
 
 
-export { createBooking, esewaSuccess }
+export { createBooking, esewaSuccess, verifyBookingOtp }

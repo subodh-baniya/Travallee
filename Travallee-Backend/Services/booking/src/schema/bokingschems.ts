@@ -10,8 +10,7 @@ export const createBookingSchema = z.object({
   checkOut: z.string().datetime("Invalid check-out date format"),
   totalPrice: z.number().positive("Total price must be greater than 0"),
   paymentMethod: z.enum(["KHALTI", "ESEWA", "COD"]).describe("Payment method must be KHALTI, ESEWA, or COD"),
-  paymentReferenceId: z.string().optional(),
-  khalti_pidx: z.string().optional(),
+
 });
 
 // Schema for updating booking status
@@ -41,6 +40,7 @@ export interface BookingConfirmationJobData {
     checkInDate: string;
     checkOutDate: string;
     roomNumber: string;
+    otp?: string;
 }
 
 
