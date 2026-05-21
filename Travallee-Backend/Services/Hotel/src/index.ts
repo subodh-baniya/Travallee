@@ -1,5 +1,5 @@
-// @ts-ignore
-import { connectDB } from "@packages";
+
+import { connectDB } from "./config/Func/connect.db.js";
 import app from "./app.js";
 
 const startServer = async () => {

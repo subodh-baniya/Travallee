@@ -1,8 +1,8 @@
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 
 
-COPY Travallee-Backend/Packages/ /app/Packages/
+
 
 
 # then install the packages in the Booking service

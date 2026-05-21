@@ -5,7 +5,6 @@ import { hotelModel } from "../model/Hotel.model.js"
 import { roomModel } from "../model/Room.model.js"
 import {uploadToCloudinary} from "../config/Func/cloudinary.js"
 import type { HotelInput, RoomInput } from "../validator/hotel.validator.js";
-import { passwordCheck } from "../config/Func/password.js";
 import {
   createHotelSchema,
   createRoomSchema,
@@ -237,58 +236,58 @@ const createroom = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-const deleteRoom = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user?._id || req.user?.id;
-  if (!userID) {
-    return apiError(res, 401, "Unauthorized: User ID not found in request");
-  }
-  const { hotelId, roomId } = req.params;
-  const { password } = req.body;
+// const deleteRoom = asyncHandler(async (req: any, res: any) => {
+//   const userID = req.user?._id || req.user?.id;
+//   if (!userID) {
+//     return apiError(res, 401, "Unauthorized: User ID not found in request");
+//   }
+//   const { hotelId, roomId } = req.params;
+//   const { password } = req.body;
 
-  if (!userID || !password) {
-    return apiError(
-      res,
-      400,
-      "User ID and password are required in request body",
-    );
-  }
+//   if (!userID || !password) {
+//     return apiError(
+//       res,
+//       400,
+//       "User ID and password are required in request body",
+//     );
+//   }
 
-  const passwordCheckResult = await passwordCheck(password, userID);
-  if (!passwordCheckResult.success) {
-    return apiError(res, 401, "Unauthorized: " + passwordCheckResult.message);
-  }
+//   const passwordCheckResult = await passwordCheck(password, userID);
+//   if (!passwordCheckResult.success) {
+//     return apiError(res, 401, "Unauthorized: " + passwordCheckResult.message);
+//   }
 
-  if (
-    !mongoose.Types.ObjectId.isValid(hotelId) ||
-    !mongoose.Types.ObjectId.isValid(roomId)
-  ) {
-    return apiError(res, 400, "Invalid hotel ID or room ID format");
-  }
+//   if (
+//     !mongoose.Types.ObjectId.isValid(hotelId) ||
+//     !mongoose.Types.ObjectId.isValid(roomId)
+//   ) {
+//     return apiError(res, 400, "Invalid hotel ID or room ID format");
+//   }
 
-  try {
-    const hotel = await hotelModel.findById(hotelId);
-    if (!hotel) {
-      return apiError(res, 404, "Hotel not found", { hotelId });
-    }
+//   try {
+//     const hotel = await hotelModel.findById(hotelId);
+//     if (!hotel) {
+//       return apiError(res, 404, "Hotel not found", { hotelId });
+//     }
 
-    const room = await roomModel.findOneAndDelete({
-      _id: new mongoose.Types.ObjectId(roomId),
-      hotelId: new mongoose.Types.ObjectId(hotelId),
-    });
+//     const room = await roomModel.findOneAndDelete({
+//       _id: new mongoose.Types.ObjectId(roomId),
+//       hotelId: new mongoose.Types.ObjectId(hotelId),
+//     });
 
-    if (!room) {
-      return apiError(res, 404, "Room not found in this hotel", { roomId });
-    }
+//     if (!room) {
+//       return apiError(res, 404, "Room not found in this hotel", { roomId });
+//     }
 
-    return apiResponse(res, 200, true, "Room deleted successfully");
-  } catch (error: any) {
-    return apiError(
-      res,
-      500,
-      "Internal server error: Unable to delete room. Please try again later.",
-    );
-  }
-});
+//     return apiResponse(res, 200, true, "Room deleted successfully");
+//   } catch (error: any) {
+//     return apiError(
+//       res,
+//       500,
+//       "Internal server error: Unable to delete room. Please try again later.",
+//     );
+//   }
+// });
 
 const featuredHotels = asyncHandler(async (req: any, res: any) => {
   try {
@@ -736,7 +735,7 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
   export {
     registerHotel,
     createroom,
-    deleteRoom,
+    // deleteRoom,
     featuredHotels,
     HotelData,
     RoomData,

@@ -1,7 +1,7 @@
 
 import app from "./app.js";
-//@ts-ignore
-import { connectDB } from "@packages"
+
+import { connectDB } from "./config/Func/connect.db.js"
 
 
 

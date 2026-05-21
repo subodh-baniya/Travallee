@@ -1,7 +1,7 @@
 services:
   redis:
-    image: redis:7
-    container_name: redis_cache
+    image: redis
+    container_name: redis_database
     ports:
       - "6379:6379"
     restart: unless-stopped
@@ -20,7 +20,6 @@ services:
       - ./Travallee-Backend/Services/Auth/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
       - redis
     restart: unless-stopped
 
@@ -36,7 +35,7 @@ services:
       - ./Travallee-Backend/Services/admin/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
+      - redis
     restart: unless-stopped
 
   bookings:
@@ -51,7 +50,7 @@ services:
       - ./Travallee-Backend/Services/booking/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
+      - redis
     restart: unless-stopped
 
   hotel:
@@ -66,7 +65,7 @@ services:
       - ./Travallee-Backend/Services/Hotel/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
+      - redis
     restart: unless-stopped
 
 
@@ -82,7 +81,6 @@ services:
       - ./Travallee-Backend/Services/notifications/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
       - redis
     restart: unless-stopped
 
@@ -98,21 +96,6 @@ services:
       - ./Travallee-Backend/Services/chat/src:/app/src
       - /app/node_modules
     depends_on:
-      - db
       - redis
     restart: unless-stopped
 
-  db:
-    image: mongo:7
-    container_name: mongo_db
-    command: mongod --quiet --logpath /dev/null
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    restart: unless-stopped
-    logging:
-      driver: "none"
-
-volumes:
-  mongo_data:

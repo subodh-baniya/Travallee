@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
-import { apiError } from "../Utils/response/api.error.js";
-import { hotelModel } from "../Model/Hotel.model.js";
-import { UserModel } from "../Model/User.model.js";
+import { apiError } from "../config/response/api.error.js";
+
 import Redis from "ioredis";
 
 //@ts-ignore
@@ -90,40 +89,40 @@ const anyAuthenticatedMiddleware = checkRoles(["admin", "hotelOwner", "user"]);
 const superAdminOrHotelAdminMiddleware = checkRoles(["superadmin", "hotelAdmin"]);
 
 // Check ownership (for hotels/rooms)
-const checkOwnership = async (req: any, res: any, next: any) => {
-  if (!req.user) {
-    return apiError(res, 401, "Unauthorized: User not authenticated");
-  }
+// const checkOwnership = async (req: any, res: any, next: any) => {
+//   if (!req.user) {
+//     return apiError(res, 401, "Unauthorized: User not authenticated");
+//   }
 
-  const userID = req.user._id || req.user.id;
-  const { hotelId } = req.params;
+//   const userID = req.user._id || req.user.id;
+//   const { hotelId } = req.params;
 
-  if (!hotelId) {
-    return apiError(res, 400, "Hotel ID is required");
-  }
+//   if (!hotelId) {
+//     return apiError(res, 400, "Hotel ID is required");
+//   }
 
-  try {
-    const hotel = await hotelModel.findOne({
-      _id: hotelId,
-      userID: userID,
-    });
+//   try {
+//     const hotel = await hotelModel.findOne({
+//       _id: hotelId,
+//       userID: userID,
+//     });
 
-    if (!hotel) {
-      return apiError(
-        res,
-        403,
-        "Forbidden: You do not have permission to access this hotel"
-      );
-    }
-    req.ownerID = userID;
-    req.targetHotelID = hotelId;
-    req.hotel = hotel;
-    next();
-  } catch (error: any) {
-    console.error("Error checking ownership:", error);
-    return apiError(res, 500, "Error checking ownership");
-  }
-};
+//     if (!hotel) {
+//       return apiError(
+//         res,
+//         403,
+//         "Forbidden: You do not have permission to access this hotel"
+//       );
+//     }
+//     req.ownerID = userID;
+//     req.targetHotelID = hotelId;
+//     req.hotel = hotel;
+//     next();
+//   } catch (error: any) {
+//     console.error("Error checking ownership:", error);
+//     return apiError(res, 500, "Error checking ownership");
+//   }
+// };
 
 export {
   authenticate,
@@ -137,5 +136,5 @@ export {
   adminOrOwnerMiddleware,
   anyAuthenticatedMiddleware,
   superAdminOrHotelAdminMiddleware,
-  checkOwnership,
+  // checkOwnership,
 };
