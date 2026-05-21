@@ -19,6 +19,7 @@ interface OTPEmailJobData {
   Name: string;
   otp: number;
   email: string;
+  subject?: string;
 }
 
 interface BookingConfirmationJobData {
@@ -93,10 +94,10 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   "OTP",
   async (job: Job<OTPEmailJobData>) => {
     try {
-      const { Name, otp , email } = job.data;
+      const { Name, otp , email , subject } = job.data;
       console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
-      await sendEmail(email, "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
+      await sendEmail(email, subject || "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
         user_name: Name,
         otp_code: otp.toString(),
         security_link: `${appLink}/security`,

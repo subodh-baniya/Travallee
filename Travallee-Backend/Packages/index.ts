@@ -19,6 +19,7 @@ import {
   anyAuthenticatedMiddleware,
   superAdminOrHotelAdminMiddleware,
   checkOwnership,
+  tokenBlacklistRedis
 } from "./middleware/role.middleware.js";
 import { passwordCheck } from "./Utils/Func/password.js";
 import {connectDB} from "./Utils/Func/connect.db.js"
@@ -56,6 +57,7 @@ export {
     chatModel,
     uploadToCloudinary,
     upload,
-    BannerModel
+    BannerModel,
+    tokenBlacklistRedis
 };
 

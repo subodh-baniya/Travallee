@@ -4,12 +4,10 @@ import {
   logoutUser,
   registerUser,
   googleAuth,
-  deleteUserProfile,
   updateUserProfile,
   getUserProfile,
   verifyOTP,
-  getUserProfilePicture,
-  updateUserRole
+  updateUserRole,
 } from "../Controllers/user.controller.js";
 
 import passport from "passport";
@@ -35,10 +33,10 @@ router.get(
 );
 router.get("/profile", authenticate, getUserProfile);
 router.post("/update-profile", authenticate, upload.single("profileImage"), updateUserProfile);
-router.delete("/delete-profile", authenticate, deleteUserProfile);
 router.post("/verify-otp", verifyOTP);
-router.get("/profile-picture", authenticate, getUserProfilePicture);
+router.get("/user-profile", authenticate, getUserProfile);
 router.patch("/internal/update-role", updateUserRole);
+
 
 
 

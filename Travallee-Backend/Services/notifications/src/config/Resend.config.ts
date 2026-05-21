@@ -26,7 +26,7 @@ const sendEmail = async (
     const emailSubject = subject || "Welcome to Travallee!";
 
     const response = await resend.emails.send({
-      from: "kcprabin9.com.np <noreply@kcprabin9.com.np>",
+      from: "Travallee <hello@kcprabin9.com.np>",
       to,
       subject: emailSubject,
       html: html || `<p>Hello ${options?.name || "User"},</p>`,

@@ -2,6 +2,13 @@ import jwt from "jsonwebtoken";
 import { apiError } from "../Utils/response/api.error.js";
 import { hotelModel } from "../Model/Hotel.model.js";
 import { UserModel } from "../Model/User.model.js";
+import Redis from "ioredis";
+
+//@ts-ignore
+export const tokenBlacklistRedis = new Redis({
+  host: process.env.REDIS_HOST || "localhost",
+  port: Number(process.env.REDIS_PORT) || 6379,
+});
 
 
 const authenticate = async (req: any, res: any, next: any) => {
@@ -16,8 +23,15 @@ const authenticate = async (req: any, res: any, next: any) => {
   }
 
   try {
+    
+    const isBlacklisted = await tokenBlacklistRedis.exists(`blacklist:${token}`);
+    if (isBlacklisted) {
+      return apiError(res, 401, "Token has been revoked. Please login again.");
+    }
+
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     req.user = decoded;
+    req.token = token;
     next();
   } catch (error: any) {
     console.error("Token verification error:", error.message);
