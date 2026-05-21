@@ -145,6 +145,27 @@ const TABS: Array<{ id: TabType; label: string; icon: string }> = [
   { id: 'bookings',  label: 'Bookings',  icon: 'calendar-outline' },
 ];
 
+// Helper: derive a usable image URI from various backend shapes
+const getHotelImageUri = (prop: any): string => {
+  const fallback = 'https://via.placeholder.com/400x300?text=No+Image';
+  if (!prop) return fallback;
+  if (typeof prop === 'string') return prop;
+  // direct image fields
+  if (typeof prop.image === 'string' && prop.image) return prop.image;
+  if (typeof prop.imageUrl === 'string' && prop.imageUrl) return prop.imageUrl;
+  if (typeof prop.photo === 'string' && prop.photo) return prop.photo;
+
+  // arrays of images
+  if (Array.isArray(prop.hotelImages) && prop.hotelImages.length > 0) return prop.hotelImages[0];
+  if (Array.isArray(prop.images) && prop.images.length > 0) return prop.images[0];
+  if (Array.isArray(prop.photos) && prop.photos.length > 0) return prop.photos[0];
+
+  // nested objects
+  if (prop.image && typeof prop.image === 'object' && typeof prop.image.url === 'string') return prop.image.url;
+
+  return fallback;
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ExploreScreen() {
@@ -198,7 +219,7 @@ export default function ExploreScreen() {
             setFilteredData([]);
           }
         } else {
-          // Fetch featured hotels from backend for 'all' filter
+          
           const response = await apiClient.get(API_ENDPOINTS_HOTEL.FEATURED_HOTELS);
           if (response.data.success && Array.isArray(response.data.data)) {
             setFilteredData(response.data.data);
@@ -328,23 +349,23 @@ export default function ExploreScreen() {
               >
                 {filteredData.length > 0 ? (
                   filteredData.map((prop: any) => (
-                    <Pressable
-                      key={prop._id || prop.id}
-                      style={styles.featuredCard}
-                      onPress={() =>
-                        router.replace({
-                          pathname: '/(tabs)/explore/detail',
-                          params: { hotelId: prop._id || prop.id },
-                        })
-                      }
-                    >
-                      <Image
-                        source={{ uri: prop.image || prop.hotelImages?.[0] || 'https://via.placeholder.com/300' }}
-                        style={styles.featuredImg}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.featuredTag}>
-                        <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
+                      <Pressable
+                        key={prop._id || prop.id}
+                        style={styles.featuredCard}
+                        onPress={() =>
+                          router.replace({
+                            pathname: '/(tabs)/explore/detail',
+                            params: { hotelId: prop._id || prop.id },
+                          })
+                        }
+                      >
+                        <Image
+                          source={{ uri: getHotelImageUri(prop) }}
+                          style={styles.featuredImg}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.featuredTag}>
+                          <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
                           {prop.tag || (prop.isFeatured ? 'Featured' : prop.propertyType || 'Hotel')}
                         </Text>
                       </View>

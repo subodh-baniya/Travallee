@@ -100,6 +100,7 @@ function StarRating({ value }: { value: number }) {
 // ─── Hotel card ───────────────────────────────────────────────────────────────
 function HotelCard({ hotel, onPress }: { hotel: Hotel; onPress: () => void }) {
   const [saved, setSaved] = useState(false);
+  const imageUri = hotel.hotelImages?.[0] || 'https://via.placeholder.com/300';
 
   return (
     <Pressable
@@ -109,7 +110,7 @@ function HotelCard({ hotel, onPress }: { hotel: Hotel; onPress: () => void }) {
       {/* Image */}
       <View style={card.imgWrap}>
         {hotel.hotelImages?.length > 0 ? (
-          <Image source={{ uri: hotel.hotelImages[0] }} style={card.img} />
+          <Image source={{ uri: imageUri }} style={card.img} />
         ) : (
           <View style={[card.img, card.imgPlaceholder]}>
             <Ionicons name="image-outline" size={32} color={N.textMuted} />

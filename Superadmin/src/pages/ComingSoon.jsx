@@ -1,4 +1,3 @@
-// src/pages/ComingSoon.jsx
 import { theme } from "../theme";
 import Toggle from "../components/Toggle";
 
