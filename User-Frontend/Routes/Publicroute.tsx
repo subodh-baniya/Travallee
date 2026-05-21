@@ -11,11 +11,9 @@ const Publicroute = () => {
 
   if (!authChecked) return <Loader />;
 
-  return isAuthenticated ? (
-    <Navigate to="/dashboard" replace />
-  ) : (
-    <Outlet />
-  );
+  if (!isAuthenticated) return <Outlet />;
+
+  return <Navigate to="/choose" replace />;
 };
 
 export default Publicroute;

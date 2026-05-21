@@ -25,6 +25,7 @@ import Finance from "../Pages/Finance"
 import ReviewsPage from "../Pages/Review"
 import RegisterHotel from "../Pages/Registerhotel"
 import ChatPage from "../Pages/Messages"
+import Choose from "../Pages/Choose"
 
 const router=createBrowserRouter(
     createRoutesFromElements(
@@ -47,8 +48,9 @@ const router=createBrowserRouter(
         </Route>
 
          <Route element={<ProtectedRoute/>}>
+          <Route path="/choose" element={<Choose/>}/>
           <Route path="/registerhotel" element={<RegisterHotel/>}/>
-        <Route element={<HotelOwnerRoute/>}>
+          <Route element={<HotelOwnerRoute/>}>
         <Route path="/dashboard" element={<Dashboard />}>
              <Route index element={<Navigate to="overview" replace />}/>
           <Route path="overview" element={<Overview/>} />
@@ -63,7 +65,7 @@ const router=createBrowserRouter(
             <Route path="finance" element={<Finance/>} />
             <Route path="messages" element={<ChatPage/>} />
         </Route>
-        </Route>
+          </Route>
         </Route>
         </>
     )
