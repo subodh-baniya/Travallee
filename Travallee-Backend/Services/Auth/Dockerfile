@@ -2,13 +2,6 @@ FROM node:20-slim
 WORKDIR /app
 
 
-# first install the packages in the root directory
-COPY Travallee-Backend/Packages/package.json Travallee-Backend/Packages/package-lock.json /app/Packages/
-COPY Travallee-Backend/Packages/.env /app/.env
-WORKDIR /app/Packages
-RUN npm install
-
-
 COPY Travallee-Backend/Packages/ /app/Packages/
 
 

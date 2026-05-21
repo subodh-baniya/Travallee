@@ -1,29 +1,34 @@
-//@ts-ignore
-import { asyncHandler, apiError, apiResponse, roomModel, hotelModel, bookingModel } from "@packages"
+
+import {asyncHandler} from "../config/asynchandler.js"
+import { apiError, apiResponse } from "../config/response/api.response.js";
+import { bookingModel } from "../model/Booking.model.js"
 import mongoose from "mongoose";
-import * as crypto from "crypto";
+
 import axios from "axios"
 import { BookingConfirmationJobData, createBookingSchema } from "../schema/bokingschems.js"
 import { z } from "zod";
 import {Queue} from "bullmq"
 import redis from "ioredis";
-//@ts-ignore
-const bookingRedis = new redis(connection);
+
+
 
 const connection = {
     host: process.env.REDIS_HOST as string,
     port: Number(process.env.REDIS_PORT)
 }
+
+//@ts-ignore
+const bookingRedis = new redis(connection);
 const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("BookingConfirmation", {
     connection
 })
 
 const taxrate = 13
 
-const calulateTotalAmount = (roomPrice: number, checkIn: Date, checkOut: Date, guestCount: number) => {
+const calulateTotalAmount = (roomPrice: number | undefined, checkIn: Date, checkOut: Date, guestCount: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
     const nights = Math.round(Math.abs((checkOut.getTime() - checkIn.getTime()) / oneDay));
-    return roomPrice * nights;
+    return roomPrice ? roomPrice * nights : 0;
 }
 
 const discountAmount = (totalAmount: number, discountPercentage: number) => {
@@ -36,7 +41,6 @@ const taxAmount = (totalAmount: number, taxRate: number) => {
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
     const userId = req.user.id;
-
     let validated: any;
 
     try {
@@ -59,16 +63,12 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     } catch (e) {
         return apiError(res, 400, "Invalid room or hotel ID format");
     }
-    const room = await roomModel.findById(roomObjectId);
+    const room = await axios.get(`${process.env.ROOM_SERVICE_URL}/rooms/${validated.roomId}`).then(response => response.data).catch(() => null);      
     if (!room) {
         return apiError(res, 404, "Room not found");
     }
 
-    if (room.hotelId.toString() !== hotelObjectId.toString()) {
-        return apiError(res, 400, "Room does not belong to the specified hotel");
-    }
-
-    const hotel = await hotelModel.findById(hotelObjectId);
+    const hotel = await axios.get(`${process.env.HOTEL_SERVICE_URL}/hotels/${validated.hotelId}`).then(response => response.data).catch(() => null);
     if (!hotel) {
         return apiError(res, 404, "Hotel not found");
     }
@@ -90,20 +90,12 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         return apiError(res, 400, "Room is not available for the selected dates");
     }
 
-    const calculatedTotalAmount = calulateTotalAmount(room.pricePerNight, checkInDate, checkOutDate, validated.guests);
+    const calculatedTotalAmount = calulateTotalAmount(room.pricePerNight as number | undefined, checkInDate, checkOutDate, validated.guests);
     const discount = discountAmount(calculatedTotalAmount, hotel.discount || 0);
     const tax = taxAmount(calculatedTotalAmount - discount, taxrate);
     const finalAmount = calculatedTotalAmount - discount + tax;
 
     bookingRedis.set(`booking:${userId}`, JSON.stringify({ ...validated, finalAmount }), "EX", 15 * 60);
-
-
-    
-    
-    
-
-
-
 
     return apiResponse(res, 201, true, "Booking created successfully", );
 }
@@ -151,52 +143,6 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
     }
 })
 
-const khaltiVerify = asyncHandler(async (req: any, res: any) => {
-    try {
-        const { pidx, purchase_order_id } = req.query;
 
-        if (!pidx || !purchase_order_id) {
-            return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-        }
 
-        const booking = await bookingModel.findById(purchase_order_id).populate("hotel");
-        if (!booking) return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-
-        const hotel = await hotelModel.findById(booking.hotel);
-        if (!hotel?.khalti_SecretKey) {
-            return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-        }
-
-        const lookupRes = await axios.post(
-            "https://dev.khalti.com/api/v2/epayment/lookup/",
-            { pidx },
-            {
-                headers: {
-                    Authorization: `Key ${hotel.khalti_SecretKey}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const paymentStatus = lookupRes.data?.status;
-
-        if (paymentStatus === "Completed") {
-            await bookingModel.findByIdAndUpdate(
-                purchase_order_id,
-                { status: "CONFIRMED", bookingPayment: "PAID", khalti_pidx: pidx },
-                { new: true }
-            )
-
-            return res.redirect(`${process.env.FRONTEND_URL}/payment-success?bookingId=${purchase_order_id}`);
-        }
-
-        await bookingModel.findByIdAndUpdate(purchase_order_id, { status: "CANCELLED" });
-        return res.redirect(`${process.env.FRONTEND_URL}/payment-failure?bookingId=${purchase_order_id}`);
-
-    } catch (error: any) {
-        return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-    }
-
-})
-
-export { createBooking, khaltiVerify, esewaSuccess }
+export { createBooking, esewaSuccess }

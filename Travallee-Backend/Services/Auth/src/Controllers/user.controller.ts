@@ -1,13 +1,10 @@
-import {
-  apiError,
-  asyncHandler,
-  apiResponse,
-  UserModel,
-  uploadToCloudinary,
-  hotelModel,
-  tokenBlacklistRedis,
-  roomModel, //@ts-ignore
-} from "@packages";
+import { apiError } from "../config/response/api.error.js";
+import { asyncHandler } from "../config/asynchandler.js";
+import { apiResponse } from "../config/response/api.response.js";
+import { UserModel } from "../model/User.model.js";
+import { uploadToCloudinary } from "../config/Func/cloudinary.js";
+import { tokenBlacklistRedis } from "../middleware/role.middleware.js";
+
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
@@ -162,9 +159,7 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
     const validate = loginSchema.parse(req.body);
-    const user = await UserModel.findOne({
-      Username: validate.Username,
-    });
+    const user = await UserModel.findOne({ Username: validate.Username as string });
     if (!user) {
       return apiError(res, 400, "Username don't exist");
     }
@@ -357,22 +352,6 @@ const googleAuth = asyncHandler(async (req: any, res: any) => {
 });
 
 
-const history = asyncHandler(async (req: any, res: any) => {
-  const userId = req.user.id;
-  const hotels = await hotelModel
-    .find({ "bookings.user": userId })
-    .select("name location");
-  const rooms = await roomModel
-    .find({ "bookings.user": userId })
-    .select("roomNumber type");
-  return apiResponse(
-    res,
-    200,
-    true,
-    "User booking history retrieved successfully",
-    { hotels, rooms },
-  );
-});
 
 const updateUserRole = asyncHandler(async (req: any, res: any) => {
   const { userID, role } = req.body;
@@ -404,6 +383,5 @@ export {
   updateUserProfile,
   verifyOTP,
   deleteAccount,
-  history,
   updateUserRole
 };

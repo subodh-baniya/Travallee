@@ -10,42 +10,18 @@ import {
   getAllHotels,
   getAllResortHotels,
   RoomData,
-  getHotelDashboard,
   displayRooms,
   getHotelByLocation
 } from "../controller/register.controller.js";
 
-import {
-  connectDB,
-  UserModel,
-  apiError,
-  asyncHandler,
-  apiResponse,
-  hotelModel,
-  authenticate,
-  checkRole,
-  checkRoles,
-  adminMiddleware,
-  hotelOwnerMiddleware,
-  userMiddleware,
-  superAdminMiddleware,
-  hotelAdminMiddleware,
-  adminOrOwnerMiddleware,
-  anyAuthenticatedMiddleware,
-  superAdminOrHotelAdminMiddleware,
-  checkOwnership,
-  passwordCheck,
-  roomModel,
-  bookingModel,
-  uploadToCloudinary, 
-  upload,//@ts-ignore
-} from "@packages";
+import { authenticate } from "../middleware/role.middleware.js";
+import { upload } from "../middleware/mullter.middleware.js";
 
 const router = Router();
 
 router.post("/register", authenticate, upload.any(), registerHotel);
 
-router.get("/dashboard", authenticate, getHotelDashboard);
+// router.get("/dashboard", authenticate, getHotelDashboard);
 
 router.get("/my-hotel", authenticate, getHotelInfo);
 

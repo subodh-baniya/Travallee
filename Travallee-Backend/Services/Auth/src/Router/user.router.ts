@@ -11,8 +11,9 @@ import {
 } from "../Controllers/user.controller.js";
 
 import passport from "passport";
-//@ts-ignore
-import { authenticate , upload} from "@packages";
+
+import { authenticate } from "../middleware/role.middleware.js";
+import { upload } from "../middleware/mullter.middleware.js";
 
 
 const router = Router();
