@@ -1,26 +1,12 @@
 import Router from "express"
-import { esewaSuccess,createBooking, khaltiVerify } from "../controller/booking.controller.js";
-
-import { 
-  loginUser,
-  logoutUser,
-  registerUser,
-  googleAuth,
-  deleteUserProfile,
-  updateUserProfile,
-  getUserProfile,
-  sendOTP,
-  verifyOTP,
-  authenticate,
-  getUserProfilePicture //@ts-ignore
-} from "@packages";
+import { esewaSuccess,createBooking, } from "../controller/booking.controller.js";
+import { authenticate } from "../middleware/role.middleware.js";
 
 const router = Router();
 
 
 router.post("/esewa/success", esewaSuccess)
 
-router.post("/khalti/verify", khaltiVerify)
 
 router.post("/create-booking", authenticate,createBooking)
 

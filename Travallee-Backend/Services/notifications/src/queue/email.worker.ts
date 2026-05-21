@@ -19,6 +19,7 @@ interface OTPEmailJobData {
   Name: string;
   otp: number;
   email: string;
+  subject?: string;
 }
 
 interface BookingConfirmationJobData {
@@ -93,9 +94,10 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   "OTP",
   async (job: Job<OTPEmailJobData>) => {
     try {
-      const { Name, otp , email } = job.data;
+      const { Name, otp , email , subject } = job.data;
+      console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
-      await sendEmail(email, "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
+      await sendEmail(email, subject || "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
         user_name: Name,
         otp_code: otp.toString(),
         security_link: `${appLink}/security`,
@@ -103,8 +105,36 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
         preferences_link: `${appLink}/preferences`,
         view_online_link: `${appLink}/view-online`
       }));
+      console.log(`OTP email successfully sent to ${email} for user ${Name}`);
+      
     } catch (error: any) {
       console.error(`Error sending OTP email:`, error);
+      throw error;
+    }
+  },
+  {
+    connection,
+  }
+);
+
+const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
+  "DeleteAccountOTP",
+  async (job: Job<OTPEmailJobData>) => {
+    try {
+      const { Name, otp , email } = job.data;
+      console.log(`Processing Delete Account OTP email job #${job.id} for user: ${Name}`);
+      const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
+      await sendEmail(email, "Your OTP Code for Account Deletion", getTwoFactorAuthTemplate({
+        user_name: Name,
+        otp_code: otp.toString(),
+        security_link: `${appLink}/security`,
+        unsubscribe_link: `${appLink}/unsubscribe`,
+        preferences_link: `${appLink}/preferences`,
+        view_online_link: `${appLink}/view-online`
+      }));
+      console.log(`Delete Account OTP email successfully sent to ${email} for user ${Name}`); 
+    } catch (error: any) {
+      console.error(`Error sending Delete Account OTP email:`, error);
       throw error;
     }
   },

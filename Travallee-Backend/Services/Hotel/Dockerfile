@@ -1,14 +1,6 @@
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 
-
-# first install the packages in the root directory
-COPY Travallee-Backend/Packages/package.json Travallee-Backend/Packages/package-lock.json /app/Packages/
-WORKDIR /app/Packages
-RUN npm install
-
-
-COPY Travallee-Backend/Packages/ /app/Packages/
 
 
 # then install the packages in the Hotel service
