@@ -18,7 +18,6 @@ services:
       - ./Travallee-Backend/Services/Auth/.env
     volumes:
       - ./Travallee-Backend/Services/Auth/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped
@@ -33,7 +32,6 @@ services:
       - ./Travallee-Backend/Services/admin/.env
     volumes:
       - ./Travallee-Backend/Services/admin/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped
@@ -48,7 +46,6 @@ services:
       - ./Travallee-Backend/Services/booking/.env
     volumes:
       - ./Travallee-Backend/Services/booking/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped
@@ -63,7 +60,6 @@ services:
       - ./Travallee-Backend/Services/Hotel/.env
     volumes:
       - ./Travallee-Backend/Services/Hotel/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped
@@ -79,7 +75,6 @@ services:
       - ./Travallee-Backend/Services/notifications/.env
     volumes:
       - ./Travallee-Backend/Services/notifications/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped
@@ -94,7 +89,6 @@ services:
       - ./Travallee-Backend/Services/chat/.env
     volumes:
       - ./Travallee-Backend/Services/chat/src:/app/src
-      - /app/node_modules
     depends_on:
       - redis
     restart: unless-stopped

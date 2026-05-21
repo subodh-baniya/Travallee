@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   registerHotel,
   createroom,
-  deleteRoom,
+  // deleteRoom,
   featuredHotels,
   HotelData,
   getHotelInfo,
@@ -41,7 +41,7 @@ router.get("/rooms/:hotelId", authenticate, RoomData);
 
 router.get("/display-rooms/:hotelId", authenticate, displayRooms);
 
-router.delete("/room/:hotelId/:roomId", authenticate, deleteRoom);
+// router.delete("/room/:hotelId/:roomId", authenticate, deleteRoom);
 
 router.get("/:hotelId", authenticate, HotelData);
 

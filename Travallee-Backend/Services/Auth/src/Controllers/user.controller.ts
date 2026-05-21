@@ -1,4 +1,4 @@
-import { apiError } from "../config/response/api.error.js";
+import { apiError } from "../config/response/api.response.js";
 import { asyncHandler } from "../config/asynchandler.js";
 import { apiResponse } from "../config/response/api.response.js";
 import { UserModel } from "../model/User.model.js";
@@ -9,13 +9,14 @@ import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
-// @ts-ignore 
-const registerRedis = new Redis(connection); const UserProfileRedis = new Redis(connection);
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
   port: Number(process.env.REDIS_PORT) || 6379,
 }
+
+// @ts-ignore 
+const registerRedis = new Redis(connection); const UserProfileRedis = new Redis(connection);
 
 
 
