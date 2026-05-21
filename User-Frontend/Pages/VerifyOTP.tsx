@@ -38,16 +38,24 @@ const VerifyOTP = () => {
         type: "register",
       });
 
-      setSuccess("OTP verified — account created.");
+      if (!resp.data || resp.data.success !== true) {
+        setError(resp.data?.message || "Verification failed");
+        return;
+      }
 
-      const user = resp.data?.data;
+      const user = resp.data.data;
       const role = user?.role || "user";
 
+      // success: show message then prompt
+      setSuccess(resp.data.message || "OTP verified — account created.");
+
       if (role === "hotelAdmin" || role === "hoteladmin") {
+        // hotel admin -> redirect to hotel admin dashboard
         navigate("/dashboard");
         return;
       }
 
+      // regular user -> show explicit modal-like prompt (inline)
       setShowPostOptions(true);
     } catch (err: unknown) {
       const e = err as AxiosError<{ message?: string }>;
@@ -58,25 +66,6 @@ const VerifyOTP = () => {
   };
 
   const [showPostOptions, setShowPostOptions] = useState(false);
-  const [showHotelForm, setShowHotelForm] = useState(false);
-  const [hotelData, setHotelData] = useState({
-    hotelName: "",
-    location: "",
-    propertyType: "",
-    phone: "",
-    description: "",
-  });
-
-  const handleHotelChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setHotelData({ ...hotelData, [e.target.name]: e.target.value });
-  };
-
-  const submitHotel = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Save hotel data to localStorage and navigate to mock payment
-    localStorage.setItem("pendingHotel", JSON.stringify(hotelData));
-    navigate("/hotel-payment", { state: { hotelData } });
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -127,8 +116,9 @@ const VerifyOTP = () => {
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              readOnly
               placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
             />
           </motion.div>
 
@@ -188,24 +178,11 @@ const VerifyOTP = () => {
             <p className="mb-3">Your account is ready. What would you like to do next?</p>
             <div className="flex gap-2 justify-center">
               <button onClick={() => navigate('/login')} className="py-2 px-4 bg-gray-200 rounded">Go to App / Login</button>
-              <button onClick={() => setShowHotelForm(true)} className="py-2 px-4 bg-black text-white rounded">Register a Hotel</button>
+              <button onClick={() => navigate('/registerhotel')} className="py-2 px-4 bg-black text-white rounded">Register a Hotel</button>
             </div>
           </div>
         )}
 
-        {showHotelForm && (
-          <form onSubmit={submitHotel} className="mt-6 space-y-3">
-            <input name="hotelName" value={hotelData.hotelName} onChange={handleHotelChange} placeholder="Hotel name" className="w-full px-3 py-2 border rounded" />
-            <input name="location" value={hotelData.location} onChange={handleHotelChange} placeholder="Location / City" className="w-full px-3 py-2 border rounded" />
-            <input name="propertyType" value={hotelData.propertyType} onChange={handleHotelChange} placeholder="Property type" className="w-full px-3 py-2 border rounded" />
-            <input name="phone" value={hotelData.phone} onChange={handleHotelChange} placeholder="Contact phone" className="w-full px-3 py-2 border rounded" />
-            <textarea name="description" value={hotelData.description} onChange={handleHotelChange} placeholder="Short description" className="w-full px-3 py-2 border rounded" />
-            <div className="flex gap-2">
-              <button type="submit" className="py-2 px-4 bg-black text-white rounded">Continue to Payment</button>
-              <button type="button" onClick={() => setShowHotelForm(false)} className="py-2 px-4 border rounded">Cancel</button>
-            </div>
-          </form>
-        )}
       </motion.div>
     </div>
   );

@@ -99,63 +99,105 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
 });
 const verifyOTP = asyncHandler(async (req: any, res: any) => {
   const { email, otp, type } = req.body;
+
   let userData: any;
-  if (type === "delete") {
-    registerRedis.get(`deleteOtp:${email}`, (err: any, result: any) => {
-      if (err) {
-        console.error("Error retrieving OTP from Redis:", err);
-        return apiError(res, 500, "Internal server error");
-      }
-      if (!result) {
-        return apiError(res, 400, "OTP has expired or is invalid");
-      }
-      if (result !== otp.toString()) {
-        return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
-      }
-      registerRedis.del(`deleteOtp:${email}`);
-      UserModel.findOneAndDelete({ email }).then(() => {
-        return apiResponse(res, 200, true, "OTP verified successfully and account deleted");
+
+  try {
+    if (type === "delete") {
+      const result = await new Promise<string | null>((resolve, reject) => {
+        registerRedis.get(`deleteOtp:${email}`, (err: any, result: any) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
       });
-    });
-  }
-  if (type === "register") {
-     await registerRedis.get(`otp:${email}`, (err: any, result: any) => {
-      if (err) {
-        console.error("Error retrieving OTP from Redis:", err);
-        return apiError(res, 500, "Internal server error");
-      }
+
       if (!result) {
         return apiError(res, 400, "OTP has expired or is invalid");
       }
-      if (result !== otp.toString()) {
+
+      if (Number(result) !== Number(otp)) {
         return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
       }
-        registerRedis.del(`otp:${email}`);
-    });
-    registerRedis.get(`pendingUser:${email}`, async (err: any, result: any) => {
-      if (err) {
-        console.error("Error retrieving pending user from Redis:", err);
-        return apiError(res, 500, "Internal server error");
+
+      await new Promise<void>((resolve, reject) => {
+        registerRedis.del(`deleteOtp:${email}`, (err: any) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+
+      await UserModel.findOneAndDelete({ email });
+
+      return apiResponse(res, 200, true, "Account deleted successfully");
+    }
+
+
+    if (type === "register") {
+      const otpResult = await new Promise<string | null>((resolve, reject) => {
+        registerRedis.get(`otp:${email}`, (err: any, result: any) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+
+      if (!otpResult) {
+        return apiError(res, 400, "OTP has expired or is invalid");
       }
-      if (!result) {
+
+      if (Number(otpResult) !== Number(otp)) {
+        return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        registerRedis.del(`otp:${email}`, (err: any) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+
+      const pendingUser = await new Promise<string | null>((resolve, reject) => {
+        registerRedis.get(`pendingUser:${email}`, (err: any, result: any) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+
+      if (!pendingUser) {
         return apiError(res, 400, "No pending registration found for this email");
       }
-      userData = JSON.parse(result);
+
+      userData = JSON.parse(pendingUser);
+
       const newUser = new UserModel(userData);
       await newUser.save();
-
 
       await registerEmailQueue.add("SendWelcomeEmail", {
         userName: newUser.Name.toUpperCase(),
         to: newUser.email,
         userId: newUser._id.toString(),
       });
-      console.log(userData);
-      await registerRedis.del(`pendingUser:${email}`);
-    });
+
+      await new Promise<void>((resolve, reject) => {
+        registerRedis.del(`pendingUser:${email}`, (err: any) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+
+      return apiResponse(
+        res,
+        200,
+        true,
+        "User registered successfully",
+        newUser
+      );
+    }
+
+    return apiError(res, 400, "Invalid type");
+  } catch (err: any) {
+    console.error("verifyOTP error:", err);
+    return apiError(res, 500, "Internal server error");
   }
-  ;
-  return apiResponse(res, 200, true, "OTP verified successfully and user registered", userData);
 });
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
