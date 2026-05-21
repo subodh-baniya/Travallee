@@ -7,7 +7,6 @@ import {
   deleteUserProfile,
   updateUserProfile,
   getUserProfile,
-  sendOTP,
   verifyOTP,
   getUserProfilePicture,
   updateUserRole
@@ -37,7 +36,6 @@ router.get(
 router.get("/profile", authenticate, getUserProfile);
 router.post("/update-profile", authenticate, upload.single("profileImage"), updateUserProfile);
 router.delete("/delete-profile", authenticate, deleteUserProfile);
-router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.get("/profile-picture", authenticate, getUserProfilePicture);
 router.patch("/internal/update-role", updateUserRole);

@@ -94,6 +94,7 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   async (job: Job<OTPEmailJobData>) => {
     try {
       const { Name, otp , email } = job.data;
+      console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       await sendEmail(email, "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
         user_name: Name,
@@ -103,6 +104,8 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
         preferences_link: `${appLink}/preferences`,
         view_online_link: `${appLink}/view-online`
       }));
+      console.log(`OTP email successfully sent to ${email} for user ${Name}`);
+      
     } catch (error: any) {
       console.error(`Error sending OTP email:`, error);
       throw error;

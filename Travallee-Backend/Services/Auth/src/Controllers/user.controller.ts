@@ -10,13 +10,20 @@ import {
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue} from "bullmq";
+import Redis from "ioredis";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
   port: Number(process.env.REDIS_PORT) || 6379,
 }
 
+// @ts-ignore 
+const registerRedis = new Redis(connection);
+
 const registerEmailQueue = new Queue<RegisterEmailJobData>("Register", {
+  connection,
+});
+const otpQueue = new Queue<OTPEmailJobData>("OTP", {
   connection,
 });
 
@@ -32,10 +39,8 @@ interface RegisterEmailJobData {
   userId: string;
 }
 
-const otpQueue = new Queue<OTPEmailJobData>("OTP", {
-  connection,
-});
 
+// logic for user registration, login, logout, profile management, and OTP verification
 const registerUser = asyncHandler(async (req: any, res: any) => {
   try {
     const validate = registerSchema.parse(req.body);
@@ -53,21 +58,28 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 400, "Username already exists");
     }
 
-    const newUser = await UserModel.create(validate);
-    const userResponse = {
-      id: newUser._id,
-      Username: newUser.Username,
-      email: newUser.email,
-      Name: newUser.Name,
-      role: newUser.role,
-    };
+    const otp = Math.floor(100000 + Math.random() * 900000);
+   
+    registerRedis.set(`otp:${validate.email}`, otp, "EX", 10 * 60); // Store OTP in Redis with 10 minutes expiration
+
+    try {
+      otpQueue.add("SendOTP", {
+        email: validate.email,
+        Name: validate.Name,
+        otp,
+      });
+    } catch (error: any) {
+      console.log("error in processing OTP email:", error);
+    }
+
+    registerRedis.set(`pendingUser:${validate.email}`, JSON.stringify(validate), "EX", 10 * 60); 
 
     return apiResponse(
       res,
       201,
       true,
       "User registered successfully",
-      userResponse,
+      { Username: validate.Username, email: validate.email },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -80,6 +92,46 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Failed to register user", error);
   }
 });
+
+const verifyOTP = asyncHandler(async (req: any, res: any) => {
+  const { email , otp  } = req.body;
+  registerRedis.get(`otp:${req.body.email}`, (err: any, result: any) => {
+    if (err) {
+      console.error("Error retrieving OTP from Redis:", err);
+      return apiError(res, 500, "Internal server error");
+    } 
+   if (!result) {
+      return apiError(res, 400, "OTP has expired or is invalid");
+    }
+    if (result !== otp) {
+      return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
+    } 
+    registerRedis.del(`otp:${req.body.email}`);
+  });
+   registerRedis.get(`pendingUser:${req.body.email}`, async (err: any, result: any) => {
+    if (err) {
+      console.error("Error retrieving pending user from Redis:", err);
+      return apiError(res, 500, "Internal server error");
+    }
+    if (!result) {
+      return apiError(res, 400, "No pending registration found for this email");
+    }
+    const userData = JSON.parse(result);
+    const newUser = new UserModel(userData);
+    await newUser.save();
+
+    registerEmailQueue.add("SendWelcomeEmail", {
+      userName: newUser.Name,
+      to: newUser.email,
+      userId: newUser._id.toString(),
+    });
+
+
+    registerRedis.del(`pendingUser:${req.body.email}`);
+  });
+  return apiResponse(res, 200, true, "OTP verified successfully");
+});
+
 
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
@@ -237,70 +289,7 @@ const deleteUserProfile = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "User profile deleted successfully");
 });
 
-const sendOTP = asyncHandler(async (req: any, res: any) => {
-  const { email } = req.body;
-  if (!email) {
-    return apiError(res, 400, "Email is required to send OTP");
-  }
-  const user = await UserModel.findOne({ email });
-  if (!user) {
-    return apiError(res, 404, "User with the provided email not found");
-  }
-  const otp = Math.floor(1000 + Math.random() * 9000);
-  user.otp = otp;
-  await user.save();
 
-  try {
-    await otpQueue.add("otp", {
-      email: user.email,
-      Name: user.Name.toUpperCase(),
-      otp: user.otp,
-    });
-  } catch (error) {
-    console.log("error in sending email otp");
-  }
-  return apiResponse(res, 200, true, "OTP sent successfully to email");
-});
-
-const verifyOTP = asyncHandler(async (req: any, res: any) => {
-  const { email, otp } = req.body;
-  if (!email || !otp) {
-    return apiError(res, 400, "Email and OTP are required for verification");
-  }
-  const user = await UserModel.findOne({ email });
-  if (!user) {
-    return apiError(res, 404, "User with the provided email not found");
-  }
-  if (user.otp !== Number(otp)) {
-    return apiError(
-      res,
-      400,
-      "Invalid OTP. Please provide the correct OTP for verification.",
-    );
-  }
-  if (user.otpExpiry && user.otpExpiry < new Date()) {
-    return apiError(
-      res,
-      400,
-      "OTP has expired. Please request a new OTP for verification.",
-    );
-  }
-  user.otp = null;
-  user.isVerified = true;
-  await user.save();
-   try {
-      const emailData: RegisterEmailJobData = {
-        userName: user.Name.toUpperCase(),
-        to: user.email,
-        userId: user._id.toString(),
-      };
-      await registerEmailQueue.add("Register", emailData);
-    } catch (error) {
-      console.log("error in processing email:", error);
-    }
-
-  return apiResponse(res, 200, true, "OTP verified successfully");
-});
 
 const getUserProfilePicture = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
@@ -316,6 +305,11 @@ const getUserProfilePicture = asyncHandler(async (req: any, res: any) => {
     { profilePicture: user.profileimage }
   );
 });
+
+
+
+
+
 
 const updateUserProfilePicture = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
@@ -400,7 +394,6 @@ export {
   getUserProfile,
   updateUserProfile,
   deleteUserProfile,
-  sendOTP,
   verifyOTP,
   getUserProfilePicture,
   updateUserProfilePicture,
