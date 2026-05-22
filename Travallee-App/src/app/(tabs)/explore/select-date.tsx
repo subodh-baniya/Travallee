@@ -1,47 +1,72 @@
 import React, { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { isAxiosError } from 'axios';
 import {
   RealixColors,
   realixDiscoverProperty,
-  realixPaymentMethods,
 } from '@/src/constants/screens/realix';
-import { API_ENDPOINTS_BOOKING } from '@/src/constants/api';
-import apiClient from '@/src/services/apiClient';
 
 type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
-
-interface BookingRequestPayload {
-  roomId: string;
-  hotelId: string;
-  checkIn: string;
-  checkOut: string;
-  guestCount: number;
-  paymentMethod: 'KHALTI' | 'ESEWA' | 'COD';
-}
-
-interface BookingRecord {
-  _id: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
 
 const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as const;
 const daysInMonth = 31;
 const firstWeekdayOffset = 1;
 
+// Pill badge component
+function Badge({ label }: { label: string }) {
+  return (
+    <View style={badgeStyles.badge}>
+      <Text style={badgeStyles.text}>{label}</Text>
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  badge: {
+    backgroundColor: `${RealixColors.accent}22`,
+    borderWidth: 1,
+    borderColor: `${RealixColors.accent}55`,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  text: {
+    fontSize: 9,
+    color: RealixColors.accent,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+});
+
+// Section header with accent line
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <View style={sectionHeaderStyles.row}>
+      <View style={sectionHeaderStyles.line} />
+      <Text style={sectionHeaderStyles.label}>{label}</Text>
+    </View>
+  );
+}
+
+const sectionHeaderStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  line: { width: 3, height: 14, borderRadius: 2, backgroundColor: RealixColors.accent },
+  label: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: RealixColors.textPrimary,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+});
+
 export default function SelectDateScreen() {
   const router = useRouter();
-  
-  // Safe navigation handler
+
   const handleGoBack = () => {
     try {
       if (router.canGoBack?.()) {
@@ -49,7 +74,7 @@ export default function SelectDateScreen() {
       } else {
         router.replace('/(tabs)/explore');
       }
-    } catch (error) {
+    } catch {
       router.replace('/(tabs)/explore');
     }
   };
@@ -62,49 +87,42 @@ export default function SelectDateScreen() {
     pricePerNight?: string;
     maxGuests?: string;
   }>();
-  
+
   const actualPrice = pricePerNight ? parseInt(pricePerNight) : realixDiscoverProperty.nightlyPrice;
   const maxGuestCount = maxGuests ? parseInt(maxGuests) : 2;
+
   const [guestCount, setGuestCount] = useState(1);
   const [checkIn, setCheckIn] = useState<number | null>(null);
   const [checkOut, setCheckOut] = useState<number | null>(null);
-  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
-  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('esewa');
 
   const dayCells = useMemo<DayCell[]>(() => {
-    const previousMonthDays = Array.from({ length: firstWeekdayOffset }, (_, index) => ({
-      day: 31 - firstWeekdayOffset + index + 1,
+    const prev = Array.from({ length: firstWeekdayOffset }, (_, i) => ({
+      day: 31 - firstWeekdayOffset + i + 1,
       month: 'prev' as const,
     }));
-    const currentMonthDays = Array.from({ length: daysInMonth }, (_, index) => ({
-      day: index + 1,
+    const curr = Array.from({ length: daysInMonth }, (_, i) => ({
+      day: i + 1,
       month: 'current' as const,
     }));
-    const nextMonthDaysCount = 42 - (previousMonthDays.length + currentMonthDays.length);
-    const nextMonthDays = Array.from({ length: nextMonthDaysCount }, (_, index) => ({
-      day: index + 1,
+    const nextCount = 42 - (prev.length + curr.length);
+    const next = Array.from({ length: nextCount }, (_, i) => ({
+      day: i + 1,
       month: 'next' as const,
     }));
-    return [...previousMonthDays, ...currentMonthDays, ...nextMonthDays];
+    return [...prev, ...curr, ...next];
   }, []);
 
-  const inRange = (day: number) => checkIn !== null && checkOut !== null && day > checkIn && day < checkOut;
+  const inRange = (day: number) =>
+    checkIn !== null && checkOut !== null && day > checkIn && day < checkOut;
 
-  // Get current month and year for display
-  const getCurrentMonthYear = () => {
-    const today = new Date();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-    return `${monthNames[today.getMonth()]} ${today.getFullYear()}`;
+  const getMonthYear = () => {
+    const d = new Date();
+    return `${['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  // Get current month name for display
-  const getCurrentMonthName = () => {
-    const today = new Date();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return monthNames[today.getMonth()];
+  const getMonthShort = () => {
+    const d = new Date();
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
   };
 
   const onSelectDay = (day: number) => {
@@ -113,264 +131,317 @@ export default function SelectDateScreen() {
       setCheckOut(null);
       return;
     }
-
     if (day <= checkIn) {
       setCheckIn(day);
       setCheckOut(null);
       return;
     }
-
     setCheckOut(day);
   };
 
   const isSelectionComplete = checkIn !== null && checkOut !== null;
 
-  // Format date to YYYY-MM-DD
   const formatBookingDate = (day: number): string => {
-    // Get current month and year
     const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    
-    const date = new Date(currentYear, currentMonth, day);
+    const date = new Date(today.getFullYear(), today.getMonth(), day);
     return date.toISOString().split('T')[0];
   };
 
-  const handleCreateBooking = async () => {
+  const handleContinueToPayment = () => {
     if (!roomId || !hotelId || !checkIn || !checkOut) {
-      Alert.alert('Error', 'Missing required booking information');
+      Alert.alert('Missing information', 'Please select your stay dates first.');
       return;
     }
-
-    if (guestCount < 1) {
-      Alert.alert('Error', 'Please select at least 1 guest');
-      return;
-    }
-
-    setIsCreatingBooking(true);
-    try {
-      const bookingPayload: BookingRequestPayload = {
-        roomId,
-        hotelId,
+    router.push({
+      pathname: '/(tabs)/explore/payment',
+      params: {
+        roomId: roomId ?? '',
+        hotelId: hotelId ?? '',
+        hotelName: hotelName ?? '',
+        roomType: roomType ?? '',
+        pricePerNight: String(actualPrice),
+        maxGuests: String(maxGuestCount),
         checkIn: formatBookingDate(checkIn),
         checkOut: formatBookingDate(checkOut),
-        guestCount,
-        paymentMethod: selectedPaymentMethod.toUpperCase() as BookingRequestPayload['paymentMethod'],
-      };
-
-      const { data } = await apiClient.post<ApiResponse<BookingRecord>>(
-        API_ENDPOINTS_BOOKING.CREATE_BOOKING,
-        bookingPayload,
-      );
-
-      if (data.success && data.data?._id) {
-        Alert.alert('Success', 'Booking created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              router.push({
-                pathname: '/(tabs)/explore/payment',
-                params: {
-                  bookingId: data.data._id,
-                  checkIn: String(checkIn),
-                  checkOut: String(checkOut),
-                  guests: String(guestCount),
-                  roomType,
-                  pricePerNight,
-                },
-              });
-            },
-          },
-        ]);
-        return;
-      }
-
-      Alert.alert('Booking Error', data.message || 'Failed to create booking');
-    } catch (error) {
-      const errorMsg = isAxiosError(error)
-        ? error.response?.data?.message || error.message || 'Failed to create booking'
-        : 'Failed to create booking';
-      Alert.alert('Booking Error', errorMsg);
-    } finally {
-      setIsCreatingBooking(false);
-    }
+        guests: String(guestCount),
+      },
+    });
   };
 
-  // Calculate pricing
-  const nights = isSelectionComplete ? checkOut - checkIn : 0;
-  const nightlyPrice = actualPrice;
-  const roomFee = nights * nightlyPrice;
-  const discountPercentage = 0.15; // 15% discount
-  const discount = roomFee * discountPercentage;
-  const taxRate = 0.13; // 13% tax rate
-  const tax = (roomFee - discount) * taxRate;
+  const nights = isSelectionComplete ? checkOut! - checkIn! : 0;
+  const roomFee = nights * actualPrice;
+  const discount = roomFee * 0.15;
+  const tax = (roomFee - discount) * 0.13;
   const total = roomFee - discount + tax;
+
+  // Range edge helpers
+  const isRangeStart = (day: number) => checkIn !== null && checkOut !== null && day === checkIn;
+  const isRangeEnd = (day: number) => checkIn !== null && checkOut !== null && day === checkOut;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="light" />
 
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.headerIcon} onPress={handleGoBack}>
-            <Ionicons name="chevron-back" size={18} color={RealixColors.textPrimary} />
+          <Pressable style={styles.iconBtn} onPress={handleGoBack}>
+            <Ionicons name="chevron-back" size={16} color={RealixColors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Select Date</Text>
+          <View>
+            <Text style={styles.headerTitle}>Select Dates</Text>
+            <Text style={styles.headerSub}>Choose your stay window</Text>
+          </View>
         </View>
         <View style={styles.headerRight}>
-          <Pressable style={styles.headerIcon}><Ionicons name="heart-outline" size={16} color={RealixColors.textSecondary} /></Pressable>
-          <Pressable style={styles.headerIcon}><Ionicons name="ellipsis-horizontal" size={16} color={RealixColors.textSecondary} /></Pressable>
+          <Pressable style={styles.iconBtn}>
+            <Ionicons name="heart-outline" size={15} color={RealixColors.textSecondary} />
+          </Pressable>
+          <Pressable style={styles.iconBtn}>
+            <Ionicons name="share-outline" size={15} color={RealixColors.textSecondary} />
+          </Pressable>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.dateInputRow}>
-          <View style={[styles.dateInput, checkIn !== null && styles.dateInputActive]}>
-            <Text style={styles.dateLabel}>Check In</Text>
-            <Text style={[styles.dateValue, checkIn === null && styles.placeholder]}>
-              {checkIn === null ? 'Check In' : `${checkIn} ${getCurrentMonthName()}`}
-            </Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* ── Date Pickers ── */}
+        <View style={styles.dateRow}>
+          <View style={[styles.datePill, checkIn !== null && styles.datePillActive]}>
+            <View style={styles.datePillIcon}>
+              <Ionicons name="log-in-outline" size={13} color={checkIn !== null ? RealixColors.accent : RealixColors.textMuted} />
+            </View>
+            <View>
+              <Text style={styles.datePillLabel}>Check In</Text>
+              <Text style={[styles.datePillValue, checkIn === null && styles.datePillPlaceholder]}>
+                {checkIn === null ? '—' : `${checkIn} ${getMonthShort()}`}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.dateInput, checkOut !== null && styles.dateInputActive]}>
-            <Text style={styles.dateLabel}>Check Out</Text>
-            <Text style={[styles.dateValue, checkOut === null && styles.placeholder]}>
-              {checkOut === null ? 'Check Out' : `${checkOut} ${getCurrentMonthName()}`}
-            </Text>
+
+          <View style={styles.dateArrow}>
+            <Ionicons name="arrow-forward" size={13} color={RealixColors.textMuted} />
+          </View>
+
+          <View style={[styles.datePill, checkOut !== null && styles.datePillActive]}>
+            <View style={styles.datePillIcon}>
+              <Ionicons name="log-out-outline" size={13} color={checkOut !== null ? RealixColors.accent : RealixColors.textMuted} />
+            </View>
+            <View>
+              <Text style={styles.datePillLabel}>Check Out</Text>
+              <Text style={[styles.datePillValue, checkOut === null && styles.datePillPlaceholder]}>
+                {checkOut === null ? '—' : `${checkOut} ${getMonthShort()}`}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.guestRow}>
-          <Ionicons name="person-outline" size={14} color={RealixColors.textMuted} />
-          <Text style={styles.guestLabel}>Guest</Text>
-          <View style={styles.guestStepper}>
-            <Pressable style={styles.stepperBtn} onPress={() => setGuestCount((value) => Math.max(1, value - 1))}>
-              <Ionicons name="remove" size={14} color={RealixColors.textPrimary} />
-            </Pressable>
-            <Text style={styles.guestCount}>{guestCount}</Text>
+        {/* ── Guest Selector ── */}
+        <View style={styles.guestCard}>
+          <View style={styles.guestLeft}>
+            <View style={styles.guestIconWrap}>
+              <Ionicons name="people-outline" size={15} color={RealixColors.accent} />
+            </View>
+            <View>
+              <Text style={styles.guestTitle}>Guests</Text>
+              <Text style={styles.guestSub}>Max {maxGuestCount} allowed</Text>
+            </View>
+          </View>
+          <View style={styles.stepper}>
             <Pressable
-              style={[styles.stepperBtn, guestCount >= maxGuestCount && styles.stepperBtnDisabled]}
-              disabled={guestCount >= maxGuestCount}
-              onPress={() => setGuestCount((value) => Math.min(maxGuestCount, value + 1))}
+              style={[styles.stepBtn, guestCount <= 1 && styles.stepBtnDisabled]}
+              disabled={guestCount <= 1}
+              onPress={() => setGuestCount(v => Math.max(1, v - 1))}
             >
-              <Ionicons name="add" size={14} color={guestCount >= maxGuestCount ? RealixColors.textMuted : RealixColors.textPrimary} />
+              <Ionicons name="remove" size={14} color={guestCount <= 1 ? RealixColors.textCaption : RealixColors.textPrimary} />
+            </Pressable>
+            <Text style={styles.stepCount}>{guestCount}</Text>
+            <Pressable
+              style={[styles.stepBtn, guestCount >= maxGuestCount && styles.stepBtnDisabled]}
+              disabled={guestCount >= maxGuestCount}
+              onPress={() => setGuestCount(v => Math.min(maxGuestCount, v + 1))}
+            >
+              <Ionicons name="add" size={14} color={guestCount >= maxGuestCount ? RealixColors.textCaption : RealixColors.accent} />
             </Pressable>
           </View>
         </View>
 
+        {/* ── Calendar ── */}
         <View style={styles.calendarCard}>
-          <View style={styles.calendarNav}>
-            <Pressable><Text style={styles.navArrow}>‹</Text></Pressable>
-            <Text style={styles.monthTitle}>{getCurrentMonthYear()}</Text>
-            <Pressable><Text style={styles.navArrow}>›</Text></Pressable>
+          {/* Month nav */}
+          <View style={styles.calNav}>
+            <Pressable style={styles.navBtn}>
+              <Ionicons name="chevron-back" size={14} color={RealixColors.textMuted} />
+            </Pressable>
+            <View style={styles.calNavCenter}>
+              <Text style={styles.calMonthTitle}>{getMonthYear()}</Text>
+              {isSelectionComplete && (
+                <Badge label={`${nights} night${nights !== 1 ? 's' : ''}`} />
+              )}
+            </View>
+            <Pressable style={styles.navBtn}>
+              <Ionicons name="chevron-forward" size={14} color={RealixColors.textMuted} />
+            </Pressable>
           </View>
 
+          {/* Weekday labels */}
           <View style={styles.weekRow}>
-            {weekdayLabels.map((label) => (
-              <Text key={label} style={styles.weekLabel}>{label}</Text>
+            {weekdayLabels.map(l => (
+              <Text key={l} style={styles.weekLabel}>{l}</Text>
             ))}
           </View>
 
+          {/* Day grid */}
           <View style={styles.daysGrid}>
-            {dayCells.map((cell, index) => {
+            {dayCells.map((cell, idx) => {
               const isCurrent = cell.month === 'current';
               const isStart = isCurrent && checkIn === cell.day;
               const isEnd = isCurrent && checkOut === cell.day;
-              const isInRange = isCurrent && inRange(cell.day);
+              const isIn = isCurrent && inRange(cell.day);
+              const rangeEdgeStart = isRangeStart(cell.day) && isCurrent;
+              const rangeEdgeEnd = isRangeEnd(cell.day) && isCurrent;
+
               return (
                 <Pressable
-                  key={`${cell.month}-${cell.day}-${index}`}
+                  key={`${cell.month}-${cell.day}-${idx}`}
                   disabled={!isCurrent}
                   style={[
                     styles.dayCell,
-                    isInRange && styles.dayRange,
-                    (isStart || isEnd) && styles.daySelected,
+                    isIn && styles.dayCellRange,
+                    rangeEdgeStart && styles.dayCellRangeStartEdge,
+                    rangeEdgeEnd && styles.dayCellRangeEndEdge,
+                    (isStart || isEnd) && styles.dayCellSelected,
                   ]}
                   onPress={() => onSelectDay(cell.day)}
                 >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      !isCurrent && styles.dayOther,
-                      (isStart || isEnd) && styles.dayTextSelected,
-                    ]}
-                  >
+                  <Text style={[
+                    styles.dayText,
+                    !isCurrent && styles.dayTextOther,
+                    (isStart || isEnd) && styles.dayTextSelected,
+                    isIn && styles.dayTextInRange,
+                  ]}>
                     {cell.day}
                   </Text>
+                  {isCurrent && (isStart || isEnd) && (
+                    <View style={styles.dayDot} />
+                  )}
                 </Pressable>
               );
             })}
           </View>
+
+          {/* Legend */}
+          <View style={styles.calLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: RealixColors.accent }]} />
+              <Text style={styles.legendText}>Selected</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#2a2a2a', borderWidth: 1, borderColor: '#3a3a3a' }]} />
+              <Text style={styles.legendText}>In Range</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: 'transparent', borderWidth: 1, borderColor: RealixColors.textCaption }]} />
+              <Text style={styles.legendText}>Unavailable</Text>
+            </View>
+          </View>
         </View>
 
-        {isSelectionComplete ? (
-          <View style={styles.bookingPanel}>
-            <View style={styles.bookingTop}>
-              <View style={styles.bookingThumb} />
-              <View style={styles.bookingInfo}>
-                <Text style={styles.bookingName}>{hotelName || 'Hotel'}</Text>
-                <Text style={styles.bookingSubtitle}>{roomType || 'Room'}</Text>
-                <Text style={styles.bookingDate}>{checkIn} - {checkOut} {getCurrentMonthName()} | {guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
-                <Text style={styles.bookingPrice}>${nightlyPrice}/night</Text>
+        {/* ── Booking Summary (visible after selection) ── */}
+        {isSelectionComplete && (
+          <View style={styles.summaryCard}>
+            {/* Hotel info row */}
+            <View style={styles.summaryTop}>
+              <View style={styles.summaryThumb}>
+                <Ionicons name="business-outline" size={18} color={RealixColors.accent} />
+              </View>
+              <View style={styles.summaryInfo}>
+                <Text style={styles.summaryName} numberOfLines={1}>{hotelName || 'Hotel'}</Text>
+                <Text style={styles.summaryType}>{roomType || 'Standard Room'}</Text>
+                <View style={styles.summaryMeta}>
+                  <Ionicons name="calendar-outline" size={10} color={RealixColors.textMuted} />
+                  <Text style={styles.summaryMetaText}>{checkIn} – {checkOut} {getMonthShort()}</Text>
+                  <View style={styles.metaDivider} />
+                  <Ionicons name="people-outline" size={10} color={RealixColors.textMuted} />
+                  <Text style={styles.summaryMetaText}>{guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
+                </View>
+              </View>
+              <View style={styles.summaryPriceTag}>
+                <Text style={styles.summaryPriceTagValue}>${actualPrice}</Text>
+                <Text style={styles.summaryPriceTagLabel}>/night</Text>
               </View>
             </View>
 
-            <Text style={styles.detailTitle}>Detail</Text>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Room Fee ({nights} night{nights !== 1 ? 's' : ''})</Text><Text style={styles.detailValue}>${roomFee}</Text></View>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Discount (15%)</Text><Text style={[styles.detailValue, styles.discount]}>-${discount.toFixed(2)}</Text></View>
-            <View style={styles.detailRow}><Text style={styles.detailLabel}>Tax (10%)</Text><Text style={styles.detailValue}>${tax.toFixed(2)}</Text></View>
-            <View style={[styles.detailRow, styles.totalRow]}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>${total.toFixed(2)}</Text></View>
+            {/* Divider */}
+            <View style={styles.divider} />
 
-            <Text style={styles.payTitle}>Select Payment</Text>
-            <Pressable style={styles.paymentHeader} onPress={() => setShowPaymentMethods((value) => !value)}>
-              <Text style={styles.paymentHeaderText}>Payment Method</Text>
-              <Ionicons name={showPaymentMethods ? 'chevron-up' : 'chevron-down'} size={14} color={RealixColors.textMuted} />
-            </Pressable>
-
-            {showPaymentMethods ? (
-              <View style={styles.paymentOptionsWrap}>
-                {realixPaymentMethods.map((method) => (
-                  <Pressable
-                    key={method.id}
-                    style={[styles.paymentOptionItem, selectedPaymentMethod === method.id && styles.paymentOptionSelected]}
-                    onPress={() => setSelectedPaymentMethod(method.id)}
-                  >
-                    <Text style={styles.paymentMethodIcon}>
-                      {method.icon}
-                    </Text>
-                    <View style={styles.paymentMethodInfo}>
-                      <Text style={styles.paymentMethodLabel}>{method.label}</Text>
-                    </View>
-                    <View style={styles.radioButton}>
-                      {selectedPaymentMethod === method.id && (
-                        <View style={styles.radioButtonInner} />
-                      )}
-                    </View>
-                  </Pressable>
-                ))}
-                <Text style={styles.termsText}>
-                  By selecting pay it from below you agree to the House Rules, Cancellation Regulations, Privacy and Policy, and accept extra hotel terms.
-                </Text>
+            {/* Pricing breakdown */}
+            <SectionHeader label="Price Breakdown" />
+            <View style={styles.priceBreakdown}>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceRowLabel}>Room fee <Text style={styles.priceRowNote}>({nights} night{nights !== 1 ? 's' : ''})</Text></Text>
+                <Text style={styles.priceRowValue}>${roomFee.toFixed(2)}</Text>
               </View>
-            ) : null}
+              <View style={styles.priceRow}>
+                <View style={styles.priceRowLabelRow}>
+                  <Text style={styles.priceRowLabel}>Discount</Text>
+                  <View style={styles.discountBadge}><Text style={styles.discountBadgeText}>15% OFF</Text></View>
+                </View>
+                <Text style={[styles.priceRowValue, styles.priceDiscount]}>−${discount.toFixed(2)}</Text>
+              </View>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceRowLabel}>VAT <Text style={styles.priceRowNote}>(13%)</Text></Text>
+                <Text style={styles.priceRowValue}>${tax.toFixed(2)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.totalCard}>
+              <Text style={styles.totalCardLabel}>Total Amount</Text>
+              <Text style={styles.totalCardValue}>${total.toFixed(2)}</Text>
+            </View>
           </View>
-        ) : null}
+        )}
+
+        {/* Instruction hint when no dates selected */}
+        {!isSelectionComplete && (
+          <View style={styles.hintCard}>
+            <Ionicons name="information-circle-outline" size={16} color={RealixColors.accent} />
+            <Text style={styles.hintText}>
+              Tap a start date, then an end date on the calendar above to see pricing.
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
+      {/* ── Bottom Bar ── */}
       <View style={styles.bottomBar}>
         <View>
-          <Text style={styles.priceLabel}>Price:</Text>
-          <Text style={styles.priceValue}>{isSelectionComplete ? `$${total.toFixed(2)}` : `$${nightlyPrice}`}<Text style={styles.priceUnit}>{isSelectionComplete ? ' total' : '/night'}</Text></Text>
+          <Text style={styles.bottomLabel}>{isSelectionComplete ? 'Total' : 'From'}</Text>
+          <View style={styles.bottomPriceRow}>
+            <Text style={styles.bottomPrice}>
+              {isSelectionComplete ? `$${total.toFixed(2)}` : `$${actualPrice}`}
+            </Text>
+            {!isSelectionComplete && (
+              <Text style={styles.bottomUnit}>/night</Text>
+            )}
+          </View>
         </View>
         <Pressable
-          style={[styles.confirmButton, !isSelectionComplete && styles.confirmDisabled]}
-          disabled={!isSelectionComplete || isCreatingBooking}
-          onPress={handleCreateBooking}
+          style={[styles.confirmBtn, !isSelectionComplete && styles.confirmBtnDisabled]}
+          disabled={!isSelectionComplete}
+          onPress={handleContinueToPayment}
         >
-          {isCreatingBooking ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.confirmText}>Confirm</Text>
-          )}
+          <Text style={[styles.confirmBtnText, !isSelectionComplete && styles.confirmBtnTextDisabled]}>
+            Confirm & Pay
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={14}
+            color={isSelectionComplete ? '#000' : RealixColors.textMuted}
+          />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -378,234 +449,377 @@ export default function SelectDateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: RealixColors.pageBackground },
+  // ── Root ──
+  container: {
+    flex: 1,
+    backgroundColor: RealixColors.pageBackground,
+  },
+
+  // ── Header ──
   header: {
-    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: RealixColors.border,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: RealixColors.textPrimary },
-  headerRight: { flexDirection: 'row', gap: 8 },
-  headerIcon: {
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: RealixColors.textPrimary, letterSpacing: -0.3 },
+  headerSub: { fontSize: 10, color: RealixColors.textMuted, marginTop: 1 },
+  headerRight: { flexDirection: 'row', gap: 6 },
+  iconBtn: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: RealixColors.border,
     backgroundColor: RealixColors.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
-  dateInputRow: { flexDirection: 'row', gap: 8 },
-  dateInput: {
-    flex: 1,
-    backgroundColor: RealixColors.inputBackground,
-    borderWidth: 1,
-    borderColor: RealixColors.inputBorder,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  dateInputActive: { borderColor: RealixColors.textPrimary },
-  dateLabel: { fontSize: 10, color: RealixColors.textMuted },
-  dateValue: { marginTop: 2, fontSize: 12, color: RealixColors.textPrimary, fontWeight: '600' },
-  placeholder: { color: RealixColors.textCaption, fontWeight: '400' },
-  guestRow: {
-    backgroundColor: RealixColors.cardBackground,
-    borderWidth: 1,
-    borderColor: RealixColors.inputBorder,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+
+  // ── Scroll content ──
+  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 24, gap: 12 },
+
+  // ── Date row ──
+  dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  guestLabel: { fontSize: 12, color: RealixColors.textMuted, flex: 1 },
-  guestStepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepperBtn: {
+  datePill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: RealixColors.cardBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  datePillActive: {
+    borderColor: `${RealixColors.accent}88`,
+    backgroundColor: `${RealixColors.accent}0d`,
+  },
+  datePillIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: RealixColors.inputBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePillLabel: { fontSize: 9, color: RealixColors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  datePillValue: { fontSize: 13, fontWeight: '700', color: RealixColors.textPrimary, marginTop: 1 },
+  datePillPlaceholder: { color: RealixColors.textCaption, fontWeight: '400' },
+  dateArrow: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: RealixColors.inputBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Guest card ──
+  guestCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: RealixColors.cardBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  guestLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  guestIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: `${RealixColors.accent}18`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestTitle: { fontSize: 13, fontWeight: '700', color: RealixColors.textPrimary },
+  guestSub: { fontSize: 10, color: RealixColors.textMuted, marginTop: 1 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+    backgroundColor: RealixColors.inputBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnDisabled: { opacity: 0.35 },
+  stepCount: {
     width: 22,
-    height: 22,
-    borderRadius: 11,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '800',
+    color: RealixColors.textPrimary,
+  },
+
+  // ── Calendar ──
+  calendarCard: {
+    backgroundColor: RealixColors.cardBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 10,
+  },
+  calNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  calNavCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  calMonthTitle: { fontSize: 14, fontWeight: '800', color: RealixColors.textPrimary, letterSpacing: -0.2 },
+  navBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: RealixColors.inputBackground,
     borderWidth: 1,
     borderColor: RealixColors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperBtnDisabled: {
-    opacity: 0.5,
+  weekRow: { flexDirection: 'row', marginBottom: 6 },
+  weekLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 9,
+    fontWeight: '700',
+    color: RealixColors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  guestCount: { width: 18, textAlign: 'center', fontSize: 12, color: RealixColors.textPrimary, fontWeight: '600' },
-  calendarCard: {
-    backgroundColor: RealixColors.screenBackground,
-    borderWidth: 1,
-    borderColor: RealixColors.border,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 8,
-  },
-  calendarNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  navArrow: { fontSize: 16, color: RealixColors.textMuted, paddingHorizontal: 4 },
-  monthTitle: { fontSize: 13, fontWeight: '700', color: RealixColors.textPrimary },
-  weekRow: { flexDirection: 'row', marginBottom: 4 },
-  weekLabel: { flex: 1, textAlign: 'center', fontSize: 10, color: RealixColors.textMuted, fontWeight: '600' },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCell: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 18,
+    borderRadius: 8,
   },
-  dayText: { fontSize: 11, color: RealixColors.textPrimary },
-  dayOther: { color: RealixColors.textCaption },
-  dayRange: { backgroundColor: '#2a2a2a', borderRadius: 0 },
-  daySelected: { backgroundColor: RealixColors.textPrimary, borderRadius: 18 },
-  dayTextSelected: { color: RealixColors.screenBackground, fontWeight: '700' },
-  bookingPanel: {
+  dayCellRange: {
+    backgroundColor: `${RealixColors.accent}15`,
+    borderRadius: 0,
+  },
+  dayCellRangeStartEdge: {
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  dayCellRangeEndEdge: {
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  dayCellSelected: {
+    backgroundColor: RealixColors.accent,
+    borderRadius: 8,
+  },
+  dayText: { fontSize: 12, fontWeight: '500', color: RealixColors.textPrimary },
+  dayTextOther: { color: RealixColors.textCaption, fontWeight: '400' },
+  dayTextSelected: { color: '#000', fontWeight: '800' },
+  dayTextInRange: { color: RealixColors.accent },
+  dayDot: {
+    position: 'absolute',
+    bottom: 4,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#000',
+  },
+  calLegend: {
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: RealixColors.border,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 8, height: 8, borderRadius: 2 },
+  legendText: { fontSize: 9, color: RealixColors.textMuted, fontWeight: '500' },
+
+  // ── Summary Card ──
+  summaryCard: {
     backgroundColor: RealixColors.cardBackground,
     borderWidth: 1,
     borderColor: RealixColors.border,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
-  },
-  bookingTop: {
-    flexDirection: 'row',
-    gap: 8,
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: RealixColors.border,
-  },
-  bookingThumb: {
-    width: 46,
-    height: 46,
-    borderRadius: 8,
-    backgroundColor: '#1a2a3a',
-  },
-  bookingInfo: { flex: 1, justifyContent: 'center' },
-  bookingName: { fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
-  bookingDate: { fontSize: 10, color: RealixColors.textMuted, marginTop: 2 },
-  bookingSubtitle: { fontSize: 10, color: RealixColors.accent, marginTop: 1 },
-  bookingPrice: { fontSize: 11, fontWeight: '700', color: RealixColors.textPrimary, marginTop: 2 },
-  detailTitle: { paddingHorizontal: 12, paddingTop: 10, fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  detailLabel: { fontSize: 12, color: RealixColors.textSecondary },
-  detailValue: { fontSize: 12, color: RealixColors.textSecondary },
-  discount: { color: '#e74c3c' },
-  totalRow: { borderTopWidth: 1, borderTopColor: RealixColors.border, marginTop: 2, paddingTop: 8, paddingBottom: 8 },
-  totalLabel: { fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
-  totalValue: { fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
-  payTitle: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6, fontSize: 12, fontWeight: '700', color: RealixColors.textPrimary },
-  paymentHeader: {
-    marginHorizontal: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: RealixColors.inputBorder,
-    borderRadius: 8,
-    minHeight: 36,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  paymentHeaderText: { fontSize: 12, color: RealixColors.textSecondary },
-  paymentOptionsWrap: { paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
-  paymentOptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 14,
     gap: 12,
+  },
+  summaryTop: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  summaryThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: `${RealixColors.accent}18`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: `${RealixColors.accent}33`,
+  },
+  summaryInfo: { flex: 1 },
+  summaryName: { fontSize: 13, fontWeight: '800', color: RealixColors.textPrimary, letterSpacing: -0.2 },
+  summaryType: { fontSize: 10, color: RealixColors.accent, fontWeight: '600', marginTop: 2 },
+  summaryMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
+  summaryMetaText: { fontSize: 10, color: RealixColors.textMuted },
+  metaDivider: { width: 1, height: 10, backgroundColor: RealixColors.border, marginHorizontal: 2 },
+  summaryPriceTag: { alignItems: 'flex-end' },
+  summaryPriceTagValue: { fontSize: 16, fontWeight: '800', color: RealixColors.textPrimary },
+  summaryPriceTagLabel: { fontSize: 9, color: RealixColors.textMuted, marginTop: 1 },
+
+  divider: { height: 1, backgroundColor: RealixColors.border },
+
+  // ── Price Breakdown ──
+  priceBreakdown: { gap: 6 },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceRowLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  priceRowLabel: { fontSize: 12, color: RealixColors.textSecondary },
+  priceRowNote: { fontSize: 10, color: RealixColors.textMuted },
+  priceRowValue: { fontSize: 12, fontWeight: '600', color: RealixColors.textPrimary },
+  priceDiscount: { color: '#e05252' },
+  discountBadge: {
+    backgroundColor: '#e0525215',
+    borderWidth: 1,
+    borderColor: '#e0525233',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  discountBadgeText: { fontSize: 8, color: '#e05252', fontWeight: '700', letterSpacing: 0.3 },
+
+  totalCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: `${RealixColors.accent}10`,
+    borderWidth: 1,
+    borderColor: `${RealixColors.accent}33`,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  totalCardLabel: { fontSize: 13, fontWeight: '700', color: RealixColors.textPrimary },
+  totalCardValue: { fontSize: 18, fontWeight: '800', color: RealixColors.accent },
+
+  // ── Payment ──
+  paymentToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: RealixColors.inputBackground,
     borderWidth: 1,
     borderColor: RealixColors.inputBorder,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  paymentOptionSelected: {
-    borderColor: RealixColors.accent,
-    backgroundColor: `${RealixColors.accent}15`,
-  },
-  paymentMethodIcon: {
-    fontSize: 24,
-  },
-  paymentMethodEmoji: {
-    fontSize: 20,
-  },
-  paymentMethodInfo: {
-    flex: 1,
-  },
-  paymentMethodLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: RealixColors.textPrimary,
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
+  paymentToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  paymentToggleText: { fontSize: 12, color: RealixColors.textSecondary },
+  paymentList: { gap: 8, marginTop: 2 },
+  paymentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: RealixColors.inputBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.inputBorder,
     borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  paymentItemActive: {
+    borderColor: `${RealixColors.accent}88`,
+    backgroundColor: `${RealixColors.accent}10`,
+  },
+  paymentItemIcon: { fontSize: 22 },
+  paymentItemLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: RealixColors.textPrimary },
+  radio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
     borderColor: RealixColors.textMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioButtonInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  radioActive: { borderColor: RealixColors.accent },
+  radioInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: RealixColors.accent,
   },
-  paymentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mcIcon: {
-    width: 30,
-    height: 18,
-    borderRadius: 3,
-    backgroundColor: '#eb001b',
-    alignItems: 'center',
-    justifyContent: 'center',
+  termsText: {
+    fontSize: 10,
+    lineHeight: 15,
+    color: RealixColors.textMuted,
+    marginTop: 4,
   },
-  mcText: { color: '#ffffff', fontSize: 8, fontWeight: '700' },
-  ppIcon: {
-    width: 30,
-    height: 18,
-    borderRadius: 3,
-    backgroundColor: '#003087',
-    alignItems: 'center',
-    justifyContent: 'center',
+
+  // ── Hint ──
+  hintCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: `${RealixColors.accent}0d`,
+    borderWidth: 1,
+    borderColor: `${RealixColors.accent}33`,
+    borderRadius: 10,
+    padding: 12,
   },
-  ppText: { color: '#009cde', fontSize: 8, fontWeight: '700' },
-  payMethodText: { fontSize: 12, color: RealixColors.textPrimary },
-  addPaymentRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addPaymentText: { fontSize: 12, color: RealixColors.textMuted },
-  termsText: { fontSize: 10, lineHeight: 15, color: RealixColors.textMuted },
+  hintText: { flex: 1, fontSize: 11, color: RealixColors.textSecondary, lineHeight: 16 },
+
+  // ── Bottom Bar ──
   bottomBar: {
     borderTopWidth: 1,
     borderTopColor: RealixColors.border,
     backgroundColor: RealixColors.screenBackground,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  priceLabel: { fontSize: 11, color: RealixColors.textMuted },
-  priceValue: { fontSize: 18, color: RealixColors.textPrimary, fontWeight: '700' },
-  priceUnit: { fontSize: 12, color: RealixColors.textMuted, fontWeight: '400' },
-  confirmButton: {
+  bottomLabel: { fontSize: 10, color: RealixColors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' },
+  bottomPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2, marginTop: 2 },
+  bottomPrice: { fontSize: 20, fontWeight: '800', color: RealixColors.textPrimary, letterSpacing: -0.5 },
+  bottomUnit: { fontSize: 11, color: RealixColors.textMuted },
+  confirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: RealixColors.accent,
-    borderRadius: 20,
+    borderRadius: 12,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
-  confirmDisabled: { backgroundColor: '#3a3a3a' },
-  confirmText: { color: '#000000', fontSize: 13, fontWeight: '700' },
+  confirmBtnDisabled: {
+    backgroundColor: RealixColors.inputBackground,
+    borderWidth: 1,
+    borderColor: RealixColors.border,
+  },
+  confirmBtnText: { color: '#000', fontSize: 13, fontWeight: '800', letterSpacing: 0.2 },
+  confirmBtnTextDisabled: { color: RealixColors.textMuted },
 });

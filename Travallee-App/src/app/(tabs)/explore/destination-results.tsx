@@ -100,7 +100,7 @@ export default function DestinationResultsScreen() {
                       </Text>
                     </View>
                   </View>
-                  {hotel.rating && (
+                  {hotel.rating !== undefined && hotel.rating !== null && (
                     <View style={styles.ratingBadge}>
                       <Ionicons name="star" size={12} color="#FFB800" />
                       <Text style={styles.ratingText}>{hotel.rating}</Text>
@@ -113,7 +113,7 @@ export default function DestinationResultsScreen() {
                   <Text style={styles.propertyType}>
                     {hotel.propertyType || 'Hotel'}
                   </Text>
-                  {hotel.numberOfReviews && (
+                  {hotel.numberOfReviews !== undefined && hotel.numberOfReviews !== null && (
                     <Text style={styles.reviewsText}>
                       {hotel.numberOfReviews} reviews
                     </Text>

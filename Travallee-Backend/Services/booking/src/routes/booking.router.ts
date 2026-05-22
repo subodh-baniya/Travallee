@@ -6,7 +6,7 @@ const router = Router();
 
 
 router.post("/esewa/success", esewaSuccess)
-router.post("/create-booking", authenticate,createBooking)
+router.post("/create-booking", authenticate , createBooking)
 router.post("/verify-otp", authenticate, verifyBookingOtp)
 
 

@@ -19,8 +19,8 @@ export default function VerifyCode() {
   const [errorMessage, setErrorMessage] = useState("");
   const params = useLocalSearchParams();
   const email = typeof params.email === "string" ? params.email : null;
-  const phone = typeof params.phone === "string" ? params.phone : null;
-  const contact = email || phone;
+  const verificationType = typeof params.type === "string" ? params.type : "register";
+  const contact = email;
 
   const handleNumberPress = (value: string) => {
     if (otp.length < OTP_LENGTH) {
@@ -36,7 +36,7 @@ export default function VerifyCode() {
 
   const handleContinue = async () => {
     if (!contact) {
-      setErrorMessage("Missing contact details. Please try signing in again.");
+      setErrorMessage("Missing email address. Please use email sign up.");
       return;
     }
 
@@ -49,7 +49,7 @@ export default function VerifyCode() {
     setErrorMessage("");
 
     try {
-      const payload = email ? { email, otp } : { phone, otp };
+      const payload = { email, otp, type: verificationType };
       // Token is automatically added by apiClient interceptor
       const response = await apiClient.post(API_VERIFY_OTP, payload);
 

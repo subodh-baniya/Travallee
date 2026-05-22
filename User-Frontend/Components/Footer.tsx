@@ -1,13 +1,18 @@
 import { FaFacebookF, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
 
 const Footer = () => {
+  const logoSrc = "/Logo.png";
+
   return (
     <footer className="bg-linear-to-r from-blue-800 via-blue-900 to-indigo-900 text-gray-200 pt-12 pb-6">
       <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-8 items-start">
 
         {/* Logo / Brand + CTA */}
-        <div className="text-center md:text-left">
-          <h2 className="text-3xl font-bold text-white mb-2">Travallee</h2>
+        <div className="text-center md:text-left flex flex-col items-center md:items-start">
+          <div className="flex items-center gap-3 mb-2">
+            <img src={logoSrc} alt="Travallee logo" className="h-9 w-9 object-contain" />
+            <h2 className="text-3xl font-bold text-white">Travallee</h2>
+          </div>
           <p className="text-gray-300 text-sm">
             Connecting hotels with travelers. Manage your property, grow your business, and reach more guests.
           </p>
@@ -61,8 +66,9 @@ const Footer = () => {
 
           </div>
 
-          <p className="text-gray-400 text-sm">
-            &copy; 2026 Travallee. All rights reserved.
+          <p className="text-gray-400 text-sm flex items-center justify-center md:justify-end gap-2">
+            <img src={logoSrc} alt="Travallee logo" className="h-4 w-4 object-contain opacity-80" />
+            <span>&copy; 2026 Travallee. All rights reserved.</span>
           </p>
         </div>
       </div>

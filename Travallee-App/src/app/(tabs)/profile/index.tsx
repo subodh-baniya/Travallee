@@ -114,7 +114,7 @@ export default function ProfileScreen() {
         const response = await apiClient.get(API_PROFILE_IMAGE);
         
         if (response.data.success && response.data.data?.profilePicture) {
-          setProfileImage(response.data.data.profilePicture);
+          setProfileImage(response.data.data.profilePicture || response.data.data.profileimage || null);
         }
       } catch (err: any) {
         // Silent error - avatar shows empty if profile fetch fails

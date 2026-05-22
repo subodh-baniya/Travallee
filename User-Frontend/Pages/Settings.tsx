@@ -12,7 +12,8 @@ import {
   FaSwimmingPool,
   FaFileAlt,
 } from "react-icons/fa";
-import { getHotelById } from "../Services/hotel.api";
+import { useNavigate } from "react-router-dom";
+import { getHotelById, getRooms } from "../Services/hotel.api";
 import { useAuth } from "../Contexts/Authcontext";
 
 interface HotelSettings {
@@ -33,6 +34,23 @@ interface HotelSettings {
   numberOfReviews?: number;
 }
 
+interface HotelRoom {
+  _id?: string;
+  roomNumber?: string;
+  roomType?: string;
+  suitetype?: string;
+  roomDescription?: string;
+  capacity?: number;
+  maxOccupancy?: number;
+  pricePerNight?: number;
+  basePrice?: number;
+  roomImages?: string[];
+  amenities?: string[];
+  bedType?: string;
+  floorNumber?: number;
+  status?: string;
+}
+
 const facilityIcons: Record<string, React.ReactNode> = {
   "Free WiFi": <FaWifi />,
   Parking: <FaParking />,
@@ -42,9 +60,11 @@ const facilityIcons: Record<string, React.ReactNode> = {
 
 const SettingsPage: React.FC = () => {
   const auth = useAuth();
+  const navigate = useNavigate();
   const hotelId = auth?.hotelId;
 
   const [settings, setSettings] = useState<HotelSettings | null>(null);
+  const [rooms, setRooms] = useState<HotelRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -62,6 +82,23 @@ const SettingsPage: React.FC = () => {
       try {
         const res = await getHotelById(hotelId);
         const hotel = res?.data ?? res;
+
+        try {
+          const roomRes = await getRooms(hotelId);
+          const roomPayload = roomRes?.data ?? roomRes;
+          const roomList = Array.isArray(roomPayload?.rooms)
+            ? roomPayload.rooms
+            : Array.isArray(roomPayload)
+              ? roomPayload
+              : Array.isArray(roomPayload?.data)
+                ? roomPayload.data
+                : [];
+
+          setRooms(roomList);
+        } catch (roomError) {
+          console.error("Failed to fetch hotel rooms:", roomError);
+          setRooms([]);
+        }
 
         setSettings({
           _id: hotel?._id,
@@ -374,6 +411,69 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+          </div>
+
+          {/* ROOMS */}
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Room Details
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                    Open a room to view or edit details in a separate page.
+                </p>
+              </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard/room-details")}
+                  className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Open all rooms
+                </button>
+            </div>
+
+              <div className="flex flex-wrap gap-3">
+              {rooms.map((room, index) => (
+                <div
+                  key={room._id || room.roomNumber || index}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`);
+                      }
+                    }}
+                    className="min-w-[140px] flex-1 max-w-[180px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-blue-50 transition cursor-pointer"
+                >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Room</div>
+                        <div className="text-2xl font-bold text-slate-900">{room.roomNumber || "N/A"}</div>
+                      </div>
+
+                      <span className="text-[10px] px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 uppercase">
+                        {room.status || "AVAILABLE"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 text-xs text-slate-500 line-clamp-2">
+                      {room.roomType || room.suitetype || "Room details"}
+                    </div>
+                </div>
+              ))}
+
+              {rooms.length === 0 && !loading && (
+                  <div className="w-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50">
+                  No room details found for this hotel yet.
+                </div>
+              )}
+            </div>
 
           </div>
 

@@ -59,7 +59,19 @@ const bookingSchema = new mongoose.Schema({
     khalti_pidx:{
         type:String,
         default:null
-    }
+    },
+    hotelName:{
+        type:String,
+        required:true
+    },
+    roomNumber:{
+        type:String,
+        required:true
+    },
+    email:{
+        type:String,
+        required:true
+    },
 
 }, { timestamps: true })
 

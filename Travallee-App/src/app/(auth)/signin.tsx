@@ -26,7 +26,7 @@ import { io } from 'socket.io-client';
 export default function SignIn() {
   const API_SIGNIN = API_ENDPOINTS_AUTH.LOGIN;
   const router = useRouter();
-  const { user, setSocket } = useAuth();
+  const { user, setSocket, checkAuth } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -84,12 +84,13 @@ export default function SignIn() {
         const token :  string = response.data?.data?.token;
         await SecureStore.setItemAsync('userToken', token);
         await AsyncStorage.setItem('token', token);
-        
 
-        const userData = response.data?.data?.data;
+        const userData = response.data?.data;
         if (userData) {
           await SecureStore.setItemAsync('userData', JSON.stringify(userData));
         }
+
+        await checkAuth();
 
         const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://192.168.1.142:6001', {
           auth: {
@@ -129,7 +130,7 @@ export default function SignIn() {
   };
 
   const handlePhoneTab = () => {
-    router.replace('/(auth)/signin-phone' as any);
+    router.replace('/(auth)/signin' as any);
   };
 
   const handleGoogleSignIn = () => {

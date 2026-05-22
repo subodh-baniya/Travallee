@@ -45,17 +45,24 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-slate-100">
         {!collapsed ? (
-          <div>
-            <span className="text-lg font-semibold text-blue-600">
-              Travallee
-            </span>
-            <div className="text-[10px] text-slate-800 tracking-widest">
-              HOTEL OWNER
+          <div className="flex items-center gap-3">
+            <img
+              src="/Logo.png"
+              alt="Travallee logo"
+              className="h-8 w-8 object-contain"
+            />
+            <div>
+              <span className="text-lg font-semibold text-blue-600">
+                Travallee
+              </span>
+              <div className="text-[10px] text-slate-800 tracking-widest">
+                HOTEL OWNER
+              </div>
             </div>
           </div>
         ) : (
-          <div className="w-8 h-8 bg-blue-50 text-blue-600 flex items-center justify-center rounded-md font-semibold">
-            T
+          <div className="w-8 h-8 bg-white flex items-center justify-center rounded-md border border-slate-200 overflow-hidden">
+            <img src="/Logo.png" alt="Travallee logo" className="h-6 w-6 object-contain" />
           </div>
         )}
       </div>
