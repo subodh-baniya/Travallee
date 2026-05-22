@@ -9,6 +9,7 @@ import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
+import axios from "axios";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -229,7 +230,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
       200,
       true,
       "User logged in successfully",
-      user,
+      {  role: user.role, token },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {

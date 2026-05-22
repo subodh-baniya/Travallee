@@ -4,6 +4,7 @@ import { sendEmail } from '../config/Resend.config.js';
 import { getWelcomeLoginTemplate } from "../templates/index.js";
 import { getTwoFactorAuthTemplate } from '../templates/index.js';
 import { getBookingConfirmationTemplate } from '../templates/index.js';
+import { getHotelRegistrationTemplate } from '../templates/index.js';
 
 const connection = {
   host: process.env.REDIS_HOST as string,
@@ -53,6 +54,15 @@ interface PaymentFailedJobData {
   userName: string;
   amount: number;
   failureReason: string;
+}
+
+interface HotelRegistrationJobData {
+  userID: string;
+  hotelName: string;
+  location: string;
+  description: string;
+  contactEmail: string;
+  contactPhone: string;
 }
 
 const registerEmailWorker = new Worker<RegisterEmailJobData>(
@@ -191,6 +201,36 @@ const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
   }
 );
 
+const HotelRegistrationWorker = new Worker<HotelRegistrationJobData>(
+  "HotelRegistration",
+  async (job: Job<HotelRegistrationJobData>) => {
+    const { hotelName, location, description, contactEmail, contactPhone } = job.data;
+    console.log(`Received hotel registration email job #${job.id} for hotel: ${hotelName} with contact email: ${contactEmail}`);
+    console.log(`Processing hotel registration email job #${job.id} for hotel: ${hotelName} for email: ${contactEmail}`);
+    try {
+      await sendEmail(
+        contactEmail,
+        "Your Hotel Registration is Being Processed - Travallee",
+        getHotelRegistrationTemplate({
+          user_name: hotelName,
+          hotel_name: hotelName,
+          location: location,
+          description: description,
+          contact_email: contactEmail,
+          contact_phone: contactPhone
+        })
+      );
+      console.log(`Hotel registration email successfully sent to ${contactEmail} for hotel ${hotelName}`);
+    } catch (error) {
+      console.error(`Error sending hotel registration email for hotel ${hotelName} to ${contactEmail}:`, error);
+      throw error;
+    }
+  },
+  {
+    connection,
+  }
+);  
+
 
 const bookingCancellationWorker = new Worker<BookingCancellationJobData>(
   "BookingCancellation",
@@ -224,12 +264,5 @@ const paymentFailedWorker = new Worker<PaymentFailedJobData>(
 
 
 
-export {
-  registerEmailWorker,
-  otpEmailWorker,
-  bookingConfirmationWorker,
-  bookingCancellationWorker,
-  paymentSuccessWorker,
-  paymentFailedWorker
-};
+
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  registerHotel,
+  registerHotelRequest,
   createroom,
   // deleteRoom,
   featuredHotels,
@@ -19,7 +19,7 @@ import { upload } from "../middleware/mullter.middleware.js";
 
 const router = Router();
 
-router.post("/register", authenticate, upload.any(), registerHotel);
+router.post("/register", authenticate, upload.any(), registerHotelRequest);
 
 // router.get("/dashboard", authenticate, getHotelDashboard);
 
