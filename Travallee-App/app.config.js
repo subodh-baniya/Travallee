@@ -2,6 +2,8 @@ import 'dotenv/config';
 
 export default {
   expo: {
+    owner: "kcprabin",
+
     name: "Travallee",
     slug: "travallee",
     version: "1.0.0",
@@ -10,29 +12,32 @@ export default {
     scheme: "app",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
-    
+
     plugins: [
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "Allow Travallee to access your location to provide better services nearby.",
+          locationAlwaysAndWhenInUsePermission:
+            "Allow Travallee to access your location to provide better services nearby.",
         },
       ],
     ],
-    
+
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.anonymous.travallee",
       infoPlist: {
-        NSLocationWhenInUseUsageDescription: "We need your location to provide better services nearby.",
-        NSLocationAlwaysAndWhenInUseUsageDescription: "We need your location to show nearby places and improve your experience.",
+        NSLocationWhenInUseUsageDescription:
+          "We need your location to provide better services nearby.",
+        NSLocationAlwaysAndWhenInUseUsageDescription:
+          "We need your location to show nearby places and improve your experience.",
       },
     },
+
     android: {
       package: "com.anonymous.travallee",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
-        
       },
       predictiveBackGestureEnabled: false,
       permissions: [
@@ -40,19 +45,21 @@ export default {
         "android.permission.ACCESS_COARSE_LOCATION",
       ],
     },
+
     web: {
       output: "static",
-      
     },
-    extra : {
+
+    extra: {
+      apiBaseUrl: process.env.API_BASE_URL,
       eas: {
-        projectId: "d1b8c9e7-5a3c-4f0b-9c8e-2a1b2c3d4e5f"
+        projectId: "6b1fbe09-3646-460b-a47e-5f5b5989fabf",
       },
-      apiBaseUrl: process.env.API_BASE_URL 
     },
+
     experiments: {
       typedRoutes: true,
-      reactCompiler: true
-    }
-  }
+      reactCompiler: true,
+    },
+  },
 };
