@@ -158,7 +158,7 @@ const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
 );
 
 const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
-  "sendBookingOtp",
+  "bookingConfirmationOtp",
   async (job: Job<BookingConfirmationJobData>) => {
 
     const { email, userName, bookingId, hotelName, checkInDate, checkOutDate, roomNumber, otp } = job.data;

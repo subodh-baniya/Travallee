@@ -11,7 +11,6 @@ import { Queue } from "bullmq"
 import redis from "ioredis";
 
 
-
 const connection = {
     host: process.env.REDIS_HOST as string,
     port: Number(process.env.REDIS_PORT)
@@ -19,23 +18,21 @@ const connection = {
 
 //@ts-ignore
 const bookingRedis = new redis(connection);
-const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("BookingConfirmation", {
+const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingConfirmationOtp", {
     connection
 })
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
     let validated: any;
-    console.log("Received booking request with data:", req.body);
-    console.log("User data from request:", req.user);
     const userId = req.user.id;
-    const userEmail = req.user.email;
-    const userName = req.user.name;
-    const hotelName = req.body.hotelName;
-    const roomNumber = req.body.roomNumber;
-    const data = { userId, userEmail, userName, hotelName, roomNumber, ...req.body };
+    console.log(req.user);
+    const { email ,Name } = req.user;
+    console.log("Creating booking for user:", { userId, email, Name });
+
 
     try {
-        validated = createBookingSchema.parse(data);
+        validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+        console.log("Validated booking data:", validated);
     } catch (error: any) {
         if (error instanceof z.ZodError) {
             const formattedErrors = error.issues.map((issue) => ({
@@ -54,8 +51,6 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     } catch (e) {
         return apiError(res, 400, "Invalid room or hotel ID format");
     }
-
-
     const bookedDates = await bookingModel.find({
         room: roomObjectId,
         hotel: hotelObjectId,
@@ -81,10 +76,12 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         paymentMethod: validated.paymentMethod,
         bookingPayment: validated.paymentMethod === "COD" ? "PAID" : "NOTPAID",
         status: validated.paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+        hotelId: validated.hotelId,
+        roomId: validated.roomId,
     };
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    await bookingRedis.set(`booking_otp:${validated.userId}`, otp, "EX", 15 * 60);
-    await bookingConfirmationQueue.add("sendBookingOtp", {
+    const otp = Math.floor(1000 + Math.random() * 9000);
+    await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
+     bookingConfirmationQueue.add("bookingConfirmationOtp", {
         email: validated.userEmail,
         userName: validated.userName,
         bookingId: "",
@@ -94,14 +91,19 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         roomNumber: validated.roomNumber,
         otp
     });
-    console.log("Booking data stored in Redis:", newBooking);
-    console.log("OTP stored in Redis:", otp);
-    console.log(`Booking OTP stored with key: booking_otp:${validated.userId}`);
-
-
+    console.log("Booking confirmation job added to queue with data:", {
+        email: validated.userEmail,
+        userName: validated.userName,
+        hotelName: validated.hotelName,
+        checkInDate: validated.checkIn,
+        checkOutDate: validated.checkOut,
+        roomNumber: validated.roomNumber,
+        otp
+    });
+  
     await bookingRedis.set(`booking:${validated.userId}`, JSON.stringify(newBooking), "EX", 15 * 60);
 
-    return apiResponse(res, 201, true, "Otp sent successfully", { otp: otp * 1000 });
+    return apiResponse(res, 201, true, "Otp sent successfully", { otpSent: true, expiresIn: 15 * 60 });
 }
 )
 
@@ -114,7 +116,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     if (!storedOtp) {
         return apiError(res, 400, "OTP has expired. Please try booking again.");
     }
-    if (otp !== storedOtp) {
+    if (String(otp) !== storedOtp) {
         return apiError(res, 400, "Invalid OTP. Please try again.");
     }
     const bookingDataString = await bookingRedis.get(`booking:${userId}`);

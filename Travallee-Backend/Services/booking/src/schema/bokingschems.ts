@@ -2,6 +2,10 @@ import { z } from "zod";
 
 // Schema for creating a new booking
 export const createBookingSchema = z.object({
+  userEmail: z.string().email("Invalid email format").optional(),
+  userName: z.string().min(1, "User name is required").optional(),
+  hotelName: z.string().min(1, "Hotel name is required"),
+  roomNumber: z.string().min(1, "Room number is required"),
   userId: z.string().min(1, "User ID is required"),
   hotelId: z.string().min(1, "Hotel ID is required"),
   roomId: z.string().min(1, "Room ID is required"),

@@ -81,7 +81,7 @@ UserSchema.methods.comparePassword = async function (
 
 UserSchema.methods.generateJWT = function () {
   // If hotelId is present then we will add it to the payload otherwise we will not add it to the payload
-  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null };
+  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null, Name: this.Name };
   const secret: string = process.env.JWT_SECRET as string;
   const data = process.env.JWT_EXPIRES_IN as string;
 
