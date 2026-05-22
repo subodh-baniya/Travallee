@@ -134,7 +134,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     return apiResponse(res, 201, true, "Data saved successfully",);
 }
 )
-
+   
 const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     const userId = req.user.id;
     const { otp } = req.body;

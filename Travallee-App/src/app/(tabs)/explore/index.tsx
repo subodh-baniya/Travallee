@@ -1,92 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import {
-  Pressable, ScrollView, StyleSheet, Text, View,
-  Image, FlatList, ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  RealixColors,
-  realixDestinations,
-  realixDiscoverProperty,
-} from '@/src/constants/screens/realix';
+import { LinearGradient } from 'expo-linear-gradient';
 import apiClient from '@/src/services/apiClient';
-import { API_ENDPOINTS_HOTEL, API_ENDPOINTS_AUTH } from '@/src/constants/api';
+import { API_ENDPOINTS_HOTEL } from '@/src/constants/api';
 import { API_URL } from '@/src/constants/env';
 
-// ─── Nepal Data ──────────────────────────────────────────────────────────────
+// ─── Colors ──────────────────────────────────────────────────────────────────
+
+export const RealixColors = {
+  pageBackground: '#111111',
+  screenBackground: '#111111',
+  sectionBackground: '#1a1a1a',
+  cardBackground: '#1e1e1e',
+  rowBackground: '#1c1c1c',
+  inputBackground: '#2a2a2a',
+  textPrimary: '#f0f0f0',
+  textSecondary: '#aaaaaa',
+  textMuted: '#666666',
+  textCaption: '#555555',
+  border: '#2a2a2a',
+  inputBorder: '#333333',
+  accent: '#7ED321',
+  accentBright: '#8EE52A',
+  accentDark: '#6abc18',
+  accentToggle: '#4CAF50',
+  orange: '#f39c12',
+  blue: '#3a7bd5',
+  shadow: 'rgba(0, 0, 0, 0.6)',
+  danger: '#ef4444',
+} as const;
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const FILTER_CHIPS = [
-  { id: 'all',      label: 'All Hotels',     icon: 'globe-outline' },
-  { id: 'hotels',   label: 'Hotels',         icon: 'business-outline' },
-  { id: 'resorts',  label: 'Resorts',        icon: 'umbrella-outline' },
+  { id: 'all',     label: 'All Hotels', icon: 'globe-outline' },
+  { id: 'hotels',  label: 'Hotels',     icon: 'business-outline' },
+  { id: 'resorts', label: 'Resorts',    icon: 'umbrella-outline' },
 ] as const;
 
 type FilterId = typeof FILTER_CHIPS[number]['id'];
 
 const NEPAL_DESTINATIONS = [
-  {
-    id: '1',
-    city: 'Kathmandu',
-    tagline: 'Capital & Culture',
-    emoji: '🏛️',
-    color: '#FFF3E0',
-    properties: 240,
-    from: 25,
-  },
-  {
-    id: '2',
-    city: 'Pokhara',
-    tagline: 'Lakes & Himalayas',
-    emoji: '🏔️',
-    color: '#E3F2FD',
-    properties: 180,
-    from: 18,
-  },
-  {
-    id: '3',
-    city: 'Chitwan',
-    tagline: 'Jungle Safaris',
-    emoji: '🦏',
-    color: '#E8F5E9',
-    properties: 95,
-    from: 30,
-  },
-  {
-    id: '4',
-    city: 'Lumbini',
-    tagline: 'Birthplace of Buddha',
-    emoji: '🕌',
-    color: '#FCE4EC',
-    properties: 48,
-    from: 15,
-  },
-  {
-    id: '5',
-    city: 'Nagarkot',
-    tagline: 'Sunrise Views',
-    emoji: '🌄',
-    color: '#EDE7F6',
-    properties: 36,
-    from: 20,
-  },
-  {
-    id: '6',
-    city: 'Bandipur',
-    tagline: 'Hilltop Heritage',
-    emoji: '🏘️',
-    color: '#FFF8E1',
-    properties: 22,
-    from: 12,
-  },
+  { id: '1', city: 'Kathmandu', tagline: 'Capital & Culture',     emoji: '🏛️', color: '#FFF3E0', properties: 240, from: 25 },
+  { id: '2', city: 'Pokhara',   tagline: 'Lakes & Himalayas',     emoji: '🏔️', color: '#E3F2FD', properties: 180, from: 18 },
+  { id: '3', city: 'Chitwan',   tagline: 'Jungle Safaris',        emoji: '🦏', color: '#E8F5E9', properties: 95,  from: 30 },
+  { id: '4', city: 'Lumbini',   tagline: 'Birthplace of Buddha',  emoji: '🕌', color: '#FCE4EC', properties: 48,  from: 15 },
+  { id: '5', city: 'Nagarkot',  tagline: 'Sunrise Views',         emoji: '🌄', color: '#EDE7F6', properties: 36,  from: 20 },
+  { id: '6', city: 'Bandipur',  tagline: 'Hilltop Heritage',      emoji: '🏘️', color: '#FFF8E1', properties: 22,  from: 12 },
 ];
 
 const FEATURED_PROPERTIES = [
   {
     id: '1',
-    name: 'Dwarika\'s Hotel',
+    name: "Dwarika's Hotel",
     location: 'Battisputali, Kathmandu',
     price: 280,
     rating: 4.9,
@@ -95,6 +74,8 @@ const FEATURED_PROPERTIES = [
     tag: 'UNESCO Heritage',
     tagColor: '#E8F5E9',
     tagTextColor: '#2E7D32',
+    gradientColors: ['#1a2e0a', '#2d5010'] as [string, string],
+    emoji: '🏛️',
     image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776680988/hotel_images/images-1776680986036-70054303.webp',
   },
   {
@@ -108,6 +89,8 @@ const FEATURED_PROPERTIES = [
     tag: 'Lakefront',
     tagColor: '#E3F2FD',
     tagTextColor: '#1565C0',
+    gradientColors: ['#0a1e2e', '#103050'] as [string, string],
+    emoji: '🏔️',
     image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776681018/hotel_images/images-1776680986036-162807224.jpg',
   },
   {
@@ -121,75 +104,215 @@ const FEATURED_PROPERTIES = [
     tag: 'Safari Included',
     tagColor: '#FFF3E0',
     tagTextColor: '#E65100',
+    gradientColors: ['#1e2a0a', '#2a4010'] as [string, string],
+    emoji: '🦏',
     image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776680988/hotel_images/images-1776680986036-70054303.webp',
   },
 ];
 
+const MIGHT_LIKE_PROPERTIES = [
+  {
+    id: '1',
+    name: 'Hotel Shanker',
+    location: 'Lazimpat, Kathmandu',
+    price: 118,
+    originalPrice: 158,
+    rating: 4.8,
+    reviews: 289,
+    type: 'Boutique Hotel',
+    offer: '25% OFF',
+    perk: 'Free breakfast + free cancellation',
+    gradientColors: ['#2e1a0a', '#503010'] as [string, string],
+    emoji: '🏰',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776681018/hotel_images/images-1776680986036-162807224.jpg',
+  },
+  {
+    id: '2',
+    name: 'Barahi Pokhara',
+    location: 'Lakeside, Pokhara',
+    price: 92,
+    originalPrice: 125,
+    rating: 4.7,
+    reviews: 214,
+    type: 'Lake Resort',
+    offer: 'Save $33',
+    perk: 'Breakfast included',
+    gradientColors: ['#0a1e2e', '#103050'] as [string, string],
+    emoji: '🌊',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776680988/hotel_images/images-1776680986036-70054303.webp',
+  },
+  {
+    id: '3',
+    name: 'Kasara Chitwan',
+    location: 'Sauraha, Chitwan',
+    price: 145,
+    originalPrice: 190,
+    rating: 4.9,
+    reviews: 167,
+    type: 'Jungle Lodge',
+    offer: 'Deal of the day',
+    perk: 'Safari add-on available',
+    gradientColors: ['#1e2a0a', '#2a4010'] as [string, string],
+    emoji: '🌿',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776681018/hotel_images/images-1776680986036-162807224.jpg',
+  },
+];
+
+const TOP_RATED_STAYS = [
+  {
+    id: '1',
+    name: "Dwarika's Hotel",
+    location: 'Kathmandu',
+    rating: 4.9,
+    reviews: 412,
+    offer: 'Guest favorite',
+    gradientColors: ['#1a2e0a', '#2d5010'] as [string, string],
+    emoji: '🏛️',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776680988/hotel_images/images-1776680986036-70054303.webp',
+  },
+  {
+    id: '2',
+    name: 'Temple Tree Resort',
+    location: 'Pokhara',
+    rating: 4.8,
+    reviews: 318,
+    offer: 'Top rated for couples',
+    gradientColors: ['#0a1e2e', '#103050'] as [string, string],
+    emoji: '🏔️',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776681018/hotel_images/images-1776680986036-162807224.jpg',
+  },
+  {
+    id: '3',
+    name: 'Barahi Jungle Lodge',
+    location: 'Chitwan',
+    rating: 4.8,
+    reviews: 204,
+    offer: 'Best safari stay',
+    gradientColors: ['#1e2a0a', '#2a4010'] as [string, string],
+    emoji: '🦏',
+    image: 'https://res.cloudinary.com/dhwql7hqx/image/upload/v1776680988/hotel_images/images-1776680986036-70054303.webp',
+  },
+];
+
+const NEARBY_GETAWAYS = [
+  { id: '1', city: 'Kathmandu Valley', note: '1-2 nights',       price: 24, icon: 'business-outline',  color: '#FFF3E0' },
+  { id: '2', city: 'Pokhara Lakeside', note: 'Weekend escape',    price: 18, icon: 'water-outline',     color: '#E3F2FD' },
+  { id: '3', city: 'Chitwan Safari',   note: 'Nature break',      price: 30, icon: 'leaf-outline',      color: '#E8F5E9' },
+  { id: '4', city: 'Nagarkot Sunrise', note: 'Quick getaway',     price: 20, icon: 'sunny-outline',     color: '#FCE4EC' },
+];
+
 const TREKKING_PACKAGES = [
-  { id: '1', name: 'EBC Trek', days: 14, from: 850, region: 'Khumbu' },
-  { id: '2', name: 'Annapurna Circuit', days: 12, from: 720, region: 'Annapurna' },
-  { id: '3', name: 'Langtang Valley', days: 7, from: 420, region: 'Langtang' },
+  { id: '1', name: 'EBC Trek',           days: 14, from: 850, region: 'Khumbu Region' },
+  { id: '2', name: 'Annapurna Circuit',  days: 12, from: 720, region: 'Annapurna Region' },
+  { id: '3', name: 'Langtang Valley',    days: 7,  from: 420, region: 'Langtang Region' },
 ];
 
 const UPCOMING_FESTIVALS = [
-  { id: '1', name: 'Dashain', date: 'Oct 2026', desc: 'Nepal\'s biggest festival' },
-  { id: '2', name: 'Tihar', date: 'Nov 2026', desc: 'Festival of lights' },
-  { id: '3', name: 'Holi', date: 'Mar 2027', desc: 'Festival of colors' },
+  { id: '1', name: 'Dashain', date: 'Oct 2026', desc: "Nepal's biggest festival" },
+  { id: '2', name: 'Tihar',   date: 'Nov 2026', desc: 'Festival of lights' },
+  { id: '3', name: 'Holi',    date: 'Mar 2027', desc: 'Festival of colors' },
+];
+
+const TRAVEL_ESSENTIALS = [
+  { id: '1', label: 'Transfers', icon: 'car-outline',              color: '#FFF3E0', iconColor: '#E65100' },
+  { id: '2', label: 'Visa Help', icon: 'document-text-outline',    color: '#E3F2FD', iconColor: '#1565C0' },
+  { id: '3', label: 'Guides',    icon: 'people-outline',           color: '#E8F5E9', iconColor: '#2E7D32' },
+  { id: '4', label: 'Insurance', icon: 'shield-checkmark-outline', color: '#FCE4EC', iconColor: '#880E4F' },
+];
+
+const QUICK_ACTIONS = [
+  { id: '1', title: 'Map View',   text: 'Browse by location', icon: 'map-outline',              bg: '#1a2040', iconColor: '#4a8adf', route: '/(tabs)/explore/map' },
+  { id: '2', title: 'Filters',    text: 'Price, type & more', icon: 'options-outline',           bg: '#1a2e0a', iconColor: '#7ED321', route: '/(tabs)/explore/filter-price' },
+  { id: '3', title: 'Transfers',  text: 'Airport pickups',    icon: 'car-outline',              bg: '#2e1a0a', iconColor: '#E65100', route: null },
+  { id: '4', title: 'Insurance',  text: 'Travel protection',  icon: 'shield-checkmark-outline', bg: '#2e0a1a', iconColor: '#880E4F', route: null },
 ];
 
 type TabType = 'explore' | 'favorites' | 'bookings';
 
 const TABS: Array<{ id: TabType; label: string; icon: string }> = [
-  { id: 'explore',   label: 'Explore',   icon: 'compass-outline' },
-  { id: 'favorites', label: 'Saved',     icon: 'bookmark-outline' },
-  { id: 'bookings',  label: 'Bookings',  icon: 'calendar-outline' },
+  { id: 'explore',   label: 'Explore',  icon: 'compass-outline' },
+  { id: 'favorites', label: 'Saved',    icon: 'bookmark-outline' },
+  { id: 'bookings',  label: 'Bookings', icon: 'calendar-outline' },
 ];
 
-// Helper: derive a usable image URI from various backend shapes
-const getHotelImageUri = (prop: any): string => {
-  const fallback = 'https://via.placeholder.com/400x300?text=No+Image';
-  if (!prop) return fallback;
-  if (typeof prop === 'string') return prop;
-  // direct image fields
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const getHotelImageUri = (prop: any): string | null => {
+  if (!prop) return null;
+  if (typeof prop === 'string' && prop) return prop;
   if (typeof prop.image === 'string' && prop.image) return prop.image;
   if (typeof prop.imageUrl === 'string' && prop.imageUrl) return prop.imageUrl;
   if (typeof prop.photo === 'string' && prop.photo) return prop.photo;
-
-  // arrays of images
   if (Array.isArray(prop.hotelImages) && prop.hotelImages.length > 0) return prop.hotelImages[0];
   if (Array.isArray(prop.images) && prop.images.length > 0) return prop.images[0];
   if (Array.isArray(prop.photos) && prop.photos.length > 0) return prop.photos[0];
-
-  // nested objects
   if (prop.image && typeof prop.image === 'object' && typeof prop.image.url === 'string') return prop.image.url;
-
-  return fallback;
+  return null;
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** Rating pill — amber on dark bg */
+const RatingPill = ({ rating }: { rating: number }) => (
+  <View style={styles.ratingPill}>
+    <Ionicons name="star" size={10} color="#FFB800" />
+    <Text style={styles.ratingText}>{rating}</Text>
+  </View>
+);
+
+/** Card image — shows real img with gradient overlay, falls back to emoji on gradient */
+const CardImage = ({
+  uri,
+  height,
+  gradientColors,
+  emoji,
+}: {
+  uri: string | null;
+  height: number;
+  gradientColors: [string, string];
+  emoji: string;
+}) => (
+  <View style={{ height, width: '100%' }}>
+    {uri ? (
+      <Image source={{ uri }} style={{ width: '100%', height }} resizeMode="cover" />
+    ) : (
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 32 }}>{emoji}</Text>
+      </LinearGradient>
+    )}
+  </View>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('explore');
+  const [activeTab, setActiveTab]       = useState<TabType>('explore');
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
   const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
 
-  // Handle destination card press - fetch hotels by location
+  // Accent strip animation
+  const stripOpacity = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(stripOpacity, { toValue: 0.7, duration: 1800, useNativeDriver: true }),
+        Animated.timing(stripOpacity, { toValue: 0.3, duration: 1800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  // Handle destination press
   const handleDestinationPress = async (location: string) => {
     try {
       setLoading(true);
       const url = `${API_URL}:3001/api/v1/hotels/location/${location}`;
       const response = await apiClient.get(url);
-      
       if (response.data.success && Array.isArray(response.data.data)) {
-        // Navigate to results page with the location data
         router.push({
           pathname: '/(tabs)/explore/destination-results',
-          params: { 
-            location,
-            hotels: JSON.stringify(response.data.data)
-          },
+          params: { location, hotels: JSON.stringify(response.data.data) },
         });
       }
     } catch (error) {
@@ -199,65 +322,52 @@ export default function ExploreScreen() {
     }
   };
 
-  // Fetch hotels or resorts based on filter
+  // Fetch hotels / resorts based on filter
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        if (activeFilter === 'hotels') {
-          const response = await apiClient.get(API_ENDPOINTS_HOTEL.GET_ALL_HOTELS);
-          if (response.data.success && Array.isArray(response.data.data)) {
-            setFilteredData(response.data.data);
-          } else {
-            setFilteredData([]);
-          }
-        } else if (activeFilter === 'resorts') {
-          const response = await apiClient.get(API_ENDPOINTS_HOTEL.GET_ALL_RESORTS);
-          if (response.data.success && Array.isArray(response.data.data)) {
-            setFilteredData(response.data.data);
-          } else {
-            setFilteredData([]);
-          }
+        let endpoint = API_ENDPOINTS_HOTEL.FEATURED_HOTELS;
+        if (activeFilter === 'hotels')  endpoint = API_ENDPOINTS_HOTEL.GET_ALL_HOTELS;
+        if (activeFilter === 'resorts') endpoint = API_ENDPOINTS_HOTEL.GET_ALL_RESORTS;
+        const response = await apiClient.get(endpoint);
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setFilteredData(response.data.data);
         } else {
-          
-          const response = await apiClient.get(API_ENDPOINTS_HOTEL.FEATURED_HOTELS);
-          if (response.data.success && Array.isArray(response.data.data)) {
-            setFilteredData(response.data.data);
-          } else {
-            setFilteredData([]);
-          }
+          setFilteredData([]);
         }
-      } catch (error) {
+      } catch {
         setFilteredData([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [activeFilter]);
 
+  const featTitle =
+    activeFilter === 'hotels'  ? 'Hotels' :
+    activeFilter === 'resorts' ? 'Resorts' :
+    'Featured Properties';
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
 
-      {/* ── Fixed Header ── */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Discover Nepal</Text>
+          <Text style={styles.eyebrow}>NEPAL · KTM</Text>
+          <Text style={styles.title}>
+            Discover <Text style={styles.titleAccent}>Nepal</Text>
+          </Text>
         </View>
         <View style={styles.headerActions}>
-          <Pressable
-            style={styles.iconBtn}
-            onPress={() => router.push('/(tabs)/explore/search')}
-          >
-            <Ionicons name="notifications-outline" size={18} color={RealixColors.textPrimary} />
+          <Pressable style={styles.iconBtn} onPress={() => router.push('/(tabs)/explore/search')}>
+            <Ionicons name="notifications-outline" size={17} color={RealixColors.textMuted} />
           </Pressable>
-          <Pressable
-            style={styles.iconBtn}
-            onPress={() => router.push('/(tabs)/explore/search')}
-          >
-            <Ionicons name="search-outline" size={18} color={RealixColors.textPrimary} />
+          <Pressable style={styles.iconBtn} onPress={() => router.push('/(tabs)/explore/search')}>
+            <Ionicons name="search-outline" size={17} color={RealixColors.textMuted} />
           </Pressable>
         </View>
       </View>
@@ -273,8 +383,8 @@ export default function ExploreScreen() {
             >
               <Ionicons
                 name={tab.icon as any}
-                size={15}
-                color={activeTab === tab.id ? '#fff' : RealixColors.textMuted}
+                size={14}
+                color={activeTab === tab.id ? '#111' : RealixColors.textMuted}
               />
               <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>
                 {tab.label}
@@ -284,16 +394,22 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Accent strip */}
+      <Animated.View style={[styles.accentStrip, { opacity: stripOpacity }]} />
 
-        {/* ══════════════════════════════════════════════ EXPLORE TAB */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* ═══════════════════════════ EXPLORE TAB */}
         {activeTab === 'explore' && (
           <>
+
             {/* Season Banner */}
-            <View style={styles.seasonBanner}>
+            <LinearGradient
+              colors={['#1e3d0a', '#2a5210', '#1b3c08']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.seasonBanner}
+            >
               <View>
                 <Text style={styles.seasonTitle}>🍂 Peak Season</Text>
                 <Text style={styles.seasonSub}>Oct – Dec · Best weather for trekking</Text>
@@ -301,14 +417,10 @@ export default function ExploreScreen() {
               <Pressable style={styles.seasonBtn}>
                 <Text style={styles.seasonBtnText}>Plan Trip</Text>
               </Pressable>
-            </View>
+            </LinearGradient>
 
             {/* Filter Chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipRow}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {FILTER_CHIPS.map((chip) => (
                 <Pressable
                   key={chip.id}
@@ -318,7 +430,7 @@ export default function ExploreScreen() {
                   <Ionicons
                     name={chip.icon as any}
                     size={13}
-                    color={activeFilter === chip.id ? '#fff' : RealixColors.textMuted}
+                    color={activeFilter === chip.id ? '#111' : RealixColors.textMuted}
                   />
                   <Text style={[styles.chipText, activeFilter === chip.id && styles.chipTextActive]}>
                     {chip.label}
@@ -327,83 +439,174 @@ export default function ExploreScreen() {
               ))}
             </ScrollView>
 
-            {/* Featured Properties */}
+            {/* ── Featured Properties ── */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {activeFilter === 'hotels' ? 'Hotels' : activeFilter === 'resorts' ? 'Resorts' : 'Featured Properties'}
-              </Text>
-              <Pressable>
-                <Text style={styles.seeAll}>See all →</Text>
-              </Pressable>
+              <Text style={styles.sectionTitle}>{featTitle}</Text>
+              <Pressable><Text style={styles.seeAll}>See all →</Text></Pressable>
             </View>
 
             {loading ? (
-              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <View style={styles.loaderWrap}>
                 <ActivityIndicator size="large" color={RealixColors.accent} />
               </View>
             ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredScroll}
-              >
-                {filteredData.length > 0 ? (
-                  filteredData.map((prop: any) => (
-                      <Pressable
-                        key={prop._id || prop.id}
-                        style={styles.featuredCard}
-                        onPress={() =>
-                          router.replace({
-                            pathname: '/(tabs)/explore/detail',
-                            params: { hotelId: prop._id || prop.id },
-                          })
-                        }
-                      >
-                        <Image
-                          source={{ uri: getHotelImageUri(prop) }}
-                          style={styles.featuredImg}
-                          resizeMode="cover"
-                        />
-                        <View style={styles.featuredTag}>
-                          <Text style={[styles.featuredTagText, { color: prop.tagTextColor || '#2E7D32' }]}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
+                {(filteredData.length > 0 ? filteredData : FEATURED_PROPERTIES).map((prop: any, idx: number) => {
+                  const fallback = FEATURED_PROPERTIES[idx % FEATURED_PROPERTIES.length];
+                  const imgUri = getHotelImageUri(prop);
+                  return (
+                    <Pressable
+                      key={prop._id || prop.id}
+                      style={styles.featuredCard}
+                      onPress={() =>
+                        router.replace({
+                          pathname: '/(tabs)/explore/detail',
+                          params: { hotelId: prop._id || prop.id },
+                        })
+                      }
+                    >
+                      <CardImage
+                        uri={imgUri}
+                        height={120}
+                        gradientColors={prop.gradientColors || fallback.gradientColors}
+                        emoji={prop.emoji || fallback.emoji}
+                      />
+                      {/* Gradient overlay */}
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.55)']}
+                        style={styles.imgOverlay}
+                      />
+                      <View style={styles.featuredTag}>
+                        <Text style={styles.featuredTagText}>
                           {prop.tag || (prop.isFeatured ? 'Featured' : prop.propertyType || 'Hotel')}
                         </Text>
                       </View>
-                  <Pressable style={styles.featuredHeart}>
-                    <Ionicons name="heart-outline" size={14} color="#fff" />
-                  </Pressable>
-                  <View style={styles.featuredBody}>
-                    <View style={styles.featuredTypeRow}>
-                      <Text style={styles.featuredType}>{prop.type || prop.propertyType || 'Hotel'}</Text>
-                      <View style={styles.ratingPill}>
-                        <Ionicons name="star" size={10} color="#FFB800" />
-                        <Text style={styles.ratingText}>{prop.rating}</Text>
+                      <Pressable style={styles.featuredHeart}>
+                        <Ionicons name="heart-outline" size={13} color="#fff" />
+                      </Pressable>
+                      <View style={styles.featuredBody}>
+                        <View style={styles.featuredTypeRow}>
+                          <Text style={styles.featuredType}>{prop.type || prop.propertyType || 'Hotel'}</Text>
+                          <RatingPill rating={prop.rating} />
+                        </View>
+                        <Text style={styles.featuredName} numberOfLines={1}>{prop.name || prop.hotelName}</Text>
+                        <View style={styles.featuredLocRow}>
+                          <Ionicons name="location-outline" size={11} color={RealixColors.textMuted} />
+                          <Text style={styles.featuredLoc} numberOfLines={1}>{prop.location || prop.hotelLocation}</Text>
+                        </View>
+                        <View style={styles.featuredPriceRow}>
+                          <Text style={styles.featuredPrice}>${prop.price || prop.pricePerNight || 'N/A'}</Text>
+                          <Text style={styles.featuredPriceSub}>/night</Text>
+                        </View>
                       </View>
-                    </View>
-                    <Text style={styles.featuredName} numberOfLines={1}>{prop.name || prop.hotelName}</Text>
-                    <View style={styles.featuredLocRow}>
-                      <Ionicons name="location-outline" size={11} color={RealixColors.textMuted} />
-                      <Text style={styles.featuredLoc} numberOfLines={1}>{prop.location || prop.hotelLocation}</Text>
-                    </View>
-                    <View style={styles.featuredPriceRow}>
-                      <Text style={styles.featuredPrice}>${prop.price || prop.pricePerNight || 'N/A'}</Text>
-                      <Text style={styles.featuredPriceSub}>/night</Text>
-                    </View>
-                  </View>
-                </Pressable>
-                  ))
-                ) : (
-                  <View />
-                )}
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             )}
 
-            {/* Destinations */}
+            {/* ── You Might Like ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>You Might Like</Text>
+              <Pressable><Text style={styles.seeAll}>More deals →</Text></Pressable>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dealScroll}>
+              {MIGHT_LIKE_PROPERTIES.map((prop) => (
+                <View key={prop.id} style={styles.dealCard}>
+                  <View>
+                    <CardImage
+                      uri={getHotelImageUri(prop)}
+                      height={128}
+                      gradientColors={prop.gradientColors}
+                      emoji={prop.emoji}
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.5)']}
+                      style={styles.imgOverlay}
+                    />
+                    <View style={styles.dealBadge}>
+                      <Text style={styles.dealBadgeText}>{prop.offer}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.dealBody}>
+                    <View style={styles.dealTopRow}>
+                      <Text style={styles.dealType}>{prop.type}</Text>
+                      <RatingPill rating={prop.rating} />
+                    </View>
+                    <Text style={styles.dealName} numberOfLines={1}>{prop.name}</Text>
+                    <View style={styles.dealLocRow}>
+                      <Ionicons name="location-outline" size={11} color={RealixColors.textMuted} />
+                      <Text style={styles.dealLoc} numberOfLines={1}>{prop.location}</Text>
+                    </View>
+                    <View style={styles.dealOfferRow}>
+                      <Text style={styles.dealPrice}>${prop.price}</Text>
+                      <Text style={styles.dealOldPrice}>${prop.originalPrice}</Text>
+                    </View>
+                    <Text style={styles.dealPerk} numberOfLines={2}>{prop.perk}</Text>
+                    <Text style={styles.dealReviews}>{prop.reviews} reviews</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* ── Top Rated Stays ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Rated Stays</Text>
+              <Pressable><Text style={styles.seeAll}>View more →</Text></Pressable>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topRatedScroll}>
+              {TOP_RATED_STAYS.map((stay) => (
+                <Pressable key={stay.id} style={styles.topRatedCard}>
+                  <CardImage
+                    uri={getHotelImageUri(stay)}
+                    height={108}
+                    gradientColors={stay.gradientColors}
+                    emoji={stay.emoji}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.5)']}
+                    style={styles.imgOverlay}
+                  />
+                  <View style={styles.topRatedBody}>
+                    <View style={styles.topRatedRow}>
+                      <Text style={styles.topRatedName} numberOfLines={1}>{stay.name}</Text>
+                      <View style={styles.topRatedBadge}>
+                        <Ionicons name="star" size={10} color="#FFB800" />
+                        <Text style={styles.topRatedBadgeText}>{stay.rating}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.topRatedLoc}>{stay.location}</Text>
+                    <Text style={styles.topRatedOffer}>{stay.offer}</Text>
+                    <Text style={styles.topRatedReviews}>{stay.reviews} reviews</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            {/* ── Nearby Getaways ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Nearby Getaways</Text>
+            </View>
+
+            <View style={styles.getawayGrid}>
+              {NEARBY_GETAWAYS.map((item) => (
+                <Pressable key={item.id} style={[styles.getawayCard, { backgroundColor: item.color }]}>
+                  <View style={styles.getawayIconWrap}>
+                    <Ionicons name={item.icon as any} size={18} color={RealixColors.accent} />
+                  </View>
+                  <Text style={styles.getawayCity}>{item.city}</Text>
+                  <Text style={styles.getawayNote}>{item.note}</Text>
+                  <Text style={styles.getawayPrice}>From ${item.price}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* ── Popular Destinations ── */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Popular Destinations</Text>
-              <Pressable>
-                <Text style={styles.seeAll}>See all →</Text>
-              </Pressable>
+              <Pressable><Text style={styles.seeAll}>See all →</Text></Pressable>
             </View>
 
             <View style={styles.destGrid}>
@@ -424,74 +627,101 @@ export default function ExploreScreen() {
               ))}
             </View>
 
-            {/* Festivals */}
+            {/* ── Trekking Packages ── */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Upcoming Festivals</Text>
-              <Pressable>
-                <Text style={styles.seeAll}>Plan →</Text>
-              </Pressable>
+              <Text style={styles.sectionTitle}>Trekking Packages</Text>
+              <Pressable><Text style={styles.seeAll}>See all →</Text></Pressable>
             </View>
 
-            {UPCOMING_FESTIVALS.map((fest) => (
-              <Pressable key={fest.id} style={styles.festCard}>
-                <View style={styles.festLeft}>
-                  <View style={styles.festDot} />
-                  <View>
-                    <Text style={styles.festName}>{fest.name}</Text>
-                    <Text style={styles.festDesc}>{fest.desc}</Text>
+            <View style={{ gap: 10 }}>
+              {TREKKING_PACKAGES.map((pkg) => (
+                <Pressable key={pkg.id} style={styles.trekkingCard}>
+                  <View style={styles.trekkingLeft}>
+                    <View style={styles.trekkingIcon}>
+                      <Ionicons name="footsteps-outline" size={18} color={RealixColors.accent} />
+                    </View>
+                    <View>
+                      <Text style={styles.trekkingName}>{pkg.name}</Text>
+                      <Text style={styles.trekkingRegion}>{pkg.region}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.festDateBox}>
-                  <Text style={styles.festDate}>{fest.date}</Text>
-                </View>
-              </Pressable>
-            ))}
+                  <View style={styles.trekkingRight}>
+                    <View>
+                      <Text style={styles.trekkingDays}>{pkg.days} days</Text>
+                      <Text style={styles.trekkingFrom}>From</Text>
+                    </View>
+                    <Text style={styles.trekkingPrice}>${pkg.from}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
 
-            {/* Quick Actions */}
+            {/* ── Travel Essentials ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Travel Essentials</Text>
+            </View>
+
+            <View style={styles.essGrid}>
+              {TRAVEL_ESSENTIALS.map((item) => (
+                <Pressable key={item.id} style={styles.essCard}>
+                  <View style={[styles.essIcon, { backgroundColor: item.color }]}>
+                    <Ionicons name={item.icon as any} size={18} color={item.iconColor} />
+                  </View>
+                  <Text style={styles.essLabel}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* ── Upcoming Festivals ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming Festivals</Text>
+              <Pressable><Text style={styles.seeAll}>Plan →</Text></Pressable>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              {UPCOMING_FESTIVALS.map((fest) => (
+                <Pressable key={fest.id} style={styles.festCard}>
+                  <View style={styles.festLeft}>
+                    <View style={styles.festDot} />
+                    <View>
+                      <Text style={styles.festName}>{fest.name}</Text>
+                      <Text style={styles.festDesc}>{fest.desc}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.festDateBox}>
+                    <Text style={styles.festDate}>{fest.date}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* ── Quick Access ── */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Quick Access</Text>
             </View>
+
             <View style={styles.quickGrid}>
-              <Pressable
-                style={styles.quickCard}
-                onPress={() => router.push('/(tabs)/explore/map')}
-              >
-                <View style={[styles.quickIcon, { backgroundColor: '#E3F2FD' }]}>
-                  <Ionicons name="map-outline" size={20} color="#1565C0" />
-                </View>
-                <Text style={styles.quickTitle}>Map View</Text>
-                <Text style={styles.quickText}>Browse by location</Text>
-              </Pressable>
-              <Pressable
-                style={styles.quickCard}
-                onPress={() => router.push('/(tabs)/explore/filter-price')}
-              >
-                <View style={[styles.quickIcon, { backgroundColor: '#E8F5E9' }]}>
-                  <Ionicons name="options-outline" size={20} color="#2E7D32" />
-                </View>
-                <Text style={styles.quickTitle}>Filters</Text>
-                <Text style={styles.quickText}>Price, type & more</Text>
-              </Pressable>
-              <Pressable style={styles.quickCard}>
-                <View style={[styles.quickIcon, { backgroundColor: '#FFF3E0' }]}>
-                  <Ionicons name="car-outline" size={20} color="#E65100" />
-                </View>
-                <Text style={styles.quickTitle}>Transfers</Text>
-                <Text style={styles.quickText}>Airport pickups</Text>
-              </Pressable>
-              <Pressable style={styles.quickCard}>
-                <View style={[styles.quickIcon, { backgroundColor: '#FCE4EC' }]}>
-                  <Ionicons name="shield-checkmark-outline" size={20} color="#880E4F" />
-                </View>
-                <Text style={styles.quickTitle}>Insurance</Text>
-                <Text style={styles.quickText}>Travel protection</Text>
-              </Pressable>
+              {QUICK_ACTIONS.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.quickCard}
+                  onPress={() => item.route && router.push(item.route as any)}
+                >
+                  <View style={[styles.quickIcon, { backgroundColor: item.bg }]}>
+                    <Ionicons name={item.icon as any} size={20} color={item.iconColor} />
+                  </View>
+                  <Text style={styles.quickTitle}>{item.title}</Text>
+                  <Text style={styles.quickText}>{item.text}</Text>
+                </Pressable>
+              ))}
             </View>
 
-            {/* Currency helper */}
+            {/* ── Currency Helper ── */}
             <View style={styles.currencyCard}>
               <View style={styles.currencyLeft}>
-                <Ionicons name="swap-horizontal-outline" size={18} color={RealixColors.accent} />
+                <View style={styles.currencyIconWrap}>
+                  <Ionicons name="swap-horizontal-outline" size={17} color={RealixColors.accent} />
+                </View>
                 <View>
                   <Text style={styles.currencyTitle}>1 USD = 133.5 NPR</Text>
                   <Text style={styles.currencySub}>Live rate · Updated just now</Text>
@@ -501,14 +731,15 @@ export default function ExploreScreen() {
                 <Text style={styles.currencyBtnText}>Convert</Text>
               </Pressable>
             </View>
+
           </>
         )}
 
-        {/* ══════════════════════════════════════════════ FAVORITES TAB */}
+        {/* ═══════════════════════════ FAVORITES TAB */}
         {activeTab === 'favorites' && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="bookmark-outline" size={36} color={RealixColors.accent} />
+              <Ionicons name="bookmark-outline" size={34} color={RealixColors.accent} />
             </View>
             <Text style={styles.emptyTitle}>No saved properties</Text>
             <Text style={styles.emptyText}>
@@ -520,11 +751,11 @@ export default function ExploreScreen() {
           </View>
         )}
 
-        {/* ══════════════════════════════════════════════ BOOKINGS TAB */}
+        {/* ═══════════════════════════ BOOKINGS TAB */}
         {activeTab === 'bookings' && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="calendar-outline" size={36} color={RealixColors.accent} />
+              <Ionicons name="calendar-outline" size={34} color={RealixColors.accent} />
             </View>
             <Text style={styles.emptyTitle}>No upcoming bookings</Text>
             <Text style={styles.emptyText}>
@@ -541,7 +772,7 @@ export default function ExploreScreen() {
   );
 }
 
-// ─── Styles ─────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -557,17 +788,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 8,
-    backgroundColor: RealixColors.pageBackground,
   },
-  greeting: {
-    fontSize: 12,
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '600',
     color: RealixColors.textMuted,
-    marginBottom: 2,
+    letterSpacing: 1.5,
+    marginBottom: 3,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: RealixColors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  titleAccent: {
+    color: RealixColors.accent,
   },
   headerActions: {
     flexDirection: 'row',
@@ -575,21 +811,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: RealixColors.cardBackground,
     borderWidth: 0.5,
-    borderColor: RealixColors.border,
+    borderColor: RealixColors.inputBorder,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // ── Accent Strip ──
+  accentStrip: {
+    height: 1.5,
+    marginHorizontal: 20,
+    borderRadius: 1,
+    backgroundColor: RealixColors.accent,
+    marginBottom: 2,
   },
 
   // ── Tab Bar ──
   tabBarWrap: {
     paddingHorizontal: 20,
-    paddingBottom: 8,
-    backgroundColor: RealixColors.pageBackground,
+    paddingBottom: 10,
   },
   tabBar: {
     flexDirection: 'row',
@@ -617,89 +861,57 @@ const styles = StyleSheet.create({
     color: RealixColors.textMuted,
   },
   tabLabelActive: {
-    color: '#fff',
+    color: '#111',
   },
 
   // ── Scroll Content ──
   content: {
     paddingHorizontal: 20,
-    paddingBottom: 36,
-    gap: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+    gap: 18,
   },
-
-  // ── Search Bar ──
-  searchBar: {
-    flexDirection: 'row',
+  loaderWrap: {
+    paddingVertical: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: RealixColors.inputBackground,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: RealixColors.inputBorder,
-    paddingLeft: 14,
-    paddingRight: 6,
-    paddingVertical: 6,
-    marginTop: 4,
-  },
-  searchInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-    paddingVertical: 8,
-  },
-  searchText: {
-    fontSize: 14,
-    color: RealixColors.textMuted,
-  },
-  filterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: RealixColors.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 0.5,
-    borderColor: RealixColors.border,
   },
 
   // ── Season Banner ──
   seasonBanner: {
-    backgroundColor: '#EAF5D6',
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: 20,
     paddingVertical: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#C5E49A',
+    borderColor: '#3a6e15',
     gap: 12,
   },
   seasonTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2E5A0E',
+    color: '#c5f07a',
     marginBottom: 4,
   },
   seasonSub: {
-    fontSize: 13,
-    color: '#3B6D11',
+    fontSize: 12,
+    color: '#8ab55a',
     fontWeight: '500',
   },
   seasonBtn: {
     backgroundColor: RealixColors.accent,
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
   },
   seasonBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#fff',
+    color: '#111',
   },
 
-  // ── Filter Chips ──
+  // ── Chips ──
   chipRow: {
     flexDirection: 'row',
     gap: 8,
@@ -714,7 +926,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: RealixColors.cardBackground,
     borderWidth: 0.5,
-    borderColor: RealixColors.border,
+    borderColor: RealixColors.inputBorder,
   },
   chipActive: {
     backgroundColor: RealixColors.accent,
@@ -726,7 +938,7 @@ const styles = StyleSheet.create({
     color: RealixColors.textMuted,
   },
   chipTextActive: {
-    color: '#fff',
+    color: '#111',
   },
 
   // ── Section Header ──
@@ -741,41 +953,65 @@ const styles = StyleSheet.create({
     color: RealixColors.textPrimary,
   },
   seeAll: {
-    fontSize: 13,
+    fontSize: 12,
     color: RealixColors.accent,
     fontWeight: '600',
   },
 
-  // ── Featured Properties ──
+  // ── Rating Pill ──
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#2a2000',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  ratingText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFB800',
+  },
+
+  // ── Image Overlay ──
+  imgOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
+
+  // ── Featured Cards ──
   featuredScroll: {
     gap: 12,
     paddingRight: 4,
   },
   featuredCard: {
-    width: 200,
+    width: 196,
     backgroundColor: RealixColors.cardBackground,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 0.5,
     borderColor: RealixColors.border,
-  },
-  featuredImg: {
-    width: '100%',
-    height: 120,
-    backgroundColor: RealixColors.border,
   },
   featuredTag: {
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   featuredTagText: {
     fontSize: 9,
     fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.4,
   },
   featuredHeart: {
     position: 'absolute',
@@ -784,13 +1020,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   featuredBody: {
     padding: 10,
-    gap: 3,
+    gap: 4,
   },
   featuredTypeRow: {
     flexDirection: 'row',
@@ -802,21 +1038,7 @@ const styles = StyleSheet.create({
     color: RealixColors.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  ratingPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#FFF8E1',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  ratingText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#E65100',
+    letterSpacing: 0.8,
   },
   featuredName: {
     fontSize: 13,
@@ -840,7 +1062,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   featuredPrice: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: RealixColors.accent,
   },
@@ -849,7 +1071,189 @@ const styles = StyleSheet.create({
     color: RealixColors.textMuted,
   },
 
-  // ── Destinations Grid ──
+  // ── Deal Cards ──
+  dealScroll: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  dealCard: {
+    width: 224,
+    backgroundColor: RealixColors.cardBackground,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: RealixColors.border,
+  },
+  dealBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(17,17,17,0.88)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  dealBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  dealBody: {
+    padding: 12,
+    gap: 4,
+  },
+  dealTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dealType: {
+    fontSize: 9,
+    color: RealixColors.textMuted,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  dealName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: RealixColors.textPrimary,
+  },
+  dealLocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  dealLoc: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+    flex: 1,
+  },
+  dealOfferRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: 2,
+  },
+  dealPrice: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: RealixColors.accent,
+  },
+  dealOldPrice: {
+    fontSize: 11,
+    color: RealixColors.textMuted,
+    textDecorationLine: 'line-through',
+  },
+  dealPerk: {
+    fontSize: 11,
+    color: RealixColors.textSecondary,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  dealReviews: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+    marginTop: 1,
+  },
+
+  // ── Top Rated ──
+  topRatedScroll: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  topRatedCard: {
+    width: 208,
+    backgroundColor: RealixColors.cardBackground,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: RealixColors.border,
+  },
+  topRatedBody: {
+    padding: 12,
+    gap: 4,
+  },
+  topRatedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  topRatedName: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: RealixColors.textPrimary,
+  },
+  topRatedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#2a2000',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  topRatedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFB800',
+  },
+  topRatedLoc: {
+    fontSize: 11,
+    color: RealixColors.textMuted,
+  },
+  topRatedOffer: {
+    fontSize: 12,
+    color: RealixColors.textSecondary,
+    lineHeight: 17,
+  },
+  topRatedReviews: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+  },
+
+  // ── Nearby Getaways ──
+  getawayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  getawayCard: {
+    width: '47.5%',
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+  },
+  getawayIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  getawayCity: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111',
+  },
+  getawayNote: {
+    fontSize: 11,
+    color: '#555',
+  },
+  getawayPrice: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#333',
+    marginTop: 4,
+  },
+
+  // ── Destinations ──
   destGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -862,7 +1266,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   destEmoji: {
-    fontSize: 28,
+    fontSize: 26,
     marginBottom: 4,
   },
   destCity: {
@@ -890,6 +1294,89 @@ const styles = StyleSheet.create({
     color: '#777',
   },
 
+  // ── Trekking ──
+  trekkingCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: RealixColors.cardBackground,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 0.5,
+    borderColor: RealixColors.border,
+  },
+  trekkingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  trekkingIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#1a2e0a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trekkingName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: RealixColors.textPrimary,
+  },
+  trekkingRegion: {
+    fontSize: 11,
+    color: RealixColors.textMuted,
+  },
+  trekkingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  trekkingDays: {
+    fontSize: 11,
+    color: RealixColors.accent,
+    fontWeight: '600',
+  },
+  trekkingFrom: {
+    fontSize: 10,
+    color: RealixColors.textMuted,
+  },
+  trekkingPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: RealixColors.textPrimary,
+  },
+
+  // ── Travel Essentials ──
+  essGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  essCard: {
+    flex: 1,
+    backgroundColor: RealixColors.cardBackground,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: RealixColors.border,
+    padding: 12,
+    alignItems: 'center',
+    gap: 8,
+  },
+  essIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  essLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: RealixColors.textPrimary,
+    textAlign: 'center',
+  },
+
   // ── Festivals ──
   festCard: {
     flexDirection: 'row',
@@ -914,7 +1401,7 @@ const styles = StyleSheet.create({
     backgroundColor: RealixColors.accent,
   },
   festName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: RealixColors.textPrimary,
     marginBottom: 2,
@@ -924,18 +1411,20 @@ const styles = StyleSheet.create({
     color: RealixColors.textMuted,
   },
   festDateBox: {
-    backgroundColor: '#EAF5D6',
+    backgroundColor: '#1a2e0a',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: '#3a6e15',
   },
   festDate: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2E5A0E',
+    color: '#8ab55a',
   },
 
-  // ── Quick Grid ──
+  // ── Quick Access ──
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -985,6 +1474,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  currencyIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#1a2e0a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   currencyTitle: {
     fontSize: 14,
     fontWeight: '700',
@@ -1004,118 +1501,10 @@ const styles = StyleSheet.create({
   currencyBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#fff',
+    color: '#111',
   },
 
-  // ── Trekking Tab ──
-  trekkingHero: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 18,
-    marginTop: 4,
-    borderWidth: 0.5,
-    borderColor: '#C5E49A',
-  },
-  trekkingHeroTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1B5E20',
-    marginBottom: 6,
-  },
-  trekkingHeroSub: {
-    fontSize: 13,
-    color: '#2E7D32',
-    lineHeight: 20,
-  },
-  trekkingCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: RealixColors.cardBackground,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderWidth: 0.5,
-    borderColor: RealixColors.border,
-  },
-  trekkingCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  trekkingName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: RealixColors.textPrimary,
-  },
-  trekkingRegion: {
-    fontSize: 11,
-    color: RealixColors.textMuted,
-  },
-  trekkingDays: {
-    fontSize: 11,
-    color: RealixColors.accent,
-    fontWeight: '600',
-  },
-  trekkingRight: {
-    alignItems: 'center',
-    gap: 4,
-    flexDirection: 'row',
-  },
-  trekkingFrom: {
-    fontSize: 10,
-    color: RealixColors.textMuted,
-  },
-  trekkingPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: RealixColors.textPrimary,
-  },
-  trekkingInfoCard: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 0.5,
-    borderColor: '#BBDEFB',
-    alignItems: 'flex-start',
-  },
-  trekkingInfoText: {
-    fontSize: 12,
-    color: '#1565C0',
-    lineHeight: 18,
-    flex: 1,
-  },
-  essGrid: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  essCard: {
-    flex: 1,
-    backgroundColor: RealixColors.cardBackground,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: RealixColors.border,
-    padding: 12,
-    alignItems: 'center',
-    gap: 8,
-  },
-  essIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  essLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: RealixColors.textPrimary,
-    textAlign: 'center',
-  },
-
-  // ── Empty States ──
+  // ── Empty State ──
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1126,7 +1515,9 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#EAF5D6',
+    backgroundColor: '#1a2e0a',
+    borderWidth: 1,
+    borderColor: '#3a6e15',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1152,6 +1543,6 @@ const styles = StyleSheet.create({
   emptyBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
+    color: '#111',
   },
 });
