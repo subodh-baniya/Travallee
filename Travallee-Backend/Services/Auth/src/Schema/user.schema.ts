@@ -1,4 +1,5 @@
 
+import mongoose from "mongoose";
 import zod, { email, number } from "zod";
 // for database 
 
@@ -34,6 +35,7 @@ export const registerSchema = zod.object({
 
 // for login validation
 export const loginSchema = zod.object({
+    hotelId: zod.string().optional(),
     email: zod.string().email("Invalid email address").optional(),
     Username: zod.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores").optional(),
     password: zod.string().min(6, "Password must be at least 6 characters long"),

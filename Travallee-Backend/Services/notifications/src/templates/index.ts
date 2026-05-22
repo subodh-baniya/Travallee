@@ -132,6 +132,15 @@ export interface CheckInReminderParams {
   view_online_link: string;
 }
 
+export interface HotelRegistrationParams {
+    user_name: string;
+    hotel_name: string;
+    location: string;
+    description: string;
+    contact_email: string;
+    contact_phone: string;
+}
+
 
 function interpolateTemplate(html: string, params: Record<string, string>): string {
   let result = html;
@@ -363,6 +372,99 @@ export function getBookingConfirmationTemplate(params: BookingConfirmationParams
 </body>
 </html>`;
   return interpolateTemplate(html, params as unknown as Record<string, string>);
+}
+
+/**
+ * Hotel Registration Template
+ */
+export function getHotelRegistrationTemplate(params: HotelRegistrationParams): string {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Registration Received</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #0f0f0f; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
+        .header { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 40px 20px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 10px; }
+        .tagline { font-size: 14px; color: rgba(255,255,255,0.8); }
+        .content { padding: 40px 30px; }
+        .content h2 { font-size: 26px; color: #fff; margin-bottom: 15px; }
+        .content p { color: #b0b0b0; margin-bottom: 15px; font-size: 15px; }
+        .card { background-color: #252525; border-left: 4px solid #0ea5e9; padding: 20px; margin: 25px 0; border-radius: 6px; }
+        .row { margin-bottom: 14px; }
+        .label { display: block; color: #888; font-size: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .value { color: #fff; font-size: 14px; }
+        .amenities { padding-left: 20px; color: #fff; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 30px 0; font-size: 15px; }
+        .divider { height: 1px; background-color: #333; margin: 30px 0; }
+        .footer-section { background-color: #252525; padding: 30px; text-align: center; border-top: 2px solid #333; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: #0ea5e9; text-decoration: none; margin: 0 10px; font-size: 13px; }
+        .copyright { color: #666; font-size: 12px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Travallee</div>
+            <div class="tagline">Hotel registration received</div>
+        </div>
+        <div class="content">
+            <h2>Hi {{user_name}}, your hotel registration is in review</h2>
+            <p>We received your hotel registration for <strong>{{hotel_name}}</strong>. The details below have been saved and shared for review.</p>
+            <div class="card">
+                <div class="row">
+                    <span class="label">Hotel Name</span>
+                    <span class="value">{{hotel_name}}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Location</span>
+                    <span class="value">{{location}}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Description</span>
+                    <span class="value">{{description}}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Contact Email</span>
+                    <span class="value">{{contact_email}}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Contact Phone</span>
+                    <span class="value">{{contact_phone}}</span>
+                </div>
+            </div>
+            <p>If anything changes, please resubmit the form with the updated details.</p>
+            <center>
+                <a href="{{app_link}}/registerhotel" class="cta-button">Review Registration</a>
+            </center>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-section">
+            <div class="footer-links">
+                <a href="{{unsubscribe_link}}">Unsubscribe</a> | 
+                <a href="{{preferences_link}}">Preferences</a> | 
+                <a href="{{view_online_link}}">View Online</a>
+            </div>
+            <div class="copyright">
+                © 2025 Travallee. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+  return interpolateTemplate(html, {
+    ...params,
+    app_link: process.env.APP_LINK || "https://kcprabin9.com.np",
+    unsubscribe_link: `${process.env.APP_LINK || "https://kcprabin9.com.np"}/unsubscribe`,
+    preferences_link: `${process.env.APP_LINK || "https://kcprabin9.com.np"}/preferences`,
+    view_online_link: `${process.env.APP_LINK || "https://kcprabin9.com.np"}/view-online`,
+  } as unknown as Record<string, string>);
 }
 
 /**

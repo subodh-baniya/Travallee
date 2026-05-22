@@ -9,6 +9,7 @@ import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
+import axios from "axios";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -210,6 +211,10 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     if (!isPasswordValid) {
       return apiError(res, 400, "Invalid password");
     }
+    if (validate.hotelId) {
+    await UserModel.updateOne({ _id: user._id }, { hotelId: validate.hotelId || null });
+    }
+    console.log(`Hotel ${validate.hotelId} authenticated successfully`);
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -223,13 +228,12 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     res.setHeader("Authorization", `Bearer ${token}`);
     res.cookie("token", token, options);
     UserProfileRedis.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3); // Cache token for 3 days
-    console.log(`User ${user} logged in successfully`);
     return apiResponse(
       res,
       200,
       true,
       "User logged in successfully",
-      user,
+      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {

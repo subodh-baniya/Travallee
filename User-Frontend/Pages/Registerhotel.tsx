@@ -3,7 +3,7 @@ import { registerHotel } from "../Services/hotel.api";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
-import axios, { AxiosError } from "axios";
+import  { AxiosError } from "axios";
 import {
   FaHotel,
   FaUser,
@@ -15,7 +15,7 @@ import {
   FaWifi,
   FaImage,
   FaFileAlt,
-  FaSave,
+  FaPaperPlane,
 } from "react-icons/fa";
 
 interface HotelForm {
@@ -29,8 +29,6 @@ interface HotelForm {
   checkoutTime: string;
   pricePerNight: number;
   facilities: string;
-  isactive: boolean;
-  isFeatured: boolean;
 }
 
 const RegisterHotel = () => {
@@ -53,8 +51,6 @@ const RegisterHotel = () => {
     checkoutTime: "12:00",
     pricePerNight: 0,
     facilities: "",
-    isactive: true,
-    isFeatured: false,
   });
 
   const [hotelImages, setHotelImages] = useState<FileList | null>(null);
@@ -71,29 +67,26 @@ const RegisterHotel = () => {
     }));
   };
 
-const handleSubmit = async () => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
   setIsSubmitting(true);
   try {
     const fd = new FormData();
+    const contactNumber = form.contactNumber.replace(/\D/g, "");
 
     fd.append("ownerName", form.ownerName.trim());
     fd.append("hotelName", form.hotelName.trim());
     fd.append("hotelDescription", form.hotelDescription.trim());
     fd.append("hotelLocation", form.hotelLocation.trim());
     fd.append("propertyType", form.propertyType.trim());
-    fd.append("contactNumber", form.contactNumber.trim());
+    fd.append("contactNumber", contactNumber);
     fd.append("checkinTime", form.checkinTime);
     fd.append("checkoutTime", form.checkoutTime);
     fd.append("pricePerNight", String(form.pricePerNight));
-    fd.append("isactive", String(form.isactive));
-    fd.append("isFeatured", String(form.isFeatured));
     fd.append("verified", "false");
     fd.append("rating", "0");
     fd.append("numberOfReviews", "0");
 
-    // ✅ DO NOT append userID — backend sets it from req.user.id before Zod runs
-
-    // ✅ Facilities as comma-separated string (matches your schema's .transform())
     const facilitiesArray = form.facilities
       .split(",")
       .map((f) => f.trim())
@@ -105,14 +98,12 @@ const handleSubmit = async () => {
     }
     fd.append("facilities", facilitiesArray.join(","));
 
-    // ✅ Hotel images
     if (!hotelImages || hotelImages.length === 0) {
       alert("Please upload at least one hotel image.");
       return;
     }
     Array.from(hotelImages).forEach((file) => fd.append("hotelImages", file));
 
-    // ✅ Verification docs
     if (!docs || docs.length === 0) {
       alert("Please upload at least one verification document.");
       return;
@@ -152,10 +143,28 @@ const handleSubmit = async () => {
     "w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all bg-white";
   const labelClass = "text-xs font-medium text-slate-500 mb-2 block";
   const iconClass = "absolute top-3.5 left-4 text-slate-400 text-sm";
+  const facilitiesList = form.facilities
+    .split(",")
+    .map((facility) => facility.trim())
+    .filter(Boolean);
+  const isFormComplete =
+    form.ownerName.trim().length > 0 &&
+    form.hotelName.trim().length > 0 &&
+    form.hotelDescription.trim().length > 0 &&
+    form.hotelLocation.trim().length > 0 &&
+    form.propertyType.trim().length > 0 &&
+    form.checkinTime.trim().length > 0 &&
+    form.checkoutTime.trim().length > 0 &&
+    form.pricePerNight > 0 &&
+    form.contactNumber.replace(/\D/g, "").length >= 10 &&
+    facilitiesList.length > 0 &&
+    Boolean(hotelImages?.length) &&
+    Boolean(docs?.length);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <motion.div
+      <motion.form
+        onSubmit={handleSubmit}
         className="max-w-4xl mx-auto space-y-6"
         variants={containerVariants}
         initial="hidden"
@@ -173,14 +182,6 @@ const handleSubmit = async () => {
               Add a new property to the booking system. Fill out the details below.
             </p>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            <FaSave />
-            {isSubmitting ? "Registering..." : "Register Hotel"}
-          </button>
         </motion.div>
 
         {/* BASIC INFORMATION */}
@@ -237,7 +238,15 @@ const handleSubmit = async () => {
               <label className={labelClass}>Contact Number</label>
               <div className="relative">
                 <FaPhoneAlt className={iconClass} />
-                <input name="contactNumber" value={form.contactNumber} onChange={handleChange} className={inputWithIconClass} placeholder="e.g. +1 234 567 8900" />
+                <input
+                  name="contactNumber"
+                  value={form.contactNumber}
+                  onChange={handleChange}
+                  className={inputWithIconClass}
+                  placeholder="e.g. 9779841234567"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
               </div>
             </div>
             <div>
@@ -287,7 +296,7 @@ const handleSubmit = async () => {
               <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors">
                 <FaImage className="text-slate-400 text-2xl mb-2" />
                 <p className="text-xs text-slate-500 mb-2">Upload high-quality images of the property</p>
-                <input type="file" multiple onChange={(e) => setHotelImages(e.target.files)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                <input type="file" multiple accept="image/*" onChange={(e) => setHotelImages(e.target.files)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
               </div>
             </div>
             <div>
@@ -295,35 +304,24 @@ const handleSubmit = async () => {
               <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors">
                 <FaFileAlt className="text-slate-400 text-2xl mb-2" />
                 <p className="text-xs text-slate-500 mb-2">Upload legal documents and ID proofs</p>
-                <input type="file" multiple onChange={(e) => setDocs(e.target.files)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                <input type="file" multiple accept="application/pdf,image/*" onChange={(e) => setDocs(e.target.files)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* STATUS */}
         <motion.div variants={itemVariants} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-5">Status</h2>
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${form.isactive ? 'bg-blue-600 border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}>
-                {form.isactive && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              <input type="checkbox" className="hidden" checked={form.isactive} onChange={(e) => setForm(p => ({ ...p, isactive: e.target.checked }))} />
-              <span className="text-sm font-medium text-slate-700">Active Listing</span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${form.isFeatured ? 'bg-blue-600 border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}>
-                {form.isFeatured && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              <input type="checkbox" className="hidden" checked={form.isFeatured} onChange={(e) => setForm(p => ({ ...p, isFeatured: e.target.checked }))} />
-              <span className="text-sm font-medium text-slate-700">Featured Property</span>
-            </label>
-          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting || !isFormComplete}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <FaPaperPlane />
+            {isSubmitting ? "Sending..." : isFormComplete ? "Submit Registration" : "Fill all fields to submit"}
+          </button>
         </motion.div>
 
-      </motion.div>
+      </motion.form>
     </div>
   );
 };

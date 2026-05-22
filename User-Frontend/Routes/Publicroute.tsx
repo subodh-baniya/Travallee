@@ -7,11 +7,15 @@ const Publicroute = () => {
 
   if (!auth) return <Loader />;
 
-  const { isAuthenticated, authChecked } = auth;
+  const { isAuthenticated, authChecked, user, isHotelOwner } = auth;
 
   if (!authChecked) return <Loader />;
 
   if (!isAuthenticated) return <Outlet />;
+
+  if (user?.role === "hotelAdmin" || isHotelOwner) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return <Navigate to="/choose" replace />;
 };

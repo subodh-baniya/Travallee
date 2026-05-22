@@ -10,17 +10,32 @@ import {
   createRoomSchema,
 } from "../validator/hotel.validator.js";
 import mongoose, { mongo } from "mongoose";
-import axios from "axios";
+import redis from "ioredis"
+import { Queue } from "bullmq"; 
 
-const registerHotel = asyncHandler(async (req: any, res: any) => {
+const connection ={
+  host: process.env.REDIS_HOST || "localhost",
+  port: parseInt(process.env.REDIS_PORT || "6379"),
+}
+//@ts-ignore
+const registerHotel = new redis(connection);
+
+const registerHotelQueue = new Queue("HotelRegistration", {
+  connection
+});
+
+
+
+// register and edit controller always at top please
+
+const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
   const userID = req.user.id || req.user._id;
-
+  const email = req.user.email;
   const files = req.files || [];
 
   if (!userID) {
     return apiError(res, 401, "Unauthorized: User ID not found in request");
   }
-  req.body.userID = userID;
 
   if (files.length > 0) {
     try {
@@ -84,29 +99,38 @@ const registerHotel = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 400, "Validation failed", parsedData.error.issues);
     }
     const hotelData: HotelInput = parsedData.data;
-    const newHotel = new hotelModel(hotelData);
-    await newHotel.save();
-    const authRes = await fetch("http://auth_service:3000/api/v1/users/internal/update-role", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userID, role: "hotelAdmin" }),
-    });
+    registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 1);// Cache for 1 day
 
-    const authData = await authRes.json();
+  const emailData = {
+    userID,
+    hotelName: parsedData.data.hotelName,
+    location: parsedData.data.hotelLocation,
+    description: parsedData.data.hotelDescription,
+    contactEmail: email,
+    contactPhone: parsedData.data.contactNumber,
+  };
+    
+    await registerHotelQueue.add("HotelRegistration", emailData);
 
-    if (authData?.data?.token) {
-      res.cookie("token", authData.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
-    }
+    return apiResponse(
+      res,
+      200,
+      true,
+      "Hotel registration data sent to super admin. Please wait until further notice.",
+      { userID }
+    );
 
-    return apiResponse(res, 201, true, "Hotel registered successfully", {
-      hotel: newHotel,
-      newToken: authData?.data?.token ?? null,
-    });
+
+
+    
+   
+
+
+    
+
+   
+
+    
 
   } catch (error: any) {
     if (error.name === "ValidationError") {
@@ -236,84 +260,28 @@ const createroom = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-// const deleteRoom = asyncHandler(async (req: any, res: any) => {
-//   const userID = req.user?._id || req.user?.id;
-//   if (!userID) {
-//     return apiError(res, 401, "Unauthorized: User ID not found in request");
-//   }
-//   const { hotelId, roomId } = req.params;
-//   const { password } = req.body;
-
-//   if (!userID || !password) {
-//     return apiError(
-//       res,
-//       400,
-//       "User ID and password are required in request body",
-//     );
-//   }
-
-//   const passwordCheckResult = await passwordCheck(password, userID);
-//   if (!passwordCheckResult.success) {
-//     return apiError(res, 401, "Unauthorized: " + passwordCheckResult.message);
-//   }
-
-//   if (
-//     !mongoose.Types.ObjectId.isValid(hotelId) ||
-//     !mongoose.Types.ObjectId.isValid(roomId)
-//   ) {
-//     return apiError(res, 400, "Invalid hotel ID or room ID format");
-//   }
-
-//   try {
-//     const hotel = await hotelModel.findById(hotelId);
-//     if (!hotel) {
-//       return apiError(res, 404, "Hotel not found", { hotelId });
-//     }
-
-//     const room = await roomModel.findOneAndDelete({
-//       _id: new mongoose.Types.ObjectId(roomId),
-//       hotelId: new mongoose.Types.ObjectId(hotelId),
-//     });
-
-//     if (!room) {
-//       return apiError(res, 404, "Room not found in this hotel", { roomId });
-//     }
-
-//     return apiResponse(res, 200, true, "Room deleted successfully");
-//   } catch (error: any) {
-//     return apiError(
-//       res,
-//       500,
-//       "Internal server error: Unable to delete room. Please try again later.",
-//     );
-//   }
-// });
-
-const featuredHotels = asyncHandler(async (req: any, res: any) => {
-  try {
-    const hotels = await hotelModel.find({ isFeatured: true });
-    if (hotels.length === 0) {
-      return apiError(res, 404, "No featured hotels found");
-    }
-    return apiResponse(
-      res,
-      200,
-      true,
-      "Featured hotels retrieved successfully",
-      hotels,
-    );
-  } catch (error) {
-    return apiError(res, 500, "Internal server error");
-  }
-});
-
 const HotelData = asyncHandler(async (req: any, res: any) => {
+   console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
   try {
+    const cachedHotel = await registerHotel.get(`hotel_${hotelId}`);
+    if (cachedHotel) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Hotel data retrieved successfully",
+        JSON.parse(cachedHotel),
+      );
+    }
+
     const hotel = await hotelModel.findById(hotelId);
     if (!hotel) {
-      return apiError(res, 404, "Hotel not found");
+      return apiError(res, 404, "Hotel not found", { hotelId });
     }
+
+    await registerHotel.set(`hotel_${hotelId}`, JSON.stringify(hotel), "EX", 60 * 60 * 24 * 3); // Cache for 3 days
+
     return apiResponse(
       res,
       200,
@@ -321,10 +289,12 @@ const HotelData = asyncHandler(async (req: any, res: any) => {
       "Hotel data retrieved successfully",
       hotel,
     );
-  } catch (error) {
-    return apiError(res, 500, "Internal server error");
+  } catch (error: any) {
+    console.error("Error retrieving hotel data:", error);
+    return apiError(res, 500, "Internal server error: Unable to retrieve hotel data");
   }
 });
+
 
 const RoomData = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
@@ -383,6 +353,30 @@ const RoomData = asyncHandler(async (req: any, res: any) => {
       500,
       "Internal server error: Unable to retrieve rooms. Please try again later.",
     );
+  }
+});
+
+
+
+
+
+
+// app controllers
+const featuredHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const hotels = await hotelModel.find({ isFeatured: true });
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No featured hotels found");
+    }
+    return apiResponse(
+      res,
+      200,
+      true,
+      "Featured hotels retrieved successfully",
+      hotels,
+    );
+  } catch (error) {
+    return apiError(res, 500, "Internal server error");
   }
 });
 
@@ -733,7 +727,7 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
 
 
   export {
-    registerHotel,
+    registerHotelRequest,
     createroom,
     // deleteRoom,
     featuredHotels,

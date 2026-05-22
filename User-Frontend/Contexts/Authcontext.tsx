@@ -7,6 +7,8 @@ export type user={
   id:string,
   role:string,
   token:string,
+  hotelId?: string,
+  Hotelid?: string,
   isHotelOwner?:boolean
 }
 
@@ -15,6 +17,7 @@ export type AuthContextType = {
   login: (form: { Username: string; password: string }) => Promise<user>;
   logout: () => Promise<void>;
   user: user|null;
+  hotelId: string | null;
   refreshUser: () => Promise<void>;
   authChecked:boolean;
   isHotelOwner:boolean;

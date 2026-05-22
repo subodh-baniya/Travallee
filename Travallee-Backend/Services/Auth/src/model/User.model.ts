@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+
 export const UserZodSchema = zod.object({
     id: zod.string().optional(),
     Name: zod.string().min(2, "Name must be at least 2 characters long"),
@@ -79,7 +80,8 @@ UserSchema.methods.comparePassword = async function (
 };
 
 UserSchema.methods.generateJWT = function () {
-  const payload = { id: this._id, email: this.email, role: this.role };
+  // If hotelId is present then we will add it to the payload otherwise we will not add it to the payload
+  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null };
   const secret: string = process.env.JWT_SECRET as string;
   const data = process.env.JWT_EXPIRES_IN as string;
 
