@@ -40,7 +40,7 @@ const firstWeekdayOffset = 1;
 
 export default function SelectDateScreen() {
   const router = useRouter();
-  
+
   // Safe navigation handler
   const handleGoBack = () => {
     try {
@@ -62,7 +62,7 @@ export default function SelectDateScreen() {
     pricePerNight?: string;
     maxGuests?: string;
   }>();
-  
+
   const actualPrice = pricePerNight ? parseInt(pricePerNight) : realixDiscoverProperty.nightlyPrice;
   const maxGuestCount = maxGuests ? parseInt(maxGuests) : 2;
   const [guestCount, setGuestCount] = useState(1);
@@ -95,7 +95,7 @@ export default function SelectDateScreen() {
   const getCurrentMonthYear = () => {
     const today = new Date();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
+      'July', 'August', 'September', 'October', 'November', 'December'];
     return `${monthNames[today.getMonth()]} ${today.getFullYear()}`;
   };
 
@@ -103,7 +103,7 @@ export default function SelectDateScreen() {
   const getCurrentMonthName = () => {
     const today = new Date();
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return monthNames[today.getMonth()];
   };
 
@@ -131,7 +131,7 @@ export default function SelectDateScreen() {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    
+
     const date = new Date(currentYear, currentMonth, day);
     return date.toISOString().split('T')[0];
   };

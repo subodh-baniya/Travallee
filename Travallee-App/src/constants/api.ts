@@ -10,7 +10,7 @@ const API_ENDPOINTS_AUTH: ApiEndpoints = {
   LOGOUT: `${API_AUTH}/logout`,
   REGISTER: `${API_AUTH}/register`,
   PROFILE: `${API_AUTH}/profile`,
-  USER_PROFILE: `${API_AUTH}/profile-picture`,
+  USER_PROFILE: `${API_AUTH}/user-profile`,
   UPDATE_PROFILE: `${API_AUTH}/update-profile`,
   CHANGE_PASSWORD: `${API_AUTH}/change-password`,
   VERIFY_OTP: `${API_AUTH}/verify-otp`,

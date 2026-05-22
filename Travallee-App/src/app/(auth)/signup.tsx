@@ -28,7 +28,6 @@ import apiClient from "@/src/services/apiClient";
 
 export default function SignUp() {
   const API_SIGNUP = API_ENDPOINTS_AUTH.REGISTER;
-  const API_SEND_VERIFICATION = API_ENDPOINTS_AUTH.SEND_OTP;
   const router = useRouter();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -69,18 +68,6 @@ export default function SignUp() {
       console.log("✅ Registration successful");
 
       if (response.status === 201) {
-        console.log("📧 Sending OTP...");
-        try {
-          // Token is automatically added by apiClient interceptor
-          await apiClient.post(
-            API_SEND_VERIFICATION,
-            { email: data.email }
-          );
-          console.log("✅ OTP sent successfully");
-        } catch (otpError: any) {
-          console.warn("⚠️ OTP send failed, but continuing:", otpError.message);
-        }
-        
         console.log("🚀 Navigating to verification...");
         proceedToVerification();
       } else {
@@ -108,7 +95,7 @@ export default function SignUp() {
     try {
       router.push({
         pathname: "/(auth)/verify-code",
-        params: { email: email.trim() },
+        params: { email: email.trim(), type: "register" },
       } as any);
     } catch (navError: any) {
       console.error("❌ Navigation error:", navError);
@@ -121,7 +108,7 @@ export default function SignUp() {
   };
 
   const handlePhoneTab = () => {
-    router.replace("/(auth)/signup-phone" as any);
+    router.replace("/(auth)/signup" as any);
   };
 
   const handleGoogleSignUp = () => {

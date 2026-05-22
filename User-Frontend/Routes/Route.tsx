@@ -21,6 +21,7 @@ import Guests from "../Pages/Guests"
 import Payments from "../Pages/Payments"
 import Reports from "../Pages/Reports"
 import Settings from "../Pages/Settings" 
+import RoomDetails from "../Pages/RoomDetails"
 import Finance from "../Pages/Finance"
 import ReviewsPage from "../Pages/Review"
 import RegisterHotel from "../Pages/Registerhotel"
@@ -61,6 +62,7 @@ const router=createBrowserRouter(
           <Route path="payments" element={<Payments/>} />
           <Route path="reports" element={<Reports/>} />
           <Route path="settings" element={<Settings/>} />
+          <Route path="room-details" element={<RoomDetails/>} />
            <Route path="reviews" element={<ReviewsPage/>} />
             <Route path="finance" element={<Finance/>} />
             <Route path="messages" element={<ChatPage/>} />

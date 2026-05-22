@@ -70,8 +70,8 @@ export default function EditProfileScreen() {
           setNumber(userData.number || '');
           
           // Fetch profile image
-          if (userData.profileImage) {
-            setProfileImage(userData.profileImage);
+          if (userData.profileimage || userData.profileImage) {
+            setProfileImage(userData.profileimage || userData.profileImage);
           }
         }
       } catch (err: any) {
