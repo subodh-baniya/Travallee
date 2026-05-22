@@ -25,14 +25,11 @@ const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingC
 const createBooking = asyncHandler(async (req: any, res: any) => {
     let validated: any;
     const userId = req.user.id;
-    console.log(req.user);
     const { email ,Name } = req.user;
-    console.log("Creating booking for user:", { userId, email, Name });
 
 
     try {
         validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
-        console.log("Validated booking data:", validated);
     } catch (error: any) {
         if (error instanceof z.ZodError) {
             const formattedErrors = error.issues.map((issue) => ({
@@ -74,10 +71,13 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         checkOut: new Date(validated.checkOut),
         totalPrice: validated.totalPrice,
         paymentMethod: validated.paymentMethod,
-        bookingPayment: validated.paymentMethod === "COD" ? "PAID" : "NOTPAID",
-        status: validated.paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+        bookingPayment: validated.paymentMethod === "COD" ? "NOTPAID" : "PAID",
+        status: validated.paymentMethod === "PENDING",
         hotelId: validated.hotelId,
         roomId: validated.roomId,
+        hotelName: validated.hotelName,
+        roomNumber: validated.roomNumber,
+        email: validated.userEmail,
     };
     const otp = Math.floor(1000 + Math.random() * 9000);
     await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
@@ -91,15 +91,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         roomNumber: validated.roomNumber,
         otp
     });
-    console.log("Booking confirmation job added to queue with data:", {
-        email: validated.userEmail,
-        userName: validated.userName,
-        hotelName: validated.hotelName,
-        checkInDate: validated.checkIn,
-        checkOutDate: validated.checkOut,
-        roomNumber: validated.roomNumber,
-        otp
-    });
+    
   
     await bookingRedis.set(`booking:${validated.userId}`, JSON.stringify(newBooking), "EX", 15 * 60);
 
@@ -116,7 +108,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     if (!storedOtp) {
         return apiError(res, 400, "OTP has expired. Please try booking again.");
     }
-    if (String(otp) !== storedOtp) {
+    if (Number(otp) !== Number(storedOtp)) {
         return apiError(res, 400, "Invalid OTP. Please try again.");
     }
     const bookingDataString = await bookingRedis.get(`booking:${userId}`);
@@ -131,7 +123,14 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         room: bookingData.roomId,
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
-        guests: bookingData.guests
+        guests: bookingData.guests,
+        totalPrice: bookingData.totalPrice,
+        paymentMethod: bookingData.paymentMethod,
+        bookingPayment: bookingData.paymentMethod === "COD" ? "PAID" : "NOTPAID",
+        status: bookingData.paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+        hotelName: bookingData.hotelName,
+        roomNumber: bookingData.roomNumber,
+        email: bookingData.email || bookingData.userEmail || req.user.email,
     });
     await newBooking.save();
 

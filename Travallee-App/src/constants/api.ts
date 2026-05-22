@@ -46,6 +46,7 @@ const API_ENDPOINTS_BOOKING: ApiEndpoints = {
   GET_BOOKINGS: `${API_BOOKING}`,
   GET_BOOKING_BY_ID: `${API_BOOKING}/:id`,
   CREATE_BOOKING: `${API_BOOKING}/create-booking`,
+  VERIFY_OTP: `${API_BOOKING}/verify-otp`,
   CANCEL_BOOKING: `${API_BOOKING}/cancel/:id`,
 };
 

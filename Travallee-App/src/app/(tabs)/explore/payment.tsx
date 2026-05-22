@@ -212,11 +212,15 @@ export default function PaymentScreen() {
       userId: bookingUserId,
       hotelId,
       roomId,
+      hotelName: hotelName || '',
+      roomNumber: roomType || '',
       guests: guestCount,
       checkIn: toIsoDateTime(checkIn),
       checkOut: toIsoDateTime(checkOut),
       totalPrice: Number(total.toFixed(2)),
       paymentMethod: selectedMethod.toUpperCase() as 'KHALTI' | 'ESEWA' | 'COD',
+      userEmail: user?.email,
+      userName: (user as any)?.name || '',
     };
 
     if (!payload.checkIn || !payload.checkOut) {
@@ -230,11 +234,6 @@ export default function PaymentScreen() {
 
       if (!response.data?.success) {
         Alert.alert('Booking Error', response.data?.message || 'Failed to save booking.');
-        return;
-      }
-
-      if (isCashOnDelivery) {
-        router.replace({ pathname: '/(tabs)/explore/success', params: bookingParams });
         return;
       }
 
