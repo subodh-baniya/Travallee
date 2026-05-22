@@ -41,9 +41,9 @@ const Loginpage = () => {
 
       const loggedInUser = await login(form);
 
-      // Hotel owners go to dashboard, regular users choose next step
-      if (loggedInUser?.isHotelOwner) {
-        navigateto("/dashboard/overview");
+      // Hotel admins go to the dashboard, regular users choose the next step
+      if (loggedInUser?.role === "hotelAdmin" || loggedInUser?.isHotelOwner) {
+        navigateto("/dashboard");
       } else {
         navigateto("/choose");
       }
@@ -54,7 +54,13 @@ const Loginpage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_AUTH_API_BASE_URL}/auth/google`;
+    const authBaseUrl = (
+      import.meta as ImportMeta & {
+        env: { VITE_AUTH_API_BASE_URL: string };
+      }
+    ).env.VITE_AUTH_API_BASE_URL;
+
+    window.location.href = `${authBaseUrl}/auth/google`;
   };
 
   return (

@@ -24,6 +24,8 @@ const registerHotelQueue = new Queue("HotelRegistration", {
   connection
 });
 
+
+
 // register and edit controller always at top please
 
 const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
@@ -34,7 +36,6 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
   if (!userID) {
     return apiError(res, 401, "Unauthorized: User ID not found in request");
   }
-  req.body.userID = userID;
 
   if (files.length > 0) {
     try {
@@ -260,6 +261,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 });
 
 const HotelData = asyncHandler(async (req: any, res: any) => {
+   console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
   try {
     const cachedHotel = await registerHotel.get(`hotel_${hotelId}`);

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+
 export const UserZodSchema = zod.object({
     id: zod.string().optional(),
     Name: zod.string().min(2, "Name must be at least 2 characters long"),

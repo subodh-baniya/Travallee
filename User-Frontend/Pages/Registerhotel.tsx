@@ -3,7 +3,7 @@ import { registerHotel } from "../Services/hotel.api";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
-import axios, { AxiosError } from "axios";
+import  { AxiosError } from "axios";
 import {
   FaHotel,
   FaUser,
