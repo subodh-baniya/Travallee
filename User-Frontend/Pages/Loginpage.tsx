@@ -49,6 +49,7 @@ const Loginpage = () => {
       }
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
+      console.log("Login error response data:", err.response?.data);
       setError(err.response?.data?.message || "Login failed");
     }
   };

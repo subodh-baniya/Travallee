@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FaHotel,
   FaPhoneAlt,
@@ -10,11 +10,13 @@ import {
   FaParking,
   FaSpa,
   FaSwimmingPool,
-  FaEdit,
-  FaSave,
+  FaFileAlt,
 } from "react-icons/fa";
+import { getHotelById } from "../Services/hotel.api";
+import { useAuth } from "../Contexts/Authcontext";
 
 interface HotelSettings {
+  _id?: string;
   hotelName: string;
   owner: string;
   contact: string;
@@ -26,33 +28,10 @@ interface HotelSettings {
   description: string;
   facilities: string[];
   images: string[];
+  documents: string[];
+  rating?: number;
+  numberOfReviews?: number;
 }
-
-const initialSettings: HotelSettings = {
-  hotelName: "Travallee Boutique Hotel",
-  owner: "Prabin Karki",
-  contact: "+977 9812345678",
-  location: "Lakeside, Pokhara, Nepal",
-  propertyType: "Boutique Hotel",
-  pricePerNight: "Rs. 8,500",
-  checkIn: "02:00 PM",
-  checkOut: "12:00 PM",
-  description:
-    "Luxury boutique hotel with mountain views, premium suites, rooftop dining, wellness spa, and curated local experiences.",
-  facilities: [
-    "Free WiFi",
-    "Parking",
-    "Spa",
-    "Swimming Pool",
-    "Breakfast",
-    "Room Service",
-  ],
-  images: [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85",
-  ],
-};
 
 const facilityIcons: Record<string, React.ReactNode> = {
   "Free WiFi": <FaWifi />,
@@ -62,19 +41,65 @@ const facilityIcons: Record<string, React.ReactNode> = {
 };
 
 const SettingsPage: React.FC = () => {
-  const [edit, setEdit] = useState(false);
+  const auth = useAuth();
+  const hotelId = auth?.hotelId;
 
-  const [settings, setSettings] =
-    useState<HotelSettings>(initialSettings);
+  const [settings, setSettings] = useState<HotelSettings | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setSettings({
-      ...settings,
-      [e.target.name]: e.target.value,
-    });
-  };
+  useEffect(() => {
+    const fetchHotel = async () => {
+      if (!hotelId) {
+        setError("No hotel id found in auth context.");
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const res = await getHotelById(hotelId);
+        const hotel = res?.data ?? res;
+
+        setSettings({
+          _id: hotel?._id,
+          hotelName: hotel?.hotelName || "Untitled hotel",
+          owner: hotel?.ownerName || "Unknown owner",
+          contact: hotel?.contactNumber || "Not provided",
+          location: hotel?.hotelLocation || "Not provided",
+          propertyType: hotel?.propertyType || "Not provided",
+          pricePerNight: hotel?.pricePerNight ? `Rs. ${hotel.pricePerNight}` : "Not provided",
+          checkIn: hotel?.checkinTime || "Not provided",
+          checkOut: hotel?.checkoutTime || "Not provided",
+          description: hotel?.hotelDescription || "No description available.",
+          facilities: Array.isArray(hotel?.facilities) ? hotel.facilities : [],
+          images: Array.isArray(hotel?.hotelImages) ? hotel.hotelImages : [],
+          documents: Array.isArray(hotel?.VerificationDocuments) ? hotel.VerificationDocuments : [],
+          rating: hotel?.rating,
+          numberOfReviews: hotel?.numberOfReviews,
+        });
+      } catch (fetchError) {
+        console.error("Failed to fetch hotel settings:", fetchError);
+        setError("Unable to load hotel details right now.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHotel();
+  }, [hotelId]);
+
+  const stats = useMemo(() => {
+    const rating = settings?.rating ?? 0;
+    const reviews = settings?.numberOfReviews ?? 0;
+    return {
+      rating: rating.toFixed(1),
+      reviews,
+      occupancy: reviews > 0 ? Math.min(100, 50 + Math.round(reviews / 2)) : 0,
+    };
+  }, [settings]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 space-y-6">
@@ -90,28 +115,31 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <h1 className="text-3xl font-bold text-slate-900">
-            {settings.hotelName}
+            {settings?.hotelName || "Loading hotel..."}
           </h1>
 
           <p className="text-sm text-slate-500 mt-2">
-            Manage hotel information, facilities,
-            pricing, and property details.
+            View hotel information, facilities, pricing, and property details from the authenticated hotel record.
           </p>
         </div>
 
-        <button
-          onClick={() => setEdit(!edit)}
-          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition ${
-            edit
-              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-              : "bg-blue-600 text-white hover:bg-blue-700"
-          }`}
-        >
-          {edit ? <FaSave /> : <FaEdit />}
-          {edit ? "Save Changes" : "Edit Settings"}
-        </button>
+        <div className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+          {hotelId ? `Hotel ID: ${hotelId}` : "No hotel id available"}
+        </div>
 
       </div>
+
+      {loading && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-slate-600">
+          Loading hotel details...
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* STATS */}
 
@@ -124,11 +152,11 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div className="text-3xl font-bold text-slate-900 mt-2">
-            4.8
+            {stats.rating}
           </div>
 
           <div className="text-sm text-emerald-600 mt-1">
-            +0.3 this month
+            Live from hotel record
           </div>
 
         </div>
@@ -140,7 +168,7 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div className="text-3xl font-bold text-slate-900 mt-2">
-            142
+            {stats.reviews}
           </div>
 
           <div className="text-sm text-slate-500 mt-1">
@@ -156,11 +184,11 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div className="text-3xl font-bold text-slate-900 mt-2">
-            74%
+            {stats.occupancy}%
           </div>
 
           <div className="text-sm text-emerald-600 mt-1">
-            High booking performance
+            Derived from current review volume
           </div>
 
         </div>
@@ -191,11 +219,9 @@ const SettingsPage: React.FC = () => {
                 </label>
 
                 <input
-                  name="hotelName"
-                  value={settings.hotelName}
-                  onChange={handleChange}
-                  disabled={!edit}
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                  value={settings?.hotelName || ""}
+                  readOnly
+                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                 />
               </div>
 
@@ -205,11 +231,9 @@ const SettingsPage: React.FC = () => {
                 </label>
 
                 <input
-                  name="owner"
-                  value={settings.owner}
-                  onChange={handleChange}
-                  disabled={!edit}
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                  value={settings?.owner || ""}
+                  readOnly
+                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                 />
               </div>
 
@@ -223,11 +247,9 @@ const SettingsPage: React.FC = () => {
                   <FaPhoneAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
 
                   <input
-                    name="contact"
-                    value={settings.contact}
-                    onChange={handleChange}
-                    disabled={!edit}
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                    value={settings?.contact || ""}
+                    readOnly
+                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                   />
 
                 </div>
@@ -239,11 +261,9 @@ const SettingsPage: React.FC = () => {
                 </label>
 
                 <input
-                  name="propertyType"
-                  value={settings.propertyType}
-                  onChange={handleChange}
-                  disabled={!edit}
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                  value={settings?.propertyType || ""}
+                  readOnly
+                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                 />
               </div>
 
@@ -258,11 +278,9 @@ const SettingsPage: React.FC = () => {
                   <FaMapMarkerAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
 
                   <input
-                    name="location"
-                    value={settings.location}
-                    onChange={handleChange}
-                    disabled={!edit}
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                    value={settings?.location || ""}
+                    readOnly
+                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                   />
 
                 </div>
@@ -282,12 +300,10 @@ const SettingsPage: React.FC = () => {
             </h2>
 
             <textarea
-              name="description"
-              value={settings.description}
-              onChange={handleChange}
-              disabled={!edit}
+              value={settings?.description || ""}
+              readOnly
               rows={6}
-              className="w-full border border-slate-200 rounded-xl px-4 py-4 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50 resize-none leading-7"
+              className="w-full border border-slate-200 rounded-xl px-4 py-4 text-sm outline-none bg-slate-50 text-slate-700 cursor-default resize-none leading-7"
             />
 
           </div>
@@ -308,22 +324,56 @@ const SettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-              {settings.images.map((img, i) => (
+              {(settings?.images || []).map((img, i) => (
                 <div
                   key={i}
-                  className="overflow-hidden rounded-2xl border border-slate-200"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setPreviewImage(img)}
+                  onKeyDown={(event) => event.key === "Enter" && setPreviewImage(img)}
+                  className="overflow-hidden rounded-2xl border border-slate-200 cursor-pointer"
                 >
 
                   <img
                     src={img}
-                    alt=""
+                    alt={`Hotel image ${i + 1}`}
                     className="h-52 w-full object-cover hover:scale-105 transition duration-300"
                   />
 
                 </div>
               ))}
 
+              {(settings?.images || []).length === 0 && (
+                <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                  No hotel images available.
+                </div>
+              )}
+
             </div>
+
+            {previewImage && (
+              <div
+                className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+                onClick={() => setPreviewImage(null)}
+              >
+                <div
+                  className="max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                    <span className="text-sm font-medium text-slate-700">Image preview</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(null)}
+                      className="text-sm text-slate-500 hover:text-slate-900"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <img src={previewImage} alt="Hotel preview" className="w-full max-h-[80vh] object-contain bg-black" />
+                </div>
+              </div>
+            )}
 
           </div>
 
@@ -350,11 +400,9 @@ const SettingsPage: React.FC = () => {
                 </div>
 
                 <input
-                  name="pricePerNight"
-                  value={settings.pricePerNight}
-                  onChange={handleChange}
-                  disabled={!edit}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50"
+                  value={settings?.pricePerNight || ""}
+                  readOnly
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
                 />
 
               </div>
@@ -367,11 +415,11 @@ const SettingsPage: React.FC = () => {
                     Check In
                   </div>
 
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700">
+                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
 
                     <FaClock className="text-slate-400" />
 
-                    {settings.checkIn}
+                    {settings?.checkIn || "Not provided"}
 
                   </div>
 
@@ -383,11 +431,11 @@ const SettingsPage: React.FC = () => {
                     Check Out
                   </div>
 
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700">
+                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
 
                     <FaClock className="text-slate-400" />
 
-                    {settings.checkOut}
+                    {settings?.checkOut || "Not provided"}
 
                   </div>
 
@@ -409,7 +457,7 @@ const SettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
 
-              {settings.facilities.map((facility, i) => (
+              {(settings?.facilities || []).map((facility, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3"
@@ -426,10 +474,49 @@ const SettingsPage: React.FC = () => {
                 </div>
               ))}
 
+
+                            {(settings?.facilities || []).length === 0 && (
+                              <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                                No facilities found.
+                              </div>
+                            )}
             </div>
 
           </div>
 
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-5">
+              <FaFileAlt className="text-blue-600" />
+              <h2 className="text-lg font-semibold text-slate-900">
+                Verification Documents
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(settings?.documents || []).map((doc, index) => (
+                <div
+                  key={index}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                >
+                  <img
+                    src={doc}
+                    alt={`Verification document ${index + 1}`}
+                    className="h-64 w-full object-contain bg-white"
+                  />
+                  <div className="px-4 py-3 text-xs text-slate-500 border-t border-slate-200">
+                    Verification document {index + 1}
+                  </div>
+                </div>
+              ))}
+
+              {(settings?.documents || []).length === 0 && (
+                <div className="text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center md:col-span-2">
+                  No verification documents available.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>

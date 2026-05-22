@@ -10,6 +10,10 @@ export const registerHotel = (data: FormData) => {
 
 export const getHotelInfo=()=>{return hotelClient.get('/my-hotel').then(res=>res.data); }
 
+export const getHotelById = (hotelId: string) => {
+  return hotelClient.get(`/${hotelId}`).then(res => res.data);
+};
+
 export const createRoom = (hotelId: string, data: FormData) => {
   return hotelClient
     .post(`/room/${hotelId}`, data, {

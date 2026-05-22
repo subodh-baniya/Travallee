@@ -5,9 +5,27 @@ import type { user } from './Authcontext';
 
 export const Authprovider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<user | null>(null);
+  const [hotelId, setHotelId] = useState<string | null>(() => {
+    return localStorage.getItem("hotelId");
+  });
   const [authChecked, setAuthChecked] = useState(false);
 
   const isAuthenticated = !!user;
+
+  const resolveHotelId = (data: user | null) => {
+    return data?.hotelId || data?.Hotelid || null;
+  };
+
+  const syncHotelId = (data: user | null) => {
+    const nextHotelId = resolveHotelId(data);
+    setHotelId(nextHotelId);
+
+    if (nextHotelId) {
+      localStorage.setItem("hotelId", nextHotelId);
+    } else {
+      localStorage.removeItem("hotelId");
+    }
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -16,10 +34,11 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
           `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
           { withCredentials: true }
         );
-
         setUser(res.data.data);
+        syncHotelId(res.data.data);
       } catch {
         setUser(null);
+        setHotelId(null);
       } finally {
         setAuthChecked(true);
       }
@@ -36,6 +55,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     );
 
     setUser(res.data.data);
+    syncHotelId(res.data.data);
     return res.data.data;
   };
 
@@ -47,6 +67,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     );
 
     setUser(null);
+    setHotelId(null);
+    localStorage.removeItem("hotelId");
   };
 
   const refreshUser = async () => {
@@ -56,8 +78,10 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
       { withCredentials: true }
     );
     setUser(res.data.data);
+    syncHotelId(res.data.data);
   } catch {
     setUser(null);
+    setHotelId(null);
   }
 };
 
@@ -65,6 +89,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     <Authcontext.Provider
       value={{
         user,
+        hotelId,
         login,
         logout,
         isAuthenticated,
