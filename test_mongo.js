@@ -117,7 +117,7 @@ const hotels = [
     ],
     propertyType: "Boutique Hotel",
     verified: true,
-    VerificationDocuments: ["NID", "Citizenship","Passport"],
+    VerificationDocuments: ["NID", "Citizenship", "Passport"],
     contactNumber: "9807766554",
     isactive: true,
     facilities: ["Lake View", "Restaurant", "Free WiFi", "Boat Service", "Parking"],
@@ -130,35 +130,30 @@ const hotels = [
     roomIDs: ["room_5a", "room_5b", "room_5c"],
   },
 
-  // Test entry covering union/string transform branches
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
     ownerName: "String Variant Hotel",
     hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
     hotelLocation: "Testville, Testland",
     hotelName: "String Variant Inn",
-    // hotelImages: replaced with attached image URL placeholder (replace with actual URL or local path)
     hotelImages: [
       "https://via.placeholder.com/1200x800.png?text=String+Variant+Inn"
     ],
     propertyType: "Guest House",
-    // boolean-like fields as strings
     verified: "true",
-    // VerificationDocuments as comma-separated string
     VerificationDocuments: "NID, Citizenship, Passport",
     contactNumber: "0123456789",
     isactive: "false",
-    // facilities as comma-separated string
     facilities: "Free WiFi,Parking,Breakfast",
     checkinTime: "2:00 PM",
     checkoutTime: "12:00 PM",
-    // numeric fields provided as strings (coerce will convert)
     pricePerNight: "99",
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
     roomIDs: ["room_6a", "room_6b"],
   },
+
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
     ownerName: "Bijaya Neupane",
@@ -183,6 +178,54 @@ const hotels = [
     isFeatured: false,
     roomIDs: ["room_7a", "room_7b"],
   },
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c11",
+    ownerName: "Imanatha Poudel", 
+    hotelDescription: "A beautiful and expansive resort featuring lush gardens, modern comfortable twin-bed rooms, and excellent hospitality in Bharatpur.",
+    hotelLocation: "Bharatpur, Chitwan, Nepal",
+    hotelName: "Chitwan Garden Resort",
+    hotelImages: [ 
+     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo_Qo143FfaC5IYA5tkM2c8mHieh5bsW52Mg&s", 
+     "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg", 
+    ],
+    propertyType: "Resort",
+    verified: true,
+    VerificationDocuments: ["Business License", "Citizenship"],
+    contactNumber: "9855012345", 
+    isactive: true,
+    facilities: ["Garden", "Free WiFi", "Air Conditioning", "Restaurant", "Parking", "Flat-screen TV"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "12:00 PM",
+    pricePerNight: 1500, 
+    rating: 4.5,
+    numberOfReviews: 215,
+    isFeatured: true,
+    roomIDs: ["room_11a", "room_11b", "room_11c"],
+  }, 
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c12",
+    ownerName: "Bishal Gurung", // Placeholder name
+    hotelDescription: "A serene riverside resort nestled along the banks of the Trishuli River, offering a perfect blend of relaxation and adventure.",
+    hotelLocation: "Kurintar, Chitwan, Nepal",
+    hotelName: "Kurintar Retreat",
+    hotelImages: [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJ0vwaIpKqJ1o5eHRHgjY7TvSpcsVuBfypg&s", 
+      "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg", 
+    ],
+    propertyType: "Resort",
+    verified: true,
+    VerificationDocuments: ["Business License", "Citizenship"],
+    contactNumber: "9800011223", 
+    isactive: true,
+    facilities: ["Swimming Pool", "Riverside Dining", "Free WiFi", "Parking", "Bar"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "11:00 AM",
+    pricePerNight: 1500, 
+    rating: 4.6,
+    numberOfReviews: 180,
+    isFeatured: true,
+    roomIDs: ["room_12a", "room_12b", "room_12c"],
+  }
 ];
 
 const url =
