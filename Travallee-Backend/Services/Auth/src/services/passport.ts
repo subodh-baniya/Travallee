@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-// @ts-ignore
-import { apiError, asyncHandler, apiResponse , UserModel } from "@packages";
+import { apiResponse, apiError } from "../config/response/api.response.js";
+import { UserModel } from "../model/User.model.js";
 
 export const passportGoogle = passport.use(
     new GoogleStrategy(

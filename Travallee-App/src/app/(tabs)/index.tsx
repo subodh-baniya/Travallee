@@ -361,6 +361,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const displayName = userName;
   const firstName = displayName.split(" ")[0] || "Traveller";
+  const capitalizedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
   const initials = displayName.split(" ").map((n) => n[0]).join("").toUpperCase() || "U";
 
   const greeting = (() => {
@@ -394,7 +395,7 @@ export default function HomeScreen() {
 
           <View style={s.headerCenter}>
             <Text style={s.greetingText}>{greeting},</Text>
-            <Text style={s.greetingName}>{firstName}</Text>
+            <Text style={s.greetingName}>{capitalizedFirstName}</Text>
           </View>
 
           <Pressable

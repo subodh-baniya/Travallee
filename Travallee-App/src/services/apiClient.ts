@@ -2,9 +2,10 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Create axios instance
+// Create axios instance - NO base URL, use full URLs from constants
+// API endpoints already include full URLs with correct ports
 const apiClient: AxiosInstance = axios.create({
-  timeout: 10000,
+  timeout: 15000,
   withCredentials: true,
 });
 

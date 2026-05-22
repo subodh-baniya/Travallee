@@ -12,6 +12,7 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   if (!auth) return null;
 
   const { user, logout } = auth;
+  const displayName = user?.Name || user?.Username || "User";
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
@@ -36,7 +37,7 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
             border border-blue-100
           "
         >
-          {user?.Username}
+          Hello, {displayName}
         </motion.div>
 
         <motion.button

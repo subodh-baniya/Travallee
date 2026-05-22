@@ -200,7 +200,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: ["room_11a", "room_11b", "room_11c"],
+    roomIDs: ["room_8a", "room_8b", "room_8c"],
   }, 
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
@@ -224,7 +224,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: ["room_12a", "room_12b", "room_12c"],
+    roomIDs: ["room_9a", "room_9b", "room_9c"],
   }
 ];
 

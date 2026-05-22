@@ -215,7 +215,7 @@ export default function EditProfileScreen() {
     } finally {
       setSaving(false);
     }
-  }, [name, email, number, router]);
+  }, [name, email, number, goBack]);
 
   if (loading) {
     return (

@@ -3,6 +3,7 @@ import { Worker, Job } from 'bullmq';
 import { sendEmail } from '../config/Resend.config.js';
 import { getWelcomeLoginTemplate } from "../templates/index.js";
 import { getTwoFactorAuthTemplate } from '../templates/index.js';
+import { getBookingConfirmationTemplate } from '../templates/index.js';
 
 const connection = {
   host: process.env.REDIS_HOST as string,
@@ -19,6 +20,7 @@ interface OTPEmailJobData {
   Name: string;
   otp: number;
   email: string;
+  subject?: string;
 }
 
 interface BookingConfirmationJobData {
@@ -29,6 +31,7 @@ interface BookingConfirmationJobData {
   checkInDate: string;
   checkOutDate: string;
   roomNumber: string;
+  otp?: string;
 }
 
 interface BookingCancellationJobData {
@@ -93,9 +96,10 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   "OTP",
   async (job: Job<OTPEmailJobData>) => {
     try {
-      const { Name, otp , email } = job.data;
+      const { Name, otp , email , subject } = job.data;
+      console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
-      await sendEmail(email, "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
+      await sendEmail(email, subject || "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
         user_name: Name,
         otp_code: otp.toString(),
         security_link: `${appLink}/security`,
@@ -103,8 +107,35 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
         preferences_link: `${appLink}/preferences`,
         view_online_link: `${appLink}/view-online`
       }));
+      console.log(`OTP email successfully sent to ${email} for user ${Name}`);
+      
     } catch (error: any) {
       console.error(`Error sending OTP email:`, error);
+      throw error;
+    }
+  },
+  {
+    connection,
+  }
+);
+
+const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
+  "DeleteAccountOTP",
+  async (job: Job<OTPEmailJobData>) => {
+    try {
+      const { Name, otp , email } = job.data;
+      const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
+      await sendEmail(email, "Your OTP Code for Account Deletion", getTwoFactorAuthTemplate({
+        user_name: Name,
+        otp_code: otp.toString(),
+        security_link: `${appLink}/security`,
+        unsubscribe_link: `${appLink}/unsubscribe`,
+        preferences_link: `${appLink}/preferences`,
+        view_online_link: `${appLink}/view-online`
+      }));
+      console.log(`Delete Account OTP email successfully sent to ${email} for user ${Name}`); 
+    } catch (error: any) {
+      console.error(`Error sending Delete Account OTP email:`, error);
       throw error;
     }
   },
@@ -116,12 +147,50 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
 const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
   "BookingConfirmation",
   async (job: Job<BookingConfirmationJobData>) => {
-    // Implement booking confirmation email sending logic here
+    const { email, userName, bookingId, hotelName, checkInDate, checkOutDate, roomNumber, otp } = job.data;
+    try {
+      const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+      const oneDay = 24 * 60 * 60 * 1000;
+      const nights = Math.max(1, Math.round(Math.abs((checkOut.getTime() - checkIn.getTime()) / oneDay))).toString();
+
+      const bookingEmailHtml = getBookingConfirmationTemplate({
+        user_name: userName,
+        user_email: email,
+        hotel_name: hotelName,
+        booking_id: bookingId || "Pending",
+        check_in_date: checkInDate,
+        check_out_date: checkOutDate,
+        room_number: roomNumber || "N/A",
+        booking_otp: otp || "Not required",
+        nights,
+        total_price: "Will be shown in booking details",
+        card_last_4: "N/A",
+        booking_link: `${appLink}/bookings`,
+        modify_link: `${appLink}/bookings/${bookingId || ""}`,
+        unsubscribe_link: `${appLink}/unsubscribe`,
+        preferences_link: `${appLink}/preferences`,
+        view_online_link: `${appLink}/view-online`
+      });
+
+      await sendEmail(
+        email,
+        "Your Booking Confirmation - Travallee",
+        bookingEmailHtml
+      );
+
+      console.log(`Booking confirmation email successfully sent to ${email}`);
+    } catch (error) {
+      console.error(`Error sending booking confirmation email:`, error);
+      throw error;
+    }
   },
   {
     connection,
   }
 );
+
 
 const bookingCancellationWorker = new Worker<BookingCancellationJobData>(
   "BookingCancellation",

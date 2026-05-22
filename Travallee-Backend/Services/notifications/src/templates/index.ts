@@ -14,10 +14,13 @@ export interface WelcomeLoginParams {
 
 export interface BookingConfirmationParams {
   user_name: string;
+    user_email?: string;
   hotel_name: string;
   booking_id: string;
   check_in_date: string;
   check_out_date: string;
+    room_number?: string;
+    booking_otp?: string;
   nights: string;
   total_price: string;
   card_last_4: string;
@@ -291,8 +294,16 @@ export function getBookingConfirmationTemplate(params: BookingConfirmationParams
                     <span class="booking-value">{{booking_id}}</span>
                 </div>
                 <div class="booking-row">
+                    <span class="booking-label">Email</span>
+                    <span class="booking-value">{{user_email}}</span>
+                </div>
+                <div class="booking-row">
                     <span class="booking-label">Hotel</span>
                     <span class="booking-value">{{hotel_name}}</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Room Number</span>
+                    <span class="booking-value">{{room_number}}</span>
                 </div>
                 <div class="booking-row">
                     <span class="booking-label">Check-in</span>
@@ -309,6 +320,10 @@ export function getBookingConfirmationTemplate(params: BookingConfirmationParams
                 <div class="booking-row">
                     <span class="booking-label">Total Price</span>
                     <span class="booking-value">{{total_price}}</span>
+                </div>
+                <div class="booking-row">
+                    <span class="booking-label">Booking OTP</span>
+                    <span class="booking-value">{{booking_otp}}</span>
                 </div>
             </div>
             <p><span class="highlight">✓ Payment received</span> - Your credit card ending in {{card_last_4}} has been charged.</p>

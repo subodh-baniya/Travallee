@@ -48,7 +48,8 @@ const Register = () => {
         rest
       );
 
-      navigateto("/login")
+      // After registering, navigate to OTP verification page with email
+      navigateto("/verify-otp", { state: { email: rest.email } });
 
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>

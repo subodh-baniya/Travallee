@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "module": "nodenext",
-    "target": "esnext",
-    "strict": true,
-    "skipLibCheck": true,
-    "moduleDetection": "force"
-  }
-}
