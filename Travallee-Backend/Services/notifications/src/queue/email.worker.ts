@@ -3,8 +3,11 @@ import { Worker, Job } from 'bullmq';
 import { sendEmail } from '../config/Resend.config.js';
 import { getWelcomeLoginTemplate } from "../templates/index.js";
 import { getTwoFactorAuthTemplate } from '../templates/index.js';
-import { getBookingConfirmationTemplate } from '../templates/index.js';
 import { getHotelRegistrationTemplate } from '../templates/index.js';
+import { getBookingCancellationTemplate } from '../templates/index.js';
+import { getPaymentSuccessTemplate } from '../templates/index.js';
+import { getPaymentFailedTemplate } from '../templates/index.js';
+import { getBookingConfirmationTemplate } from '../templates/index.js';
 
 const connection = {
   host: process.env.REDIS_HOST as string,
@@ -70,9 +73,9 @@ const registerEmailWorker = new Worker<RegisterEmailJobData>(
   async (job: Job<RegisterEmailJobData>) => {
     try {
       const { userName, to, userId } = job.data;
-      
+
       console.log(`Processing email job #${job.id} for user: ${userName}`);
-      
+
       await sendEmail(
         to,
         "Welcome to Travallee - Your Journey Begins Here!",
@@ -84,13 +87,13 @@ const registerEmailWorker = new Worker<RegisterEmailJobData>(
           view_online_link: `${process.env.APP_LINK}/view-online`
         })
       );
-      
+
       console.log(`Email successfully sent to ${to} for user ${userName}`);
-      return { 
-        success: true, 
-        email: to, 
+      return {
+        success: true,
+        email: to,
         userId,
-        message: "Welcome email sent successfully" 
+        message: "Welcome email sent successfully"
       };
     } catch (error) {
       console.error(`Error sending welcome email:`, error);
@@ -106,7 +109,7 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
   "OTP",
   async (job: Job<OTPEmailJobData>) => {
     try {
-      const { Name, otp , email , subject } = job.data;
+      const { Name, otp, email, subject } = job.data;
       console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       await sendEmail(email, subject || "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
@@ -118,7 +121,7 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
         view_online_link: `${appLink}/view-online`
       }));
       console.log(`OTP email successfully sent to ${email} for user ${Name}`);
-      
+
     } catch (error: any) {
       console.error(`Error sending OTP email:`, error);
       throw error;
@@ -133,7 +136,7 @@ const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
   "DeleteAccountOTP",
   async (job: Job<OTPEmailJobData>) => {
     try {
-      const { Name, otp , email } = job.data;
+      const { Name, otp, email } = job.data;
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       await sendEmail(email, "Your OTP Code for Account Deletion", getTwoFactorAuthTemplate({
         user_name: Name,
@@ -143,7 +146,7 @@ const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
         preferences_link: `${appLink}/preferences`,
         view_online_link: `${appLink}/view-online`
       }));
-      console.log(`Delete Account OTP email successfully sent to ${email} for user ${Name}`); 
+      console.log(`Delete Account OTP email successfully sent to ${email} for user ${Name}`);
     } catch (error: any) {
       console.error(`Error sending Delete Account OTP email:`, error);
       throw error;
@@ -155,9 +158,11 @@ const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
 );
 
 const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
-  "BookingConfirmation",
+  "sendBookingOtp",
   async (job: Job<BookingConfirmationJobData>) => {
+
     const { email, userName, bookingId, hotelName, checkInDate, checkOutDate, roomNumber, otp } = job.data;
+    console.log(`Processing booking confirmation email job #${job.id} for user: ${userName} with email: ${email}`);
     try {
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       const checkIn = new Date(checkInDate);
@@ -229,7 +234,7 @@ const HotelRegistrationWorker = new Worker<HotelRegistrationJobData>(
   {
     connection,
   }
-);  
+);
 
 
 const bookingCancellationWorker = new Worker<BookingCancellationJobData>(
@@ -260,7 +265,7 @@ const paymentFailedWorker = new Worker<PaymentFailedJobData>(
   {
     connection,
   }
-);  
+);
 
 
 

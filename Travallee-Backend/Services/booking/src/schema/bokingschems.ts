@@ -40,7 +40,7 @@ export interface BookingConfirmationJobData {
     checkInDate: string;
     checkOutDate: string;
     roomNumber: string;
-    otp?: string;
+    otp: number;
 }
 
 

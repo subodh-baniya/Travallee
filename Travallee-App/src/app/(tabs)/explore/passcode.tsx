@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
@@ -12,6 +12,18 @@ const numberRows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['', '0',
 export default function PasscodeScreen() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
+  const { roomId, hotelId, hotelName, roomType, pricePerNight, checkIn, checkOut, guests, paymentMethod, maxGuests } = useLocalSearchParams<{
+    roomId?: string;
+    hotelId?: string;
+    hotelName?: string;
+    roomType?: string;
+    pricePerNight?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: string;
+    paymentMethod?: string;
+    maxGuests?: string;
+  }>();
   const [digits, setDigits] = useState(['1', '2', '3', '4', '', '']);
 
   const pushDigit = (digit: string) => {
@@ -29,7 +41,21 @@ export default function PasscodeScreen() {
     if (index >= 0) next[index] = digit;
     setDigits(next);
     if (index === digits.length - 1) {
-      router.replace('/(tabs)/explore/success');
+      router.replace({
+        pathname: '/(tabs)/explore/success',
+        params: {
+          roomId,
+          hotelId,
+          hotelName,
+          roomType,
+          pricePerNight,
+          checkIn,
+          checkOut,
+          guests,
+          paymentMethod,
+          maxGuests,
+        },
+      });
     }
   };
 
