@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { getHotelInfo, getRooms } from "../Services/hotel.api";
+import { getRooms } from "../Services/hotel.api";
+import { useAuth } from "../Contexts/Authcontext";
 
 export type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 export type RoomType   = "DELUXE" | "SUITE" | "STANDARD";
@@ -36,25 +37,24 @@ export interface Pagination {
 export const useRooms = () => {
   const [rooms, setRooms]           = useState<Room[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [hotelId, setHotelId]       = useState<string | null>(null);
   const [page, setPage]             = useState(1);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
 
-  useEffect(() => {
-    getHotelInfo()
-      .then(data => setHotelId(data._id))
-      .catch(() => setError("Failed to load hotel info"));
-  }, []);
+  const auth    = useAuth();
+  const hotelId = auth?.hotelId;
 
   const fetchRooms = useCallback(async () => {
-    if (!hotelId) return;
+     if (!hotelId) {
+    return;
+  }
     try {
       setLoading(true);
       setError("");
+
       const data = await getRooms(hotelId, page);
-      setRooms(data.rooms ?? []);
-      setPagination(data.pagination ?? null);
+      setRooms(data.data.rooms??[]);
+      setPagination(data.data?.pagination ?? null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load rooms");
     } finally {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useRooms, Room } from "../Hooks/useRooms";
+import { useRooms, type Room } from "../Hooks/useRooms";
 
 type StatusFilter = "ALL" | "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 type TypeFilter   = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
