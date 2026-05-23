@@ -196,6 +196,12 @@ const createroom = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 400, "Invalid hotel ID format");
   }
 
+  // Verify hotel exists before attempting any uploads (avoid uploading files then failing)
+  const hotel = await hotelModel.findById(hotelId);
+  if (!hotel) {
+    return apiError(res, 404, "Hotel not found", { hotelId });
+  }
+
   if (files.length > 0) {
     try {
       const uploadedUrls: string[] = [];
@@ -222,14 +228,73 @@ const createroom = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    // Verify hotel exists
-    const hotel = await hotelModel.findById(hotelId);
-    if (!hotel) {
-      return apiError(res, 404, "Hotel not found", { hotelId });
-    }
+    // Coerce incoming values (multipart/form fields are strings) to expected types
+    const coerceRoomBody = (body: any) => {
+      const out: any = { ...body };
+      const toNumber = (v: any, fallback = 0) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      };
 
-    // Validate room data
-    const parsedData = createRoomSchema.safeParse(req.body);
+      out.maxOccupancy = toNumber(body.maxOccupancy, undefined);
+      out.capacity = toNumber(body.capacity, undefined);
+      if (body.roomSize !== undefined) out.roomSize = toNumber(body.roomSize, undefined);
+      out.floorNumber = toNumber(body.floorNumber, 0);
+      out.basePrice = toNumber(body.basePrice, undefined);
+      out.pricePerNight = toNumber(body.pricePerNight, undefined);
+      if (body.weekendPrice !== undefined) out.weekendPrice = toNumber(body.weekendPrice, undefined);
+      out.taxRate = toNumber(body.taxRate, 0);
+      out.minStayNights = toNumber(body.minStayNights, 1);
+
+      // Arrays: accept JSON string or comma-separated string
+      const parseArray = (v: any) => {
+        if (!v) return [];
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string') {
+          try {
+            const parsed = JSON.parse(v);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (e) {
+            return v.split(',').map((s: string) => s.trim()).filter(Boolean);
+          }
+        }
+        return [];
+      };
+
+      out.amenities = parseArray(body.amenities);
+      out.specialFeatures = parseArray(body.specialFeatures);
+
+      // Booleans
+      const parseBool = (v: any) => {
+        if (typeof v === 'boolean') return v;
+        if (typeof v === 'string') return v === 'true' || v === '1';
+        return Boolean(v);
+      };
+
+      out.isAccessible = parseBool(body.isAccessible);
+      out.hasBathtub = parseBool(body.hasBathtub);
+      out.hasShower = parseBool(body.hasShower);
+      out.hasBalcony = parseBool(body.hasBalcony);
+      out.hasAC = parseBool(body.hasAC);
+      out.hasHeating = parseBool(body.hasHeating);
+      out.hasWifi = parseBool(body.hasWifi);
+
+      // roomImages should already be set from uploads (array of urls)
+      if (!out.roomImages) out.roomImages = [];
+
+      // Ensure required string fields exist
+      out.roomNumber = body.roomNumber;
+      out.roomType = body.roomType;
+      out.suitetype = body.suitetype;
+      out.roomDescription = body.roomDescription;
+      out.cancellationPolicy = body.cancellationPolicy;
+
+      return out;
+    };
+
+    // Validate room data (after coercion)
+    const coerced = coerceRoomBody(req.body);
+    const parsedData = createRoomSchema.safeParse(coerced);
     if (!parsedData.success) {
       const validationErrors = parsedData.error.issues.map((issue) => ({
         field: issue.path.join("."),
@@ -237,7 +302,6 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       }));
       return apiError(res, 400, "Validation failed", validationErrors);
     }
-
     const roomData: RoomInput = parsedData.data;
     roomData.hotelId = hotelId;
 
@@ -246,6 +310,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       hotelId: new mongoose.Types.ObjectId(hotelId),
       roomNumber: roomData.roomNumber,
     });
+    console.log("Checking for existing room with number", roomData.roomNumber, "in hotel", hotelId, "Found:", !!existingRoom);
 
     if (existingRoom) {
       return apiError(
@@ -256,6 +321,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
     }
 
     const response = await roomModel.create(roomData as any);
+    console.log(response)
 
     if (!response) {
       return apiError(res, 500, "Failed to save room to database");
