@@ -3,6 +3,7 @@ import { useAuth } from "../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { FiBell, FiMenu } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -15,7 +16,7 @@ type PanelNotification = {
   createdAt: string;
 };
 
-const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
+const UNREAD_NOTIFICATIONS_STORAGE_KEY = "unreadBookingNotifications";
 
 const normalizeNotification = (payload: any): PanelNotification => ({
   bookingId: payload.bookingId,
@@ -28,6 +29,7 @@ const normalizeNotification = (payload: any): PanelNotification => ({
 
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<PanelNotification[]>([]);
   const [openNotifications, setOpenNotifications] = useState(false);
 
@@ -36,9 +38,48 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const { user, logout, hotelId } = auth;
   const displayName = user?.Name || user?.Username || "User";
 
+  const syncUnreadNotifications = (items: PanelNotification[]) => {
+    try {
+      localStorage.setItem(UNREAD_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items.slice(0, 15)));
+    } catch {
+      // Ignore local storage failures.
+    }
+  };
+
+  const removeNotification = (bookingId?: string) => {
+    if (!bookingId) {
+      return;
+    }
+
+    setNotifications((prev) => {
+      const next = prev.filter((item) => item.bookingId !== bookingId);
+      syncUnreadNotifications(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (!hotelId) {
       return;
+    }
+
+    try {
+      const raw = localStorage.getItem(UNREAD_NOTIFICATIONS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setNotifications(
+            parsed
+              .map((item: any) => normalizeNotification(item))
+              .filter((item: PanelNotification, index: number, array: PanelNotification[]) =>
+                array.findIndex((candidate) => candidate.bookingId === item.bookingId) === index,
+              )
+              .slice(0, 15),
+          );
+        }
+      }
+    } catch {
+      // Ignore local storage parse issues.
     }
 
     const socket: Socket = io(import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001", {
@@ -52,16 +93,13 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
       const nextNotification = normalizeNotification(payload);
 
       try {
-        const previousRaw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+        const previousRaw = localStorage.getItem(UNREAD_NOTIFICATIONS_STORAGE_KEY);
         const previous = previousRaw ? JSON.parse(previousRaw) : [];
         const normalized = Array.isArray(previous) ? previous : [];
         const withoutDuplicate = payload?.bookingId
           ? normalized.filter((item: any) => item?.bookingId !== payload.bookingId)
           : normalized;
-        localStorage.setItem(
-          RECENT_BOOKINGS_STORAGE_KEY,
-          JSON.stringify([payload, ...withoutDuplicate].slice(0, 30)),
-        );
+        syncUnreadNotifications([nextNotification, ...withoutDuplicate]);
       } catch {
         // Ignore local storage failures; live notifications still work.
       }
@@ -126,8 +164,13 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
                     <button
                       key={`${item.bookingId || "booking"}-${index}`}
                       onClick={() => {
+                        removeNotification(item.bookingId);
                         setOpenNotifications(false);
-                        window.location.href = "/dashboard/bookings";
+                        if (item.bookingId) {
+                          navigate(`/dashboard/bookings/${item.bookingId}`);
+                        } else {
+                          navigate("/dashboard/bookings");
+                        }
                       }}
                       className="w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
                     >

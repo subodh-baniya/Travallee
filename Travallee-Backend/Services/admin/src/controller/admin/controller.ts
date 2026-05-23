@@ -1,9 +1,9 @@
-import redis from "ioredis"
-import {asyncHandler} from "../../config/asynchandler.js"
-import {  apiResponse,apiError } from "../../config/response/api.response.js"
+import axios from "axios";
+import redis from "ioredis";
+import { asyncHandler } from "../../config/asynchandler.js";
+import { apiResponse, apiError } from "../../config/response/api.response.js";
 import { createClient } from "redis";
 import { io } from "../../app.js";
-import {adminModel} from "../../model/Hotel.admin.js";
 
 const sub = createClient({
     url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
@@ -21,29 +21,7 @@ const connection = {
     host: process.env.REDIS_HOST as string,
     port: Number(process.env.REDIS_PORT)
 }
-//@ts-ignore this is for pub sub model
-const adminPub = new redis(connection);
-
-sub.subscribe("bookingConfirmed",async (BookingData: string) => {
-        const bookingData = JSON.parse(BookingData);
-        io.to(`hotel_${bookingData.hotelId}`).emit("new_booking", bookingData);
-        io.to(`hotel_${bookingData.hotelId}`).emit("booking_notification", {
-            title: "New booking confirmed  for room " + bookingData.roomNumber,
-            message: `${bookingData.userName || bookingData.name || "Guest"} booked room ${bookingData.roomNumber || "-"} for ${bookingData.stayDurationNights || 1} night(s), amount Rs.${bookingData.amount || "-"}, ${bookingData.paymentMethod || "-"} (${bookingData.bookingPayment || "-"})`,
-            bookingId: bookingData.bookingId,
-            userId: bookingData.userId,
-            hotelId: bookingData.hotelId,
-            amount: bookingData.amount,
-            paymentMethod: bookingData.paymentMethod,
-            bookingPayment: bookingData.bookingPayment,
-            stayDurationNights: bookingData.stayDurationNights,
-            status: bookingData.status,
-            createdAt: new Date().toISOString(),
-        });
-        adminPub.set(`booking_${bookingData.bookingId}`, JSON.stringify(bookingData), "EX", 60 * 60 ); // Store booking data for 24 hours
-    })
-
-//@ts-ignore this is for pub sub model 
+// @ts-ignore this is for pub sub model
 const adminPub = new redis(connection);
 
 const getBookingData = asyncHandler(async (req: any, res: any) => {
@@ -51,9 +29,49 @@ const getBookingData = asyncHandler(async (req: any, res: any) => {
     if (!bookingId) {
         return apiError(res, 400, "Booking ID is required");
     }
+    try {
+        const cachedBooking = await adminPub.get(`booking_${bookingId}`);
+        if (cachedBooking) {
+            return apiResponse(res, 200, true, "Booking retrieved successfully", JSON.parse(cachedBooking));
+        }
 
+        return apiError(res, 404, "Booking not found", { bookingId });
+    } catch (error: any) {
+        console.error("Error retrieving booking:", error);
+        return apiError(res, 500, "Unable to retrieve booking");
+    }
+});
+
+const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
+    const { hotelId } = req.params;
+
+    if (!hotelId) {
+        return apiError(res, 400, "Hotel ID is required");
+    }
+
+    try {
+        const hotelServiceUrl = process.env.HOTEL_SERVICE_URL || "http://hotel:3001/api/v1/hotels";
+        const response = await axios.get(`${hotelServiceUrl}/booking-history/${hotelId}`);
+
+        return apiResponse(
+            res,
+            200,
+            true,
+            "Booking history retrieved successfully",
+            response.data?.data ?? response.data,
+        );
+    } catch (error: any) {
+        console.error("Error fetching booking history from Hotel service:", error?.response?.data || error?.message || error);
+        return apiError(
+            res,
+            error?.response?.status || 500,
+            error?.response?.data?.message || "Unable to retrieve booking history",
+            error?.response?.data?.error || error?.message,
+        );
+    }
 });
 
 export {
-    getBookingData
+    getBookingData,
+    getBookingHistoryByHotelId,
 }

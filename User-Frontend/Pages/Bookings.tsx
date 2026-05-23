@@ -52,7 +52,24 @@ type HotelBookingHistoryEntry = {
   email?: string;
 };
 
-const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
+type StoredNotificationShape = {
+  bookingId?: string;
+  userId?: string;
+  userName?: string;
+  name?: string;
+  email?: string;
+  roomNumber?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  stayDurationNights?: number;
+  amount?: number | string;
+  paymentMethod?: string;
+  bookingPayment?: string;
+  status?: string;
+  createdAt?: string;
+};
+
+const BOOKING_HISTORY_STORAGE_KEY = "recentBookingHistory";
 
 
 const statusMap: Record<string, string> = {
@@ -65,6 +82,12 @@ const formatDisplayDate = (value?: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+};
+
+const parseCurrencyValue = (value?: string) => {
+  if (!value) return 0;
+  const numericValue = Number(String(value).replace(/[^0-9.-]+/g, ""));
+  return Number.isFinite(numericValue) ? numericValue : 0;
 };
 
 const normalizePaymentStatus = (status?: string): Exclude<Status, "ALL"> => {
@@ -109,6 +132,38 @@ const mapHistoryBooking = (payload: HotelBookingHistoryEntry): Booking => {
   };
 };
 
+const mapHistoryToNotification = (payload: HotelBookingHistoryEntry): StoredNotificationShape => ({
+  bookingId: payload.bookingId,
+  userId: payload.userId,
+  userName: payload.guestName,
+  email: payload.email,
+  roomNumber: payload.roomNumber,
+  checkInDate: payload.checkinDate,
+  checkOutDate: payload.checkoutDate,
+  stayDurationNights: payload.stayDurationNights,
+  amount: payload.totalPrice,
+  paymentMethod: payload.paymentMethod,
+  bookingPayment: payload.bookingPayment,
+  status: payload.status,
+  createdAt: new Date().toISOString(),
+});
+
+const mapIncomingToStoredBooking = (payload: IncomingBookingEvent): StoredNotificationShape => ({
+  bookingId: payload.bookingId,
+  userId: payload.userId,
+  userName: payload.userName || payload.name || payload.email,
+  email: payload.email,
+  roomNumber: payload.roomNumber,
+  checkInDate: payload.checkInDate,
+  checkOutDate: payload.checkOutDate,
+  stayDurationNights: payload.stayDurationNights,
+  amount: payload.amount,
+  paymentMethod: payload.paymentMethod,
+  bookingPayment: payload.bookingPayment,
+  status: payload.status,
+  createdAt: new Date().toISOString(),
+});
+
 
 const Bookings = () => {
   const auth = useAuth();
@@ -136,6 +191,17 @@ const Bookings = () => {
           return;
         }
 
+        try {
+          localStorage.setItem(
+            BOOKING_HISTORY_STORAGE_KEY,
+            JSON.stringify(
+              history.map((item: HotelBookingHistoryEntry) => mapHistoryToNotification(item)).slice(0, 30),
+            ),
+          );
+        } catch {
+          // Ignore local storage failures.
+        }
+
         setBookings(
           history
             .map((item: HotelBookingHistoryEntry) => mapHistoryBooking(item))
@@ -146,7 +212,7 @@ const Bookings = () => {
         );
       } catch {
         try {
-          const raw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+          const raw = localStorage.getItem(BOOKING_HISTORY_STORAGE_KEY);
           if (!raw) {
             return;
           }
@@ -189,15 +255,15 @@ const Bookings = () => {
       const incoming = mapIncomingBooking(payload);
 
       try {
-        const previousRaw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+        const previousRaw = localStorage.getItem(BOOKING_HISTORY_STORAGE_KEY);
         const previous = previousRaw ? JSON.parse(previousRaw) : [];
         const normalized = Array.isArray(previous) ? previous : [];
         const withoutDuplicate = payload?.bookingId
           ? normalized.filter((item: IncomingBookingEvent) => item?.bookingId !== payload.bookingId)
           : normalized;
         localStorage.setItem(
-          RECENT_BOOKINGS_STORAGE_KEY,
-          JSON.stringify([payload, ...withoutDuplicate].slice(0, 30)),
+          BOOKING_HISTORY_STORAGE_KEY,
+          JSON.stringify([mapIncomingToStoredBooking(payload), ...withoutDuplicate].slice(0, 30)),
         );
       } catch {
         // Ignore local storage failures.
@@ -225,6 +291,14 @@ const Bookings = () => {
     );
   });
 
+  const totalRevenue = bookings.reduce((sum, booking) => sum + parseCurrencyValue(booking.amount), 0);
+  const occupiedRooms = new Set(bookings.map((booking) => booking.room).filter((room) => room && room !== "-")).size;
+  const todayKey = new Date().toDateString();
+  const todaysCheckIns = bookings.filter((booking) => {
+    const checkInDate = new Date(booking.checkIn);
+    return !Number.isNaN(checkInDate.getTime()) && checkInDate.toDateString() === todayKey;
+  }).length;
+
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
@@ -242,6 +316,33 @@ const Bookings = () => {
         <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
           + New Booking
         </button>
+      </div>
+
+      {/* SUMMARY */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white border-l-4 border-rose-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Revenue</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">Rs. {totalRevenue.toLocaleString("en-US")}</p>
+          <p className="text-xs text-slate-500 mt-1">Total booking value</p>
+        </div>
+
+        <div className="bg-white border-l-4 border-blue-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Rooms Occupied</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">{occupiedRooms} / {bookings.length}</p>
+          <p className="text-xs text-slate-500 mt-1">Unique rooms currently booked</p>
+        </div>
+
+        <div className="bg-white border-l-4 border-amber-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Average Rating</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">0 / 5</p>
+          <p className="text-xs text-slate-500 mt-1">Waiting for review data</p>
+        </div>
+
+        <div className="bg-white border-l-4 border-emerald-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Today's Check-ins</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">{todaysCheckIns}</p>
+          <p className="text-xs text-slate-500 mt-1">Bookings starting today</p>
+        </div>
       </div>
 
       {/* FILTER BAR */}
