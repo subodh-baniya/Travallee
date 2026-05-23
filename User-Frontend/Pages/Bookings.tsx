@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { StatCard } from "../Components/Statcard";
 import {
@@ -7,55 +7,35 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
+import { io, Socket } from "socket.io-client";
+import { useAuth } from "../Contexts/Authcontext";
 
 /* ---------------- DATA ---------------- */
 
 type Status = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
 
-const bookings = [
-  {
-    id: "R-1081",
-    guest: "Priya Sharma",
-    room: "101",
-    type: "Deluxe",
-    checkIn: "Mar 27",
-    checkOut: "Mar 29",
-    amount: "Rs. 8,400",
-    status: "CONFIRMED",
-  },
-  {
-    id: "R-1082",
-    guest: "David Lee",
-    room: "310",
-    type: "Suite",
-    checkIn: "Mar 27",
-    checkOut: "Apr 1",
-    amount: "Rs. 42,000",
-    status: "CONFIRMED",
-  },
-  {
-    id: "R-1083",
-    guest: "Maya Karki",
-    room: "217",
-    type: "Standard",
-    checkIn: "Mar 27",
-    checkOut: "Mar 29",
-    amount: "Rs. 4,200",
-    status: "PENDING",
-  },
-  {
-    id: "R-1077",
-    guest: "Karen White",
-    room: "304",
-    type: "Deluxe",
-    checkIn: "Mar 23",
-    checkOut: "Mar 26",
-    amount: "Rs. 12,600",
-    status: "CANCELLED",
-  },
-];
+type Booking = {
+  id: string;
+  guest: string;
+  room: string;
+  type: string;
+  checkIn: string;
+  checkOut: string;
+  amount: string;
+  status: Exclude<Status, "ALL">;
+};
 
-/* ---------------- STATUS STYLE ---------------- */
+type IncomingBookingEvent = {
+  bookingId?: string;
+  userName?: string;
+  name?: string;
+  email?: string;
+  roomNumber?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  status?: string;
+};
+
 
 const statusMap: Record<string, string> = {
   CONFIRMED: "bg-emerald-50 text-emerald-600 border-emerald-100",
@@ -63,11 +43,69 @@ const statusMap: Record<string, string> = {
   CANCELLED: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
-/* ---------------- COMPONENT ---------------- */
+const formatDisplayDate = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+};
+
+const normalizeStatus = (status?: string): Exclude<Status, "ALL"> => {
+  if (status === "CONFIRMED" || status === "PENDING" || status === "CANCELLED") {
+    return status;
+  }
+  return "PENDING";
+};
+
+const mapIncomingBooking = (payload: IncomingBookingEvent): Booking => {
+  return {
+    id: payload.bookingId || `TMP-${Date.now()}`,
+    guest: payload.userName || payload.name || payload.email || "Guest",
+    room: payload.roomNumber || "-",
+    type: "Room",
+    checkIn: formatDisplayDate(payload.checkInDate),
+    checkOut: formatDisplayDate(payload.checkOutDate),
+    amount: "-",
+    status: normalizeStatus(payload.status),
+  };
+};
+
 
 const Bookings = () => {
+  const auth = useAuth();
+  const hotelId = auth?.hotelId || null;
+
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<Status>("ALL");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (!hotelId) {
+      return;
+    }
+
+    const socket: Socket = io(import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001", {
+      path: "/api/v1/admin/socket.io",
+      query: { HotelId: hotelId },
+      withCredentials: true,
+      transports: ["websocket"],
+    });
+
+    const handleNewBooking = (payload: IncomingBookingEvent) => {
+      const incoming = mapIncomingBooking(payload);
+      setBookings((prev) => {
+        const filteredExisting = prev.filter((item) => item.id !== incoming.id);
+        return [incoming, ...filteredExisting];
+      });
+    };
+
+    socket.on("new_booking", handleNewBooking);
+
+    return () => {
+      socket.off("new_booking", handleNewBooking);
+      socket.disconnect();
+    };
+  }, [hotelId]);
 
   const filtered = bookings.filter((b) => {
     return (
@@ -76,6 +114,11 @@ const Bookings = () => {
         b.room.includes(search))
     );
   });
+
+  const totalBookings = bookings.length;
+  const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED").length;
+  const pendingBookings = bookings.filter((b) => b.status === "PENDING").length;
+  const cancelledBookings = bookings.filter((b) => b.status === "CANCELLED").length;
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
@@ -98,10 +141,10 @@ const Bookings = () => {
 
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Total" value="142" icon={<FaCalendarCheck />} />
-        <StatCard title="Confirmed" value="98" icon={<FaCheckCircle />} />
-        <StatCard title="Pending" value="31" icon={<FaClock />} />
-        <StatCard title="Cancelled" value="13" icon={<FaTimesCircle />} />
+        <StatCard title="Total" value={String(totalBookings)} icon={<FaCalendarCheck />} />
+        <StatCard title="Confirmed" value={String(confirmedBookings)} icon={<FaCheckCircle />} />
+        <StatCard title="Pending" value={String(pendingBookings)} icon={<FaClock />} />
+        <StatCard title="Cancelled" value={String(cancelledBookings)} icon={<FaTimesCircle />} />
       </div>
 
       {/* FILTER BAR */}
@@ -215,6 +258,14 @@ const Bookings = () => {
 
         </motion.tr>
       ))}
+
+      {filtered.length === 0 && (
+        <tr>
+          <td className="px-4 py-10 text-center text-slate-500" colSpan={9}>
+            No bookings available.
+          </td>
+        </tr>
+      )}
 
     </tbody>
   </table>

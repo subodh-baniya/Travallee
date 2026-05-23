@@ -263,6 +263,15 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 const HotelData = asyncHandler(async (req: any, res: any) => {
    console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
   try {
     const cachedHotel = await registerHotel.get(`hotel_${hotelId}`);
     if (cachedHotel) {

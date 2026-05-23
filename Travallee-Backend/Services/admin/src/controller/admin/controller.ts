@@ -18,6 +18,14 @@ sub.subscribe("bookingConfirmed",async (BookingData: string) => {
         const bookingData = JSON.parse(BookingData);
         console.log("Received booking confirmation for booking ID:", bookingData.bookingId);
         io.to(`hotel_${bookingData.hotelId}`).emit("new_booking", bookingData);
+        io.to(`hotel_${bookingData.hotelId}`).emit("booking_notification", {
+            title: "New booking confirmed",
+            message: `${bookingData.userName || bookingData.name || "Guest"} booked room ${bookingData.roomNumber || "-"}`,
+            bookingId: bookingData.bookingId,
+            hotelId: bookingData.hotelId,
+            status: bookingData.status,
+            createdAt: new Date().toISOString(),
+        });
     });
 
 

@@ -80,7 +80,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         totalPrice: validated.totalPrice,
         paymentMethod: validated.paymentMethod,
         bookingPayment: validated.paymentMethod === "COD" ? "NOTPAID" : "PAID",
-        status: validated.paymentMethod === "PENDING",
+        status: validated.paymentMethod === "COD" ? "PENDING" : "CONFIRMED",
         hotelId: validated.hotelId,
         roomId: validated.roomId,
         hotelName: validated.hotelName,
@@ -125,10 +125,14 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         return apiError(res, 400, "Booking data has expired. Please try booking again.");
     }
     const bookingData = JSON.parse(bookingDataString);
-    if (bookingData.paymentMethod === "COD") {
-        bookingData.bookingPayment = "NOTPAID";
-        bookingData.status = "PENDING";
-    }
+    const fallbackBookingPayment = bookingData.paymentMethod === "COD" ? "NOTPAID" : "PAID";
+    const fallbackStatus = bookingData.paymentMethod === "COD" ? "PENDING" : "CONFIRMED";
+    const bookingPayment = ["PAID", "NOTPAID"].includes(bookingData.bookingPayment)
+        ? bookingData.bookingPayment
+        : fallbackBookingPayment;
+    const status = ["PENDING", "CONFIRMED", "CANCELLED"].includes(bookingData.status)
+        ? bookingData.status
+        : fallbackStatus;
 
     const newBooking = new bookingModel({
         user: userId,
@@ -139,8 +143,8 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         guests: bookingData.guests,
         totalPrice: bookingData.totalPrice,
         paymentMethod: bookingData.paymentMethod,
-        bookingPayment: bookingData.paymentMethod,
-        status: bookingData.paymentMethod,
+        bookingPayment,
+        status,
         hotelName: bookingData.hotelName,
         roomNumber: bookingData.roomNumber,
         email: bookingData.email || bookingData.userEmail || req.user.email,
@@ -160,7 +164,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         checkInDate: bookingData.checkIn,
         checkOutDate: bookingData.checkOut,
         roomNumber: bookingData.roomNumber,
-        status: bookingData.status,
+        status,
     }));
     console.log("Published booking confirmation for booking ID:", newBooking._id);
     return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);

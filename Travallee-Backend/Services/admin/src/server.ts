@@ -1,4 +1,4 @@
-import server from "./app.js";
+import {server} from "./app.js";
 import { connectDB } from "./config/Func/connect.db.js"
 
 
