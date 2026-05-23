@@ -227,8 +227,8 @@ const hotels = [
     hotelLocation: "Annapurna-10, Ghandruk, Kaski, Nepal",
     hotelName: "Ashish Aama Homestay",
     hotelImages: [
-      "https://cdn.esewahotels.com/hotels/ghandruk_homestay_view.jpg",
-      "https://cdn.esewahotels.com/hotels/ghandruk_traditional_room.jpg"
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/a5/3a/83/night-shot.jpg?w=900&h=-1&s=1", 
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/45/57/52/morning-view-from-ashish.jpg?w=700&h=-1&s=1"
     ],
     propertyType: "Homestay",
     verified: true,
