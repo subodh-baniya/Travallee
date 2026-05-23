@@ -13,6 +13,7 @@ export const createBookingSchema = z.object({
   checkIn: z.string().datetime("Invalid check-in date format"),
   checkOut: z.string().datetime("Invalid check-out date format"),
   totalPrice: z.number().positive("Total price must be greater than 0"),
+  status: z.enum(["CANCELLED", "PENDING", "CONFIRMED"]).optional(),
   paymentMethod: z.enum(["KHALTI", "ESEWA", "COD"]).describe("Payment method must be KHALTI, ESEWA, or COD"),
 
 });

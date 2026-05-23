@@ -52,7 +52,6 @@ const bookingSchema = new mongoose.Schema({
         enum:["KHALTI","ESEWA","COD"],
         required:true
     },
-
     paymentReferenceId:{
         type:String
     },
