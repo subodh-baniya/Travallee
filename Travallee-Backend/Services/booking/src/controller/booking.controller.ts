@@ -11,16 +11,23 @@ import { Queue } from "bullmq"
 import redis from "ioredis";
 
 
+
 const connection = {
     host: process.env.REDIS_HOST as string,
     port: Number(process.env.REDIS_PORT)
 }
 
-//@ts-ignore
+//@ts-ignore this is for saving otp and booking data temporarily before confirmation, it will be deleted after confirmation or expiration
 const bookingRedis = new redis(connection);
+
+//@ts-ignore this is for pub sub model 
+const boookingPub = new redis(connection);
+
 const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingConfirmationOtp", {
     connection
 })
+
+
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
     let validated: any;
@@ -102,6 +109,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
 const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     const userId = req.user.id;
+    const name = req.user.Name;
     const { otp } = req.body;
     const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
 
@@ -116,7 +124,11 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         return apiError(res, 400, "Booking data has expired. Please try booking again.");
     }
     const bookingData = JSON.parse(bookingDataString);
-
+     if(bookingData.paymentMethod === "COD"){
+        bookingData.bookingPayment = "NOTPAID";
+        bookingData.status = "PENDING";
+     }
+    
     const newBooking = new bookingModel({
         user: userId,
         hotel: bookingData.hotelId,
@@ -126,8 +138,8 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         guests: bookingData.guests,
         totalPrice: bookingData.totalPrice,
         paymentMethod: bookingData.paymentMethod,
-        bookingPayment: bookingData.paymentMethod === "COD" ? "PAID" : "NOTPAID",
-        status: bookingData.paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+        bookingPayment: bookingData.paymentMethod,
+        status: bookingData.paymentMethod ,
         hotelName: bookingData.hotelName,
         roomNumber: bookingData.roomNumber,
         email: bookingData.email || bookingData.userEmail || req.user.email,
@@ -136,7 +148,17 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 
     await bookingRedis.del(`booking_otp:${userId}`);
     await bookingRedis.del(`booking:${userId}`);
-    return apiResponse(res, 200, true, "Booking confirmed successfully", { bookingId: newBooking._id });
+    await boookingPub.publish("bookingConfirmed", JSON.stringify({
+        name,
+        email: bookingData.userEmail,
+        userName: bookingData.userName,
+        bookingId: newBooking._id,
+        checkInDate: bookingData.checkIn,
+        checkOutDate: bookingData.checkOut,
+        roomNumber: bookingData.roomNumber,
+        status: bookingData.status,
+    }));
+    return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking );
 });
 
 

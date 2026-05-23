@@ -2,23 +2,37 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';   
 import adminRoutes from './router/router.js';
+import { Server } from "socket.io";
+import http from "http";
 
 const app = express();
 
-app.use(express.json({
-    limit: '10mb' 
-}));
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: 'http://localhost:5173', // depends
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+    }
+}); 
+
+io.on("connection", (socket) => {
+    console.log("Admin client connected:", socket.id);
+    socket.on("disconnect", () => {
+        console.log("Admin client disconnected:", socket.id);
+    });
+});
+
 app.use(cors({
     origin: 'http://localhost:5173', // depends
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    credentials: true
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
-
 
 
 app.use('/api/v1/admin', adminRoutes);
 
 
-export default app;
+export default server;
