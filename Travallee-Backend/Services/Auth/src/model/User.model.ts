@@ -22,7 +22,7 @@ export const UserZodSchema = zod.object({
     otp: zod.number().optional(),
     otpExpiry: zod.date().optional(),
     refreshToken: zod.string().optional(),
-
+  
 })  
 
 export type UserType = zod.infer<typeof UserZodSchema>;

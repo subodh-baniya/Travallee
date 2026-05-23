@@ -8,7 +8,7 @@ export default {
     slug: "travallee",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/Logo.png",
     scheme: "app",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,

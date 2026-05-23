@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   FaHotel,
   FaPhoneAlt,
@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { getHotelById, getRooms } from "../Services/hotel.api";
+import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
 
 interface HotelSettings {
@@ -68,6 +69,232 @@ const SettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [newRoomNumber, setNewRoomNumber] = useState("");
+  const [newRoomType, setNewRoomType] = useState("");
+  const [newBasePrice, setNewBasePrice] = useState("");
+  const [newCapacity, setNewCapacity] = useState("");
+  const [newAmenities, setNewAmenities] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newFloor, setNewFloor] = useState("");
+  const [creatingRoom, setCreatingRoom] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [newSuiteType, setNewSuiteType] = useState("");
+  const [newMaxOccupancy, setNewMaxOccupancy] = useState("");
+  const [newBedType, setNewBedType] = useState("");
+  const [newRoomSize, setNewRoomSize] = useState("");
+  const [newViewType, setNewViewType] = useState("none");
+  const [newPricePerNight, setNewPricePerNight] = useState("");
+  const [newWeekendPrice, setNewWeekendPrice] = useState("");
+  const [newTaxRate, setNewTaxRate] = useState("");
+  const [newMinStayNights, setNewMinStayNights] = useState("");
+  const [newCancellationPolicy, setNewCancellationPolicy] = useState("");
+  const [newSpecialFeatures, setNewSpecialFeatures] = useState("");
+  const [newRoomImages, setNewRoomImages] = useState<File[]>([]);
+  const [newRoomImagePreviews, setNewRoomImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [newIsAccessible, setNewIsAccessible] = useState(false);
+  const [newHasBathtub, setNewHasBathtub] = useState(false);
+  const [newHasShower, setNewHasShower] = useState(false);
+  const [newHasBalcony, setNewHasBalcony] = useState(false);
+  const [newHasAC, setNewHasAC] = useState(true);
+  const [newHasHeating, setNewHasHeating] = useState(false);
+  const [newHasWifi, setNewHasWifi] = useState(true);
+  const [newIsActive, setNewIsActive] = useState(true);
+  const [newIsFeatured, setNewIsFeatured] = useState(false);
+  const [newRating, setNewRating] = useState("0");
+  const [newNumberOfReviews, setNewNumberOfReviews] = useState("0");
+  const [showCreateDrawer, setShowCreateDrawer] = useState(false);
+
+  const createRoomSubmit = async () => {
+    setCreateError("");
+    setCreateSuccess("");
+    if (!hotelId) {
+      setCreateError("No hotel id available");
+      return;
+    }
+    if (!newRoomNumber) {
+      setCreateError("Room number is required");
+      return;
+    }
+
+    // validate required fields per Room.model.ts
+    if (!newRoomNumber || !newRoomType || !newSuiteType || !newDescription || !newMaxOccupancy || !newCapacity || !newBedType || !newBasePrice || !newPricePerNight || !newCancellationPolicy || !newAmenities) {
+      setCreateError("Please fill all required fields marked with *");
+      return;
+    }
+    if (!newRoomImages || newRoomImages.length === 0) {
+      setCreateError("Please upload at least one room image");
+      return;
+    }
+
+    setCreatingRoom(true);
+    try {
+      // include auth token if available (backend requires authenticate middleware)
+      const token = auth?.user?.token;
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      // If user attached local File objects, send multipart/form-data (server will upload files)
+      if (newRoomImages && newRoomImages.length > 0) {
+        const fd = new FormData();
+        fd.append("hotelId", String(hotelId));
+        fd.append("roomNumber", newRoomNumber);
+        if (newRoomType) fd.append("roomType", newRoomType);
+        if (newSuiteType) fd.append("suitetype", newSuiteType);
+        if (newBasePrice) fd.append("basePrice", String(Number(newBasePrice) || 0));
+        if (newPricePerNight) fd.append("pricePerNight", String(Number(newPricePerNight) || 0));
+        if (newWeekendPrice) fd.append("weekendPrice", String(Number(newWeekendPrice) || 0));
+        if (newCapacity) fd.append("capacity", String(Number(newCapacity) || 1));
+        if (newMaxOccupancy) fd.append("maxOccupancy", String(Number(newMaxOccupancy) || 1));
+        if (newRoomSize) fd.append("roomSize", String(Number(newRoomSize) || 0));
+        if (newBedType) fd.append("bedType", newBedType);
+        if (newFloor) fd.append("floorNumber", String(Number(newFloor) || 0));
+        if (newViewType) fd.append("viewType", newViewType);
+        if (newDescription) fd.append("roomDescription", newDescription);
+        if (newCancellationPolicy) fd.append("cancellationPolicy", newCancellationPolicy);
+        if (newMinStayNights) fd.append("minStayNights", String(Number(newMinStayNights) || 1));
+        if (newTaxRate) fd.append("taxRate", String(Number(newTaxRate) || 0));
+        if (newSpecialFeatures) fd.append("specialFeatures", JSON.stringify(newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean)));
+        if (newAmenities) fd.append("amenities", JSON.stringify(newAmenities.split(",").map(s => s.trim()).filter(Boolean)));
+
+        // booleans
+        fd.append("isAccessible", String(newIsAccessible));
+        fd.append("hasBathtub", String(newHasBathtub));
+        fd.append("hasShower", String(newHasShower));
+        fd.append("hasBalcony", String(newHasBalcony));
+        fd.append("hasAC", String(newHasAC));
+        fd.append("hasHeating", String(newHasHeating));
+        fd.append("hasWifi", String(newHasWifi));
+        fd.append("isActive", String(newIsActive));
+        fd.append("isFeatured", String(newIsFeatured));
+        fd.append("rating", String(Number(newRating) || 0));
+        fd.append("numberOfReviews", String(Number(newNumberOfReviews) || 0));
+
+        // images (multiple files)
+        newRoomImages.forEach((file) => {
+          fd.append("roomImages", file);
+        });
+
+        // Debug: log FormData entries so we can compare with Postman
+        try {
+          for (const entry of fd.entries()) {
+            console.log("FormData entry:", entry[0], entry[1]);
+          }
+        } catch (logErr) {
+          console.warn("Failed to enumerate FormData entries:", logErr);
+        }
+
+        await hotelClient.post(`/room/${hotelId}`, fd, {
+          headers,
+          withCredentials: true,
+        });
+      } else {
+        // Build JSON payload aligned with backend createRoomSchema
+        const payload: any = {
+          hotelId,
+          roomNumber: String(newRoomNumber || ""),
+          roomType: String(newRoomType || ""),
+          suitetype: String(newSuiteType || ""),
+          roomDescription: String(newDescription || ""),
+
+          // numeric fields
+          maxOccupancy: Number(newMaxOccupancy) || Number(newCapacity) || 1,
+          capacity: Number(newCapacity) || 1,
+          roomSize: newRoomSize ? Number(newRoomSize) : undefined,
+          bedType: String(newBedType || ""),
+          floorNumber: Number(newFloor) || 0,
+          viewType: newViewType || "none",
+
+          // pricing
+          basePrice: Number(newBasePrice) || 0,
+          pricePerNight: Number(newPricePerNight) || Number(newBasePrice) || 0,
+          weekendPrice: newWeekendPrice ? Number(newWeekendPrice) : undefined,
+          taxRate: Number(newTaxRate) || 0,
+
+          // policies
+          minStayNights: Number(newMinStayNights) || 1,
+          cancellationPolicy: String(newCancellationPolicy || ""),
+
+          // arrays
+          amenities: newAmenities ? newAmenities.split(",").map(s => s.trim()).filter(Boolean) : [],
+          specialFeatures: newSpecialFeatures ? newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean) : [],
+
+          // images: prefer server-uploaded URLs; fallback to previews (note: preview blobs are not permanent URLs)
+          roomImages: (newRoomImagePreviews && newRoomImagePreviews.length > 0)
+            ? newRoomImagePreviews.filter(p => typeof p === 'string')
+            : [],
+
+          // booleans and flags
+          isAccessible: Boolean(newIsAccessible),
+          hasBathtub: Boolean(newHasBathtub),
+          hasShower: Boolean(newHasShower),
+          hasBalcony: Boolean(newHasBalcony),
+          hasAC: Boolean(newHasAC),
+          hasHeating: Boolean(newHasHeating),
+          hasWifi: Boolean(newHasWifi),
+
+          // status/rating defaults
+          isActive: Boolean(newIsActive),
+          isFeatured: Boolean(newIsFeatured),
+          rating: Number(newRating) || 0,
+          numberOfReviews: Number(newNumberOfReviews) || 0,
+        };
+
+        console.log("JSON payload:", payload);
+
+        await hotelClient.post(`/room/${hotelId}`, payload, {
+          headers,
+          withCredentials: true,
+        });
+      }
+      setCreateSuccess("Room created successfully");
+      setNewRoomNumber("");
+      setNewRoomType("");
+      setNewBasePrice("");
+      setNewCapacity("");
+      setNewAmenities("");
+      setNewDescription("");
+      setNewFloor("");
+
+      try {
+        const roomRes = await getRooms(hotelId);
+        const roomPayload = roomRes?.data ?? roomRes;
+        const roomList = Array.isArray(roomPayload?.rooms)
+          ? roomPayload.rooms
+          : Array.isArray(roomPayload)
+            ? roomPayload
+            : Array.isArray(roomPayload?.data)
+              ? roomPayload.data
+              : [];
+        setRooms(roomList);
+      } catch (e) {
+        // ignore refresh errors
+      }
+    } catch (err: any) {
+      console.error("Create room error:", err);
+      const resp = err?.response?.data;
+      if (resp) {
+        // Prefer validation array or data payload if present
+        if (Array.isArray(resp) && resp.length > 0) {
+          setCreateError(JSON.stringify(resp, null, 2));
+        } else if (resp?.data) {
+          setCreateError(typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data, null, 2));
+        } else if (resp?.errors) {
+          setCreateError(JSON.stringify(resp.errors, null, 2));
+        } else if (resp?.message || resp?.msg) {
+          setCreateError(String(resp.message || resp.msg));
+        } else {
+          setCreateError(JSON.stringify(resp, null, 2));
+        }
+      } else {
+        setCreateError(String(err));
+      }
+    } finally {
+      setCreatingRoom(false);
+      setShowCreateDrawer(false);
+    }
+  };
 
   useEffect(() => {
     const fetchHotel = async () => {
@@ -177,6 +404,8 @@ const SettingsPage: React.FC = () => {
           {error}
         </div>
       )}
+
+            
 
       {/* STATS */}
 
@@ -328,6 +557,221 @@ const SettingsPage: React.FC = () => {
 
           </div>
 
+          {/* Create room drawer (right side) */}
+          <div
+            aria-hidden={!showCreateDrawer}
+            className={`fixed inset-y-0 right-0 z-50 w-96 bg-white border-l border-slate-200 shadow-2xl transform transition-transform duration-350 ${showCreateDrawer ? 'translate-x-0' : 'translate-x-full'}`}
+            style={{ display: 'flex', flexDirection: 'column', maxHeight: '100vh' }}
+          >
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+              <div className="font-semibold text-lg">Quick Add Room</div>
+              <button onClick={() => setShowCreateDrawer(false)} className="text-sm text-slate-500">Close</button>
+            </div>
+            <div className="p-6 flex-1 flex flex-col relative">
+              <div className="space-y-4 text-base pb-36" style={{ WebkitOverflowScrolling: 'touch', height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+                <div>
+                  <label className="text-sm font-medium">Room number <span className="text-rose-600">*</span></label>
+                  <input placeholder="101" value={newRoomNumber} onChange={(e) => setNewRoomNumber(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Room type <span className="text-rose-600">*</span></label>
+                  <input placeholder="deluxe" value={newRoomType} onChange={(e) => setNewRoomType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Suite type <span className="text-rose-600">*</span></label>
+                  <input placeholder="junior" value={newSuiteType} onChange={(e) => setNewSuiteType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Base price <span className="text-rose-600">*</span></label>
+                    <input placeholder="150" value={newBasePrice} onChange={(e) => setNewBasePrice(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Price per night <span className="text-rose-600">*</span></label>
+                    <input placeholder="150" value={newPricePerNight} onChange={(e) => setNewPricePerNight(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Capacity <span className="text-rose-600">*</span></label>
+                    <input placeholder="2" value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Max occupancy <span className="text-rose-600">*</span></label>
+                    <input placeholder="2" value={newMaxOccupancy} onChange={(e) => setNewMaxOccupancy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Bed type <span className="text-rose-600">*</span></label>
+                    <input placeholder="queen" value={newBedType} onChange={(e) => setNewBedType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Room size (sqm)</label>
+                    <input placeholder="20" value={newRoomSize} onChange={(e) => setNewRoomSize(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">View type <span className="text-rose-600">*</span></label>
+                  <select value={newViewType} onChange={(e) => setNewViewType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1 bg-white">
+                    <option value="none">none</option>
+                    <option value="city">city</option>
+                    <option value="garden">garden</option>
+                    <option value="beach">beach</option>
+                    <option value="mountain">mountain</option>
+                    <option value="street">street</option>
+                    <option value="pool">pool</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Amenities (comma separated) <span className="text-rose-600">*</span></label>
+                  <input placeholder="wifi,ac,tv" value={newAmenities} onChange={(e) => setNewAmenities(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Special features (comma separated)</label>
+                  <input placeholder="sea view,king bed" value={newSpecialFeatures} onChange={(e) => setNewSpecialFeatures(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Cancellation policy <span className="text-rose-600">*</span></label>
+                  <input placeholder="48 hours free cancellation" value={newCancellationPolicy} onChange={(e) => setNewCancellationPolicy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Tax rate <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newTaxRate} onChange={(e) => setNewTaxRate(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Min stay nights <span className="text-rose-600">*</span></label>
+                    <input placeholder="1" value={newMinStayNights} onChange={(e) => setNewMinStayNights(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Rating <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newRating} onChange={(e) => setNewRating(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Number of reviews <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newNumberOfReviews} onChange={(e) => setNewNumberOfReviews(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description <span className="text-rose-600">*</span></label>
+                  <textarea placeholder="Spacious room with city view" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Images (at least 1) <span className="text-rose-600">*</span></label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm"
+                    >
+                      Choose images
+                    </button>
+                    <div className="text-sm text-slate-500">{newRoomImages.length} selected</div>
+                  </div>
+                  <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    // revoke previous urls
+                    newRoomImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                    const previews = files.map(f => URL.createObjectURL(f));
+                    setNewRoomImages(files);
+                    setNewRoomImagePreviews(previews);
+                  }} className="hidden" />
+
+                  {newRoomImagePreviews.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {newRoomImagePreviews.map((src, idx) => (
+                        <div key={src} className="relative">
+                          <img src={src} alt={`preview-${idx}`} className="h-20 w-full object-cover rounded-md border" />
+                          <button type="button" onClick={() => {
+                            // remove one
+                            const updatedFiles = newRoomImages.filter((_, i) => i !== idx);
+                            const updatedPreviews = newRoomImagePreviews.filter((_, i) => i !== idx);
+                            // revoke removed url
+                            URL.revokeObjectURL(src);
+                            setNewRoomImages(updatedFiles);
+                            setNewRoomImagePreviews(updatedPreviews);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }} className="absolute -top-1 -right-1 bg-white rounded-full p-1 text-xs border">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-sm">Accessible</label>
+                  <input type="checkbox" checked={newIsAccessible} onChange={(e) => setNewIsAccessible(e.target.checked)} />
+
+                  <label className="text-sm">Bathtub</label>
+                  <input type="checkbox" checked={newHasBathtub} onChange={(e) => setNewHasBathtub(e.target.checked)} />
+
+                  <label className="text-sm">Shower</label>
+                  <input type="checkbox" checked={newHasShower} onChange={(e) => setNewHasShower(e.target.checked)} />
+
+                  <label className="text-sm">Balcony</label>
+                  <input type="checkbox" checked={newHasBalcony} onChange={(e) => setNewHasBalcony(e.target.checked)} />
+
+                  <label className="text-sm">AC</label>
+                  <input type="checkbox" checked={newHasAC} onChange={(e) => setNewHasAC(e.target.checked)} />
+
+                  <label className="text-sm">Heating</label>
+                  <input type="checkbox" checked={newHasHeating} onChange={(e) => setNewHasHeating(e.target.checked)} />
+
+                  <label className="text-sm">Wifi</label>
+                  <input type="checkbox" checked={newHasWifi} onChange={(e) => setNewHasWifi(e.target.checked)} />
+
+                  <label className="text-sm">Active</label>
+                  <input type="checkbox" checked={newIsActive} onChange={(e) => setNewIsActive(e.target.checked)} />
+
+                  <label className="text-sm">Featured</label>
+                  <input type="checkbox" checked={newIsFeatured} onChange={(e) => setNewIsFeatured(e.target.checked)} />
+                </div>
+
+                {createError && <div className="text-sm text-red-600">{createError}</div>}
+                {createSuccess && <div className="text-sm text-emerald-600">{createSuccess}</div>}
+              </div>
+            </div>
+            {/* footer with persistent actions (fixed inside drawer) */}
+            <div className="border-t p-4 bg-white flex items-center justify-end gap-2 h-20 absolute left-0 right-0 bottom-0" style={{ zIndex: 60 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewRoomNumber(''); setNewRoomType(''); setNewSuiteType(''); setNewBasePrice(''); setNewPricePerNight(''); setNewWeekendPrice(''); setNewTaxRate(''); setNewCapacity(''); setNewMaxOccupancy(''); setNewRoomSize(''); setNewBedType(''); setNewAmenities(''); setNewSpecialFeatures(''); setNewFloor(''); setNewMinStayNights(''); setNewDescription(''); setNewViewType('none'); setNewRoomImages([]); setNewIsAccessible(false); setNewHasBathtub(false); setNewHasShower(false); setNewHasBalcony(false); setNewHasHeating(false); setNewHasAC(true); setNewHasWifi(true); setNewIsActive(true); setNewIsFeatured(false); setNewRating('0'); setNewNumberOfReviews('0'); setCreateError(''); setCreateSuccess('');
+                }}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Reset
+              </button>
+
+              <button
+                type="button"
+                disabled={creatingRoom}
+                onClick={() => void createRoomSubmit()}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 text-sm font-semibold shadow"
+              >
+                {creatingRoom ? 'Creating...' : 'Create Room'}
+              </button>
+            </div>
+          </div>
+
+          {showCreateDrawer && <div onClick={() => setShowCreateDrawer(false)} className="fixed inset-0 z-40 bg-black/30"></div>}
+
           {/* DESCRIPTION */}
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
@@ -434,6 +878,13 @@ const SettingsPage: React.FC = () => {
                   className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
                 >
                   Open all rooms
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateDrawer(true)}
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 hover:bg-rose-100 transition"
+                >
+                  Quick Add Room
                 </button>
             </div>
 

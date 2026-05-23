@@ -12,6 +12,7 @@ import {
 import mongoose, { mongo } from "mongoose";
 import redis from "ioredis"
 import { Queue } from "bullmq"; 
+import { createClient } from "redis";
 
 const connection ={
   host: process.env.REDIS_HOST || "localhost",
@@ -22,6 +23,44 @@ const registerHotel = new redis(connection);
 
 const registerHotelQueue = new Queue("HotelRegistration", {
   connection
+});
+
+const sub = createClient({
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+const pub = createClient({
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+
+Promise.all([sub.connect(), pub.connect()]).then(() => {
+}).catch((err) => {
+  console.error("Error connecting to Redis:", err);
+});
+
+sub.subscribe("bookingHistory", async (message: string) => {
+  const bookingData = JSON.parse(message);
+  const {hotelId} = bookingData;
+  console.log("Received booking history update for hotelId:", hotelId, "with data:", bookingData);
+  try {
+    await hotelModel.findByIdAndUpdate(hotelId, {
+      $push: {
+        bookingHistory: {
+          userId: bookingData.userId,
+          roomId: bookingData.roomId,
+          checkinDate: bookingData.checkinDate,
+          checkoutDate: bookingData.checkoutDate,
+          totalPrice: bookingData.totalPrice,
+          paymentMethod: bookingData.paymentMethod,
+          bookingPayment: bookingData.bookingPayment,
+          status: bookingData.status,
+          guests: bookingData.guests,
+          email: bookingData.email,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Error updating booking history:", error);
+  }
 });
 
 
@@ -157,6 +196,12 @@ const createroom = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 400, "Invalid hotel ID format");
   }
 
+  // Verify hotel exists before attempting any uploads (avoid uploading files then failing)
+  const hotel = await hotelModel.findById(hotelId);
+  if (!hotel) {
+    return apiError(res, 404, "Hotel not found", { hotelId });
+  }
+
   if (files.length > 0) {
     try {
       const uploadedUrls: string[] = [];
@@ -183,14 +228,74 @@ const createroom = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    // Verify hotel exists
-    const hotel = await hotelModel.findById(hotelId);
-    if (!hotel) {
-      return apiError(res, 404, "Hotel not found", { hotelId });
-    }
+    // Coerce incoming values (multipart/form fields are strings) to expected types
+    const coerceRoomBody = (body: any) => {
+      const out: any = { ...body, hotelId };
+      const toNumber = (v: any, fallback = 0) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      };
 
-    // Validate room data
-    const parsedData = createRoomSchema.safeParse(req.body);
+      out.maxOccupancy = toNumber(body.maxOccupancy, undefined);
+      out.capacity = toNumber(body.capacity, undefined);
+      if (body.roomSize !== undefined) out.roomSize = toNumber(body.roomSize, undefined);
+      out.floorNumber = toNumber(body.floorNumber, 0);
+      out.basePrice = toNumber(body.basePrice, undefined);
+      out.pricePerNight = toNumber(body.pricePerNight, undefined);
+      if (body.weekendPrice !== undefined) out.weekendPrice = toNumber(body.weekendPrice, undefined);
+      out.taxRate = toNumber(body.taxRate, 0);
+      out.minStayNights = toNumber(body.minStayNights, 1);
+
+      // Arrays: accept JSON string or comma-separated string
+      const parseArray = (v: any) => {
+        if (!v) return [];
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string') {
+          try {
+            const parsed = JSON.parse(v);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (e) {
+            return v.split(',').map((s: string) => s.trim()).filter(Boolean);
+          }
+        }
+        return [];
+      };
+
+      out.amenities = parseArray(body.amenities);
+      out.specialFeatures = parseArray(body.specialFeatures);
+      out.roomImages = parseArray(body.roomImages);
+
+      // Booleans
+      const parseBool = (v: any) => {
+        if (typeof v === 'boolean') return v;
+        if (typeof v === 'string') return v === 'true' || v === '1';
+        return Boolean(v);
+      };
+
+      out.isAccessible = parseBool(body.isAccessible);
+      out.hasBathtub = parseBool(body.hasBathtub);
+      out.hasShower = parseBool(body.hasShower);
+      out.hasBalcony = parseBool(body.hasBalcony);
+      out.hasAC = parseBool(body.hasAC);
+      out.hasHeating = parseBool(body.hasHeating);
+      out.hasWifi = parseBool(body.hasWifi);
+
+      // roomImages should already be set from uploads (array of urls)
+      if (!out.roomImages) out.roomImages = [];
+
+      // Ensure required string fields exist
+      out.roomNumber = body.roomNumber;
+      out.roomType = body.roomType;
+      out.suitetype = body.suitetype;
+      out.roomDescription = body.roomDescription;
+      out.cancellationPolicy = body.cancellationPolicy;
+
+      return out;
+    };
+
+    // Validate room data (after coercion)
+    const coerced = coerceRoomBody(req.body);
+    const parsedData = createRoomSchema.safeParse(coerced);
     if (!parsedData.success) {
       const validationErrors = parsedData.error.issues.map((issue) => ({
         field: issue.path.join("."),
@@ -198,7 +303,6 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       }));
       return apiError(res, 400, "Validation failed", validationErrors);
     }
-
     const roomData: RoomInput = parsedData.data;
     roomData.hotelId = hotelId;
 
@@ -207,6 +311,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       hotelId: new mongoose.Types.ObjectId(hotelId),
       roomNumber: roomData.roomNumber,
     });
+    console.log("Checking for existing room with number", roomData.roomNumber, "in hotel", hotelId, "Found:", !!existingRoom);
 
     if (existingRoom) {
       return apiError(
@@ -217,6 +322,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
     }
 
     const response = await roomModel.create(roomData as any);
+    console.log(response)
 
     if (!response) {
       return apiError(res, 500, "Failed to save room to database");
@@ -263,6 +369,15 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 const HotelData = asyncHandler(async (req: any, res: any) => {
    console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
   try {
     const cachedHotel = await registerHotel.get(`hotel_${hotelId}`);
     if (cachedHotel) {
@@ -292,6 +407,95 @@ const HotelData = asyncHandler(async (req: any, res: any) => {
   } catch (error: any) {
     console.error("Error retrieving hotel data:", error);
     return apiError(res, 500, "Internal server error: Unable to retrieve hotel data");
+  }
+});
+
+const syncBookingHistory = asyncHandler(async (req: any, res: any) => {
+  const {
+    bookingId,
+    hotelId,
+    userId,
+    roomId,
+    guestName,
+    roomNumber,
+    checkinDate,
+    checkoutDate,
+    totalPrice,
+    paymentMethod,
+    bookingPayment,
+    status,
+    guests,
+    email,
+    stayDurationNights,
+  } = req.body || {};
+
+  if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Valid hotel ID is required");
+  }
+
+  try {
+    const hotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      {
+        $push: {
+          bookingHistory: {
+            bookingId,
+            userId,
+            roomId,
+            guestName,
+            roomNumber,
+            checkinDate,
+            checkoutDate,
+            totalPrice,
+            stayDurationNights,
+            paymentMethod,
+            bookingPayment,
+            status,
+            guests,
+            email,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    return apiResponse(res, 200, true, "Booking history synced successfully", hotel.bookingHistory);
+  } catch (error: any) {
+    console.error("Error syncing booking history:", error);
+    return apiError(res, 500, "Unable to sync booking history");
+  }
+});
+
+const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
+  try {
+    const hotel = await hotelModel.findById(hotelId).select("hotelName bookingHistory");
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    return apiResponse(res, 200, true, "Booking history retrieved successfully", {
+      hotelId,
+      hotelName: hotel.hotelName,
+      bookingHistory: hotel.bookingHistory || [],
+    });
+  } catch (error: any) {
+    console.error("Error retrieving booking history:", error);
+    return apiError(res, 500, "Unable to retrieve booking history");
   }
 });
 
@@ -732,6 +936,8 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
     // deleteRoom,
     featuredHotels,
     HotelData,
+    syncBookingHistory,
+    getBookingHistoryByHotelId,
     RoomData,
     searchHotels,
     searchRooms,
