@@ -15,6 +15,7 @@ import Publicroute from "./Publicroute"
 import HotelOwnerRoute from "./HotelOwnerRoute"
 import Overview from "../Pages/Overview"
 import Bookings from "../Pages/Bookings"
+import BookingDetails from "../Pages/BookingDetails"
 import Rooms from "../Pages/Rooms"
 import Pricing from "../Pages/Pricing"
 import Guests from "../Pages/Guests"
@@ -56,6 +57,7 @@ const router=createBrowserRouter(
              <Route index element={<Navigate to="overview" replace />}/>
           <Route path="overview" element={<Overview/>} />
           <Route path="bookings" element={<Bookings/>} />
+          <Route path="bookings/:bookingId" element={<BookingDetails/>} />
           <Route path="rooms" element={<Rooms/>} />
           <Route path="pricing" element={<Pricing/>} />
           <Route path="guests" element={<Guests/>} />

@@ -133,6 +133,12 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     const status = ["PENDING", "CONFIRMED", "CANCELLED"].includes(bookingData.status)
         ? bookingData.status
         : fallbackStatus;
+    const checkInDate = new Date(bookingData.checkIn);
+    const checkOutDate = new Date(bookingData.checkOut);
+    const stayDurationNights = Math.max(
+        1,
+        Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
+    );
 
     const newBooking = new bookingModel({
         user: userId,
@@ -154,6 +160,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     await bookingRedis.del(`booking_otp:${userId}`);
     await bookingRedis.del(`booking:${userId}`);
     await pub.publish("bookingConfirmed", JSON.stringify({
+        userId,
         hotelId: bookingData.hotelId,
         roomId: bookingData.roomId,
         hotelName: bookingData.hotelName,
@@ -163,6 +170,10 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         bookingId: newBooking._id,
         checkInDate: bookingData.checkIn,
         checkOutDate: bookingData.checkOut,
+        stayDurationNights,
+        amount: bookingData.totalPrice,
+        paymentMethod: bookingData.paymentMethod,
+        bookingPayment,
         roomNumber: bookingData.roomNumber,
         status,
     }));

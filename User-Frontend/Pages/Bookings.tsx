@@ -1,46 +1,47 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { StatCard } from "../Components/Statcard";
-import {
-  FaCalendarCheck,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
-} from "react-icons/fa";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "../Contexts/Authcontext";
+import { useNavigate } from "react-router-dom";
 
 /* ---------------- DATA ---------------- */
 
-type Status = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
+type Status = "ALL" | "PAID" | "NOTPAID";
 
 type Booking = {
   id: string;
+  userId: string;
   guest: string;
   room: string;
-  type: string;
   checkIn: string;
   checkOut: string;
   amount: string;
   status: Exclude<Status, "ALL">;
+  bookingStatus: "CONFIRMED" | "PENDING" | "CANCELLED";
 };
 
 type IncomingBookingEvent = {
   bookingId?: string;
+  userId?: string;
   userName?: string;
   name?: string;
   email?: string;
   roomNumber?: string;
   checkInDate?: string;
   checkOutDate?: string;
+  stayDurationNights?: number;
+  amount?: number | string;
+  paymentMethod?: string;
+  bookingPayment?: string;
   status?: string;
 };
 
+const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
+
 
 const statusMap: Record<string, string> = {
-  CONFIRMED: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  PENDING: "bg-amber-50 text-amber-600 border-amber-100",
-  CANCELLED: "bg-rose-50 text-rose-600 border-rose-100",
+  PAID: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  NOTPAID: "bg-amber-50 text-amber-600 border-amber-100",
 };
 
 const formatDisplayDate = (value?: string) => {
@@ -50,7 +51,14 @@ const formatDisplayDate = (value?: string) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
 };
 
-const normalizeStatus = (status?: string): Exclude<Status, "ALL"> => {
+const normalizePaymentStatus = (status?: string): Exclude<Status, "ALL"> => {
+  if (status === "PAID" || status === "NOTPAID") {
+    return status;
+  }
+  return "NOTPAID";
+};
+
+const normalizeBookingStatus = (status?: string): "CONFIRMED" | "PENDING" | "CANCELLED" => {
   if (status === "CONFIRMED" || status === "PENDING" || status === "CANCELLED") {
     return status;
   }
@@ -60,13 +68,14 @@ const normalizeStatus = (status?: string): Exclude<Status, "ALL"> => {
 const mapIncomingBooking = (payload: IncomingBookingEvent): Booking => {
   return {
     id: payload.bookingId || `TMP-${Date.now()}`,
+    userId: payload.userId || "-",
     guest: payload.userName || payload.name || payload.email || "Guest",
     room: payload.roomNumber || "-",
-    type: "Room",
     checkIn: formatDisplayDate(payload.checkInDate),
     checkOut: formatDisplayDate(payload.checkOutDate),
-    amount: "-",
-    status: normalizeStatus(payload.status),
+    amount: payload.amount !== undefined ? `Rs. ${payload.amount}` : "-",
+    status: normalizePaymentStatus(payload.bookingPayment),
+    bookingStatus: normalizeBookingStatus(payload.status),
   };
 };
 
@@ -74,10 +83,36 @@ const mapIncomingBooking = (payload: IncomingBookingEvent): Booking => {
 const Bookings = () => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
+  const navigate = useNavigate();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<Status>("ALL");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+
+      const restored = parsed
+        .map((item: IncomingBookingEvent) => mapIncomingBooking(item))
+        .filter((item: Booking, index: number, array: Booking[]) =>
+          array.findIndex((candidate) => candidate.id === item.id) === index,
+        )
+        .slice(0, 30);
+
+      setBookings(restored);
+    } catch {
+      // Ignore local storage parse issues.
+    }
+  }, []);
 
   useEffect(() => {
     if (!hotelId) {
@@ -93,6 +128,22 @@ const Bookings = () => {
 
     const handleNewBooking = (payload: IncomingBookingEvent) => {
       const incoming = mapIncomingBooking(payload);
+
+      try {
+        const previousRaw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+        const previous = previousRaw ? JSON.parse(previousRaw) : [];
+        const normalized = Array.isArray(previous) ? previous : [];
+        const withoutDuplicate = payload?.bookingId
+          ? normalized.filter((item: IncomingBookingEvent) => item?.bookingId !== payload.bookingId)
+          : normalized;
+        localStorage.setItem(
+          RECENT_BOOKINGS_STORAGE_KEY,
+          JSON.stringify([payload, ...withoutDuplicate].slice(0, 30)),
+        );
+      } catch {
+        // Ignore local storage failures.
+      }
+
       setBookings((prev) => {
         const filteredExisting = prev.filter((item) => item.id !== incoming.id);
         return [incoming, ...filteredExisting];
@@ -115,11 +166,6 @@ const Bookings = () => {
     );
   });
 
-  const totalBookings = bookings.length;
-  const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED").length;
-  const pendingBookings = bookings.filter((b) => b.status === "PENDING").length;
-  const cancelledBookings = bookings.filter((b) => b.status === "CANCELLED").length;
-
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
@@ -139,14 +185,6 @@ const Bookings = () => {
         </button>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Total" value={String(totalBookings)} icon={<FaCalendarCheck />} />
-        <StatCard title="Confirmed" value={String(confirmedBookings)} icon={<FaCheckCircle />} />
-        <StatCard title="Pending" value={String(pendingBookings)} icon={<FaClock />} />
-        <StatCard title="Cancelled" value={String(cancelledBookings)} icon={<FaTimesCircle />} />
-      </div>
-
       {/* FILTER BAR */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
 
@@ -161,7 +199,7 @@ const Bookings = () => {
 
         {/* STATUS FILTER */}
         <div className="flex gap-2">
-          {["ALL", "CONFIRMED", "PENDING", "CANCELLED"].map((s) => (
+          {["ALL", "PAID", "NOTPAID"].map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s as Status)}
@@ -185,18 +223,11 @@ const Bookings = () => {
 
     <thead className="bg-slate-50 text-slate-500 text-xs">
       <tr>
-        <th className="text-left px-4 py-3 font-medium">ID</th>
-        <th className="text-left px-4 py-3 font-medium">Guest</th>
-        <th className="text-center px-4 py-3 font-medium">Room</th>
-        <th className="text-left px-4 py-3 font-medium">Type</th>
-
-        {/* SPLIT HERE */}
+        <th className="text-left px-4 py-3 font-medium">Name</th>
+        <th className="text-center px-4 py-3 font-medium">Room No</th>
+        <th className="text-center px-4 py-3 font-medium">Status</th>
         <th className="text-left px-4 py-3 font-medium">Check-in</th>
         <th className="text-left px-4 py-3 font-medium">Check-out</th>
-
-        <th className="text-right px-4 py-3 font-medium">Amount</th>
-        <th className="text-center px-4 py-3 font-medium">Status</th>
-        <th className="text-right px-4 py-3 font-medium"></th>
       </tr>
     </thead>
 
@@ -207,12 +238,9 @@ const Bookings = () => {
           key={i}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="hover:bg-slate-50 transition"
+          onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
+          className="hover:bg-slate-50 transition cursor-pointer"
         >
-
-          <td className="px-4 py-3 text-slate-400 align-middle">
-            {b.id}
-          </td>
 
           <td className="px-4 py-3 font-medium text-slate-800 align-middle">
             {b.guest}
@@ -224,22 +252,12 @@ const Bookings = () => {
             </span>
           </td>
 
-          <td className="px-4 py-3 text-slate-600 align-middle">
-            {b.type}
-          </td>
-
-          {/* CHECK-IN */}
           <td className="px-4 py-3 text-slate-500 text-xs align-middle">
             {b.checkIn}
           </td>
 
-          {/* CHECK-OUT */}
           <td className="px-4 py-3 text-slate-500 text-xs align-middle">
             {b.checkOut}
-          </td>
-
-          <td className="px-4 py-3 text-right font-medium align-middle">
-            {b.amount}
           </td>
 
           <td className="px-4 py-3 text-center align-middle">
@@ -250,18 +268,12 @@ const Bookings = () => {
             </span>
           </td>
 
-          <td className="px-4 py-3 text-right align-middle">
-            <button className="text-xs text-blue-600 hover:underline">
-              Edit
-            </button>
-          </td>
-
         </motion.tr>
       ))}
 
       {filtered.length === 0 && (
         <tr>
-          <td className="px-4 py-10 text-center text-slate-500" colSpan={9}>
+          <td className="px-4 py-10 text-center text-slate-500" colSpan={5}>
             No bookings available.
           </td>
         </tr>

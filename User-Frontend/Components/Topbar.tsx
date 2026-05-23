@@ -15,6 +15,17 @@ type PanelNotification = {
   createdAt: string;
 };
 
+const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
+
+const normalizeNotification = (payload: any): PanelNotification => ({
+  bookingId: payload.bookingId,
+  title: payload.title || "New booking confirmed",
+  message:
+    payload.message ||
+    `${payload.userName || payload.name || "Guest"} (User: ${payload.userId || "-"}) booked room ${payload.roomNumber || "-"} for ${payload.stayDurationNights || 1} night(s), amount Rs.${payload.amount || "-"}, ${payload.paymentMethod || "-"} (${payload.bookingPayment || "-"})`,
+  createdAt: payload.createdAt || new Date().toISOString(),
+});
+
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
   const [notifications, setNotifications] = useState<PanelNotification[]>([]);
@@ -37,21 +48,38 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
       transports: ["websocket"],
     });
 
-    const handlePanelNotification = (payload: any) => {
-      const nextNotification: PanelNotification = {
-        bookingId: payload.bookingId,
-        title: payload.title || "New booking confirmed",
-        message: payload.message || "A new booking has been confirmed.",
-        createdAt: payload.createdAt || new Date().toISOString(),
-      };
+    const pushNotification = (payload: any) => {
+      const nextNotification = normalizeNotification(payload);
 
-      setNotifications((prev) => [nextNotification, ...prev].slice(0, 15));
+      try {
+        const previousRaw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+        const previous = previousRaw ? JSON.parse(previousRaw) : [];
+        const normalized = Array.isArray(previous) ? previous : [];
+        const withoutDuplicate = payload?.bookingId
+          ? normalized.filter((item: any) => item?.bookingId !== payload.bookingId)
+          : normalized;
+        localStorage.setItem(
+          RECENT_BOOKINGS_STORAGE_KEY,
+          JSON.stringify([payload, ...withoutDuplicate].slice(0, 30)),
+        );
+      } catch {
+        // Ignore local storage failures; live notifications still work.
+      }
+
+      setNotifications((prev) => {
+        const withoutDuplicate = nextNotification.bookingId
+          ? prev.filter((item) => item.bookingId !== nextNotification.bookingId)
+          : prev;
+        return [nextNotification, ...withoutDuplicate].slice(0, 15);
+      });
     };
 
-    socket.on("booking_notification", handlePanelNotification);
+    socket.on("booking_notification", pushNotification);
+    socket.on("new_booking", pushNotification);
 
     return () => {
-      socket.off("booking_notification", handlePanelNotification);
+      socket.off("booking_notification", pushNotification);
+      socket.off("new_booking", pushNotification);
       socket.disconnect();
     };
   }, [hotelId]);
@@ -95,10 +123,17 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
                   <div className="px-4 py-4 text-sm text-slate-500">No notifications yet.</div>
                 ) : (
                   notifications.map((item, index) => (
-                    <div key={`${item.bookingId || "booking"}-${index}`} className="px-4 py-3 border-b border-slate-100 last:border-b-0">
+                    <button
+                      key={`${item.bookingId || "booking"}-${index}`}
+                      onClick={() => {
+                        setOpenNotifications(false);
+                        window.location.href = "/dashboard/bookings";
+                      }}
+                      className="w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
+                    >
                       <p className="text-sm font-medium text-slate-800">{item.title}</p>
                       <p className="text-xs text-slate-600 mt-1">{item.message}</p>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
