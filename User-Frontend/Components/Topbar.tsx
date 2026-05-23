@@ -8,8 +8,7 @@ interface TopbarProps {
 
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
-
-  if (!auth) return null;
+ if (!auth) return null;
 
   const { user, logout } = auth;
   const displayName = user?.Name || user?.Username || "User";
@@ -42,8 +41,8 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
         <motion.button
           onClick={async () => {
+             await logout();
             window.location.href="/initialhome/herosection"
-              await logout();
               }}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}

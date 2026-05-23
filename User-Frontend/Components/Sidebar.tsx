@@ -1,5 +1,9 @@
 import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useAuth } from "../Contexts/Authcontext";
+import { getHotelById } from "../Services/hotel.api";
+
 
 interface SidebarProps {
   collapsed: boolean;
@@ -33,6 +37,23 @@ const sections = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
+    const [hotel,setHotel]=useState<any>();
+    const auth=useAuth();
+    const hotelId=auth?.hotelId;
+    useEffect(()=>{
+
+      const fetchHotel=async()=>{
+        if(!hotelId){
+          console.log("no hotel id found");
+          return;
+        }
+       const res= await getHotelById(hotelId);
+       setHotel(res?.data??res)
+      }
+     fetchHotel();
+
+    },[hotelId])
+
   return (
     <aside
       className={`
@@ -56,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                 Travallee
               </span>
               <div className="text-[10px] text-slate-800 tracking-widest">
-                HOTEL OWNER
+                {hotel?.hotelName||"hotelName"}
               </div>
             </div>
           </div>
