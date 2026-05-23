@@ -83,6 +83,7 @@ const SettingsPage: React.FC = () => {
   const [newMaxOccupancy, setNewMaxOccupancy] = useState("");
   const [newBedType, setNewBedType] = useState("");
   const [newRoomSize, setNewRoomSize] = useState("");
+  const [newViewType, setNewViewType] = useState("none");
   const [newPricePerNight, setNewPricePerNight] = useState("");
   const [newWeekendPrice, setNewWeekendPrice] = useState("");
   const [newTaxRate, setNewTaxRate] = useState("");
@@ -94,9 +95,15 @@ const SettingsPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [newIsAccessible, setNewIsAccessible] = useState(false);
   const [newHasBathtub, setNewHasBathtub] = useState(false);
+  const [newHasShower, setNewHasShower] = useState(false);
   const [newHasBalcony, setNewHasBalcony] = useState(false);
   const [newHasAC, setNewHasAC] = useState(true);
+  const [newHasHeating, setNewHasHeating] = useState(false);
   const [newHasWifi, setNewHasWifi] = useState(true);
+  const [newIsActive, setNewIsActive] = useState(true);
+  const [newIsFeatured, setNewIsFeatured] = useState(false);
+  const [newRating, setNewRating] = useState("0");
+  const [newNumberOfReviews, setNewNumberOfReviews] = useState("0");
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
 
   const createRoomSubmit = async () => {
@@ -143,6 +150,7 @@ const SettingsPage: React.FC = () => {
         if (newRoomSize) fd.append("roomSize", String(Number(newRoomSize) || 0));
         if (newBedType) fd.append("bedType", newBedType);
         if (newFloor) fd.append("floorNumber", String(Number(newFloor) || 0));
+        if (newViewType) fd.append("viewType", newViewType);
         if (newDescription) fd.append("roomDescription", newDescription);
         if (newCancellationPolicy) fd.append("cancellationPolicy", newCancellationPolicy);
         if (newMinStayNights) fd.append("minStayNights", String(Number(newMinStayNights) || 1));
@@ -153,9 +161,15 @@ const SettingsPage: React.FC = () => {
         // booleans
         fd.append("isAccessible", String(newIsAccessible));
         fd.append("hasBathtub", String(newHasBathtub));
+        fd.append("hasShower", String(newHasShower));
         fd.append("hasBalcony", String(newHasBalcony));
         fd.append("hasAC", String(newHasAC));
+        fd.append("hasHeating", String(newHasHeating));
         fd.append("hasWifi", String(newHasWifi));
+        fd.append("isActive", String(newIsActive));
+        fd.append("isFeatured", String(newIsFeatured));
+        fd.append("rating", String(Number(newRating) || 0));
+        fd.append("numberOfReviews", String(Number(newNumberOfReviews) || 0));
 
         // images (multiple files)
         newRoomImages.forEach((file) => {
@@ -190,6 +204,7 @@ const SettingsPage: React.FC = () => {
           roomSize: newRoomSize ? Number(newRoomSize) : undefined,
           bedType: String(newBedType || ""),
           floorNumber: Number(newFloor) || 0,
+          viewType: newViewType || "none",
 
           // pricing
           basePrice: Number(newBasePrice) || 0,
@@ -213,17 +228,17 @@ const SettingsPage: React.FC = () => {
           // booleans and flags
           isAccessible: Boolean(newIsAccessible),
           hasBathtub: Boolean(newHasBathtub),
-          hasShower: false,
+          hasShower: Boolean(newHasShower),
           hasBalcony: Boolean(newHasBalcony),
           hasAC: Boolean(newHasAC),
-          hasHeating: false,
+          hasHeating: Boolean(newHasHeating),
           hasWifi: Boolean(newHasWifi),
 
           // status/rating defaults
-          isActive: true,
-          isFeatured: false,
-          rating: 0,
-          numberOfReviews: 0,
+          isActive: Boolean(newIsActive),
+          isFeatured: Boolean(newIsFeatured),
+          rating: Number(newRating) || 0,
+          numberOfReviews: Number(newNumberOfReviews) || 0,
         };
 
         console.log("JSON payload:", payload);
@@ -603,6 +618,19 @@ const SettingsPage: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="text-sm font-medium">View type <span className="text-rose-600">*</span></label>
+                  <select value={newViewType} onChange={(e) => setNewViewType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1 bg-white">
+                    <option value="none">none</option>
+                    <option value="city">city</option>
+                    <option value="garden">garden</option>
+                    <option value="beach">beach</option>
+                    <option value="mountain">mountain</option>
+                    <option value="street">street</option>
+                    <option value="pool">pool</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="text-sm font-medium">Amenities (comma separated) <span className="text-rose-600">*</span></label>
                   <input placeholder="wifi,ac,tv" value={newAmenities} onChange={(e) => setNewAmenities(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
                 </div>
@@ -615,6 +643,28 @@ const SettingsPage: React.FC = () => {
                 <div>
                   <label className="text-sm font-medium">Cancellation policy <span className="text-rose-600">*</span></label>
                   <input placeholder="48 hours free cancellation" value={newCancellationPolicy} onChange={(e) => setNewCancellationPolicy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Tax rate <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newTaxRate} onChange={(e) => setNewTaxRate(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Min stay nights <span className="text-rose-600">*</span></label>
+                    <input placeholder="1" value={newMinStayNights} onChange={(e) => setNewMinStayNights(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Rating <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newRating} onChange={(e) => setNewRating(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Number of reviews <span className="text-rose-600">*</span></label>
+                    <input placeholder="0" value={newNumberOfReviews} onChange={(e) => setNewNumberOfReviews(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  </div>
                 </div>
 
                 <div>
@@ -671,14 +721,26 @@ const SettingsPage: React.FC = () => {
                   <label className="text-sm">Bathtub</label>
                   <input type="checkbox" checked={newHasBathtub} onChange={(e) => setNewHasBathtub(e.target.checked)} />
 
+                  <label className="text-sm">Shower</label>
+                  <input type="checkbox" checked={newHasShower} onChange={(e) => setNewHasShower(e.target.checked)} />
+
                   <label className="text-sm">Balcony</label>
                   <input type="checkbox" checked={newHasBalcony} onChange={(e) => setNewHasBalcony(e.target.checked)} />
 
                   <label className="text-sm">AC</label>
                   <input type="checkbox" checked={newHasAC} onChange={(e) => setNewHasAC(e.target.checked)} />
 
+                  <label className="text-sm">Heating</label>
+                  <input type="checkbox" checked={newHasHeating} onChange={(e) => setNewHasHeating(e.target.checked)} />
+
                   <label className="text-sm">Wifi</label>
                   <input type="checkbox" checked={newHasWifi} onChange={(e) => setNewHasWifi(e.target.checked)} />
+
+                  <label className="text-sm">Active</label>
+                  <input type="checkbox" checked={newIsActive} onChange={(e) => setNewIsActive(e.target.checked)} />
+
+                  <label className="text-sm">Featured</label>
+                  <input type="checkbox" checked={newIsFeatured} onChange={(e) => setNewIsFeatured(e.target.checked)} />
                 </div>
 
                 {createError && <div className="text-sm text-red-600">{createError}</div>}
@@ -690,7 +752,7 @@ const SettingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNewRoomNumber(''); setNewRoomType(''); setNewSuiteType(''); setNewBasePrice(''); setNewPricePerNight(''); setNewWeekendPrice(''); setNewTaxRate(''); setNewCapacity(''); setNewMaxOccupancy(''); setNewRoomSize(''); setNewBedType(''); setNewAmenities(''); setNewSpecialFeatures(''); setNewFloor(''); setNewMinStayNights(''); setNewDescription(''); setNewRoomImages([]); setNewIsAccessible(false); setNewHasBathtub(false); setNewHasBalcony(false); setCreateError(''); setCreateSuccess('');
+                  setNewRoomNumber(''); setNewRoomType(''); setNewSuiteType(''); setNewBasePrice(''); setNewPricePerNight(''); setNewWeekendPrice(''); setNewTaxRate(''); setNewCapacity(''); setNewMaxOccupancy(''); setNewRoomSize(''); setNewBedType(''); setNewAmenities(''); setNewSpecialFeatures(''); setNewFloor(''); setNewMinStayNights(''); setNewDescription(''); setNewViewType('none'); setNewRoomImages([]); setNewIsAccessible(false); setNewHasBathtub(false); setNewHasShower(false); setNewHasBalcony(false); setNewHasHeating(false); setNewHasAC(true); setNewHasWifi(true); setNewIsActive(true); setNewIsFeatured(false); setNewRating('0'); setNewNumberOfReviews('0'); setCreateError(''); setCreateSuccess('');
                 }}
                 className="px-4 py-2 border rounded-lg"
               >
