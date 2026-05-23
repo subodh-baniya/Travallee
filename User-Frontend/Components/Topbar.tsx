@@ -3,7 +3,6 @@ import { useAuth } from "../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { FiBell, FiMenu } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
-import { useNavigate } from "react-router-dom";
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -20,16 +19,15 @@ const UNREAD_NOTIFICATIONS_STORAGE_KEY = "unreadBookingNotifications";
 
 const normalizeNotification = (payload: any): PanelNotification => ({
   bookingId: payload.bookingId,
-  title: payload.title || "New booking confirmed",
+  title: payload.title || "New booking has come",
   message:
     payload.message ||
-    `${payload.userName || payload.name || "Guest"} (User: ${payload.userId || "-"}) booked room ${payload.roomNumber || "-"} for ${payload.stayDurationNights || 1} night(s), amount Rs.${payload.amount || "-"}, ${payload.paymentMethod || "-"} (${payload.bookingPayment || "-"})`,
+    `${payload.userName || payload.name || "Guest"} booked room ${payload.roomNumber || "-"}.`,
   createdAt: payload.createdAt || new Date().toISOString(),
 });
 
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<PanelNotification[]>([]);
   const [openNotifications, setOpenNotifications] = useState(false);
 
@@ -114,10 +112,12 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
     socket.on("booking_notification", pushNotification);
     socket.on("new_booking", pushNotification);
+    socket.on("bookingConfirmed", pushNotification);
 
     return () => {
       socket.off("booking_notification", pushNotification);
       socket.off("new_booking", pushNotification);
+      socket.off("bookingConfirmed", pushNotification);
       socket.disconnect();
     };
   }, [hotelId]);
@@ -166,11 +166,6 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
                       onClick={() => {
                         removeNotification(item.bookingId);
                         setOpenNotifications(false);
-                        if (item.bookingId) {
-                          navigate(`/dashboard/bookings/${item.bookingId}`);
-                        } else {
-                          navigate("/dashboard/bookings");
-                        }
                       }}
                       className="w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
                     >

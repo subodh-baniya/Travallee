@@ -12,7 +12,6 @@ const pub = createClient({
     url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 Promise.all([sub.connect(), pub.connect()]).then(() => {
-    console.log("Admin Redis clients connected");
 }).catch((err) => {
     console.error("Error connecting to Redis:", err);
 });
@@ -24,23 +23,18 @@ const connection = {
 // @ts-ignore this is for pub sub model
 const adminPub = new redis(connection);
 
-const getBookingData = asyncHandler(async (req: any, res: any) => {
-    const { bookingId } = req.params;
-    if (!bookingId) {
-        return apiError(res, 400, "Booking ID is required");
-    }
-    try {
-        const cachedBooking = await adminPub.get(`booking_${bookingId}`);
-        if (cachedBooking) {
-            return apiResponse(res, 200, true, "Booking retrieved successfully", JSON.parse(cachedBooking));
-        }
 
-        return apiError(res, 404, "Booking not found", { bookingId });
-    } catch (error: any) {
-        console.error("Error retrieving booking:", error);
-        return apiError(res, 500, "Unable to retrieve booking");
-    }
+sub.subscribe("bookingConfirmed", (message) => {
+    try {
+        const data = JSON.parse(message);
+        const hotelId = data.hotelId;
+        io.to(`hotel_${hotelId}`).emit("bookingConfirmed", data);
+    } catch (err) {
+        console.error("Error parsing booking confirmation message:", err);
+    } 
 });
+
+
 
 const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
     const { hotelId } = req.params;
@@ -72,6 +66,5 @@ const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
 });
 
 export {
-    getBookingData,
     getBookingHistoryByHotelId,
 }
