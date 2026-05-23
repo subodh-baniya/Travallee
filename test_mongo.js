@@ -27,7 +27,6 @@ const hotels = [
     isFeatured: true,
     roomIDs: ["room_1a", "room_1b", "room_1c"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c02",
     ownerName: "Sita Karki",
@@ -52,7 +51,6 @@ const hotels = [
     isFeatured: true,
     roomIDs: ["room_2a", "room_2b"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c03",
     ownerName: "Bikash Thapa",
@@ -77,7 +75,6 @@ const hotels = [
     isFeatured: false,
     roomIDs: ["room_3a", "room_3b", "room_3c"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c04",
     ownerName: "Nabin Adhikari",
@@ -103,7 +100,6 @@ const hotels = [
     isFeatured: true,
     roomIDs: ["room_4a", "room_4b"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c05",
     ownerName: "Anita Gurung",
@@ -129,7 +125,6 @@ const hotels = [
     isFeatured: true,
     roomIDs: ["room_5a", "room_5b", "room_5c"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
     ownerName: "String Variant Hotel",
@@ -153,7 +148,6 @@ const hotels = [
     isFeatured: "false",
     roomIDs: ["room_6a", "room_6b"],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
     ownerName: "Bijaya Neupane",
@@ -180,55 +174,79 @@ const hotels = [
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
-    ownerName: "Imanatha Poudel", 
+    ownerName: "Imanatha Poudel",
     hotelDescription: "A beautiful and expansive resort featuring lush gardens, modern comfortable twin-bed rooms, and excellent hospitality in Bharatpur.",
     hotelLocation: "Bharatpur, Chitwan, Nepal",
     hotelName: "Chitwan Garden Resort",
-    hotelImages: [ 
-     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo_Qo143FfaC5IYA5tkM2c8mHieh5bsW52Mg&s", 
-     "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg", 
+    hotelImages: [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo_Qo143FfaC5IYA5tkM2c8mHieh5bsW52Mg&s",
+      "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg"
     ],
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Business License", "Citizenship"],
-    contactNumber: "9855012345", 
+    contactNumber: "9855012345",
     isactive: true,
     facilities: ["Garden", "Free WiFi", "Air Conditioning", "Restaurant", "Parking", "Flat-screen TV"],
     checkinTime: "2:00 PM",
     checkoutTime: "12:00 PM",
-    pricePerNight: 1500, 
+    pricePerNight: 1500,
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
     roomIDs: ["room_8a", "room_8b", "room_8c"],
-  }, 
+  },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
-    ownerName: "Bishal Gurung", // Placeholder name
+    ownerName: "Bishal Gurung",
     hotelDescription: "A serene riverside resort nestled along the banks of the Trishuli River, offering a perfect blend of relaxation and adventure.",
     hotelLocation: "Kurintar, Chitwan, Nepal",
     hotelName: "Kurintar Retreat",
     hotelImages: [
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJ0vwaIpKqJ1o5eHRHgjY7TvSpcsVuBfypg&s", 
-      "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg", 
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJ0vwaIpKqJ1o5eHRHgjY7TvSpcsVuBfypg&s",
+      "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg"
     ],
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Business License", "Citizenship"],
-    contactNumber: "9800011223", 
+    contactNumber: "9800011223",
     isactive: true,
     facilities: ["Swimming Pool", "Riverside Dining", "Free WiFi", "Parking", "Bar"],
     checkinTime: "2:00 PM",
     checkoutTime: "11:00 AM",
-    pricePerNight: 1500, 
+    pricePerNight: 1500,
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
     roomIDs: ["room_9a", "room_9b", "room_9c"],
+  },
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c13",
+    ownerName: "Aama Gurung",
+    hotelDescription: "An authentic Gurung family-run homestay offering traditional stone-house architecture, home-cooked local organic meals, and direct panoramic views of Annapurna South, Machhapuchhre, and Hiunchuli.",
+    hotelLocation: "Annapurna-10, Ghandruk, Kaski, Nepal",
+    hotelName: "Ashish Aama Homestay",
+    hotelImages: [
+      "https://cdn.esewahotels.com/hotels/ghandruk_homestay_view.jpg",
+      "https://cdn.esewahotels.com/hotels/ghandruk_traditional_room.jpg"
+    ],
+    propertyType: "Homestay",
+    verified: true,
+    VerificationDocuments: ["Local Ward Registration Certificate", "Citizenship"],
+    contactNumber: "9806673025",
+    isactive: true,
+    facilities: ["Traditional Dining", "Mountain View Terrace", "Free WiFi", "Hot Shower", "Gurung Cultural Dress Experience"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "11:00 AM",
+    pricePerNight: 2000,
+    rating: 4.8,
+    numberOfReviews: 124,
+    isFeatured: true,
+    roomIDs: ["room_gh1", "room_gh2", "room_gh3"]
   }
 ];
 
-const url = 
+const url =
   "mongodb+srv://kcprabin2063_db_user:rambabu123@data.pstsfqw.mongodb.net/test?retryWrites=true&w=majority";
 
 async function run() {
