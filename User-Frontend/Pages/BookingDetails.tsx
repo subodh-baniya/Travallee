@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../Contexts/Authcontext";
 
 type StoredBookingEvent = {
   bookingId?: string;
   userId?: string;
+  guestName?: string;
   userName?: string;
   name?: string;
   email?: string;
@@ -21,8 +24,6 @@ type StoredBookingEvent = {
   createdAt?: string;
 };
 
-const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
-
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -39,24 +40,33 @@ const formatDateTime = (value?: string) => {
 const BookingDetails = () => {
   const navigate = useNavigate();
   const { bookingId } = useParams();
+  const auth = useAuth();
+  const hotelId = auth?.hotelId || null;
+  const [booking, setBooking] = useState<StoredBookingEvent | null>(null);
 
-  const booking = useMemo<StoredBookingEvent | null>(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
-      if (!raw) {
-        return null;
+  useEffect(() => {
+    const loadBooking = async () => {
+      if (!hotelId || !bookingId) {
+        return;
       }
 
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        return null;
-      }
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001"}/api/v1/admin/booking-history/${hotelId}`,
+          { withCredentials: true },
+        );
 
-      return parsed.find((item: StoredBookingEvent) => item.bookingId === bookingId) || null;
-    } catch {
-      return null;
-    }
-  }, [bookingId]);
+        const history = response.data?.data?.bookingHistory || response.data?.bookingHistory || [];
+        if (Array.isArray(history)) {
+          setBooking(history.find((item: StoredBookingEvent) => item.bookingId === bookingId) || null);
+        }
+      } catch {
+        setBooking(null);
+      }
+    };
+
+    void loadBooking();
+  }, [bookingId, hotelId]);
 
   if (!booking) {
     return (
@@ -75,7 +85,7 @@ const BookingDetails = () => {
     );
   }
 
-  const guestName = booking.userName || booking.name || booking.email || "Guest";
+  const displayGuestName = booking.guestName || booking.userName || booking.name || booking.email || "Guest";
   const nights = booking.stayDurationNights || 1;
 
   return (
@@ -94,7 +104,7 @@ const BookingDetails = () => {
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Booking ID:</span> <span className="font-medium text-slate-800">{booking.bookingId || "-"}</span></div>
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">User ID:</span> <span className="font-medium text-slate-800">{booking.userId || "-"}</span></div>
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Guest:</span> <span className="font-medium text-slate-800">{guestName}</span></div>
+          <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Guest:</span> <span className="font-medium text-slate-800">{displayGuestName}</span></div>
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Email:</span> <span className="font-medium text-slate-800">{booking.email || "-"}</span></div>
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Hotel:</span> <span className="font-medium text-slate-800">{booking.hotelName || booking.hotelId || "-"}</span></div>
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100"><span className="text-slate-500">Room:</span> <span className="font-medium text-slate-800">{booking.roomNumber || booking.roomId || "-"}</span></div>

@@ -12,6 +12,7 @@ import {
 import mongoose, { mongo } from "mongoose";
 import redis from "ioredis"
 import { Queue } from "bullmq"; 
+import { createClient } from "redis";
 
 const connection ={
   host: process.env.REDIS_HOST || "localhost",
@@ -22,6 +23,44 @@ const registerHotel = new redis(connection);
 
 const registerHotelQueue = new Queue("HotelRegistration", {
   connection
+});
+
+const sub = createClient({
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+const pub = createClient({
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+
+Promise.all([sub.connect(), pub.connect()]).then(() => {
+}).catch((err) => {
+  console.error("Error connecting to Redis:", err);
+});
+
+sub.subscribe("bookingHistory", async (message: string) => {
+  const bookingData = JSON.parse(message);
+  const {hotelId} = bookingData;
+  console.log("Received booking history update for hotelId:", hotelId, "with data:", bookingData);
+  try {
+    await hotelModel.findByIdAndUpdate(hotelId, {
+      $push: {
+        bookingHistory: {
+          userId: bookingData.userId,
+          roomId: bookingData.roomId,
+          checkinDate: bookingData.checkinDate,
+          checkoutDate: bookingData.checkoutDate,
+          totalPrice: bookingData.totalPrice,
+          paymentMethod: bookingData.paymentMethod,
+          bookingPayment: bookingData.bookingPayment,
+          status: bookingData.status,
+          guests: bookingData.guests,
+          email: bookingData.email,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Error updating booking history:", error);
+  }
 });
 
 
@@ -301,6 +340,95 @@ const HotelData = asyncHandler(async (req: any, res: any) => {
   } catch (error: any) {
     console.error("Error retrieving hotel data:", error);
     return apiError(res, 500, "Internal server error: Unable to retrieve hotel data");
+  }
+});
+
+const syncBookingHistory = asyncHandler(async (req: any, res: any) => {
+  const {
+    bookingId,
+    hotelId,
+    userId,
+    roomId,
+    guestName,
+    roomNumber,
+    checkinDate,
+    checkoutDate,
+    totalPrice,
+    paymentMethod,
+    bookingPayment,
+    status,
+    guests,
+    email,
+    stayDurationNights,
+  } = req.body || {};
+
+  if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Valid hotel ID is required");
+  }
+
+  try {
+    const hotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      {
+        $push: {
+          bookingHistory: {
+            bookingId,
+            userId,
+            roomId,
+            guestName,
+            roomNumber,
+            checkinDate,
+            checkoutDate,
+            totalPrice,
+            stayDurationNights,
+            paymentMethod,
+            bookingPayment,
+            status,
+            guests,
+            email,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    return apiResponse(res, 200, true, "Booking history synced successfully", hotel.bookingHistory);
+  } catch (error: any) {
+    console.error("Error syncing booking history:", error);
+    return apiError(res, 500, "Unable to sync booking history");
+  }
+});
+
+const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
+  try {
+    const hotel = await hotelModel.findById(hotelId).select("hotelName bookingHistory");
+
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    return apiResponse(res, 200, true, "Booking history retrieved successfully", {
+      hotelId,
+      hotelName: hotel.hotelName,
+      bookingHistory: hotel.bookingHistory || [],
+    });
+  } catch (error: any) {
+    console.error("Error retrieving booking history:", error);
+    return apiError(res, 500, "Unable to retrieve booking history");
   }
 });
 
@@ -741,6 +869,8 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
     // deleteRoom,
     featuredHotels,
     HotelData,
+    syncBookingHistory,
+    getBookingHistoryByHotelId,
     RoomData,
     searchHotels,
     searchRooms,

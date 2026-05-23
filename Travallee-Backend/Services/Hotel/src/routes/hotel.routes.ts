@@ -5,6 +5,8 @@ import {
   // deleteRoom,
   featuredHotels,
   HotelData,
+  syncBookingHistory,
+  getBookingHistoryByHotelId,
   getHotelInfo,
   highReviewedHotels,
   getAllHotels,
@@ -40,6 +42,10 @@ router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 router.get("/rooms/:hotelId", authenticate, RoomData);
 
 router.get("/display-rooms/:hotelId", authenticate, displayRooms);
+
+router.post("/booking-history", syncBookingHistory);
+
+router.get("/booking-history/:hotelId", getBookingHistoryByHotelId);
 
 router.get("/:hotelId", authenticate, HotelData);
 

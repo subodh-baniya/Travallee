@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "../Contexts/Authcontext";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,21 @@ type IncomingBookingEvent = {
   paymentMethod?: string;
   bookingPayment?: string;
   status?: string;
+};
+
+type HotelBookingHistoryEntry = {
+  bookingId?: string;
+  userId?: string;
+  guestName?: string;
+  roomNumber?: string;
+  checkinDate?: string;
+  checkoutDate?: string;
+  totalPrice?: number;
+  paymentMethod?: string;
+  bookingPayment?: string;
+  status?: string;
+  stayDurationNights?: number;
+  email?: string;
 };
 
 const RECENT_BOOKINGS_STORAGE_KEY = "recentBookingEvents";
@@ -79,6 +95,20 @@ const mapIncomingBooking = (payload: IncomingBookingEvent): Booking => {
   };
 };
 
+const mapHistoryBooking = (payload: HotelBookingHistoryEntry): Booking => {
+  return {
+    id: payload.bookingId || `TMP-${Date.now()}`,
+    userId: payload.userId || "-",
+    guest: payload.guestName || payload.email || payload.userId || "Guest",
+    room: payload.roomNumber || "-",
+    checkIn: formatDisplayDate(payload.checkinDate),
+    checkOut: formatDisplayDate(payload.checkoutDate),
+    amount: payload.totalPrice !== undefined ? `Rs. ${payload.totalPrice}` : "-",
+    status: normalizePaymentStatus(payload.bookingPayment),
+    bookingStatus: normalizeBookingStatus(payload.status),
+  };
+};
+
 
 const Bookings = () => {
   const auth = useAuth();
@@ -90,29 +120,58 @@ const Bookings = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
-      if (!raw) {
+    const fetchBookingHistory = async () => {
+      if (!hotelId) {
         return;
       }
 
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        return;
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001"}/api/v1/admin/booking-history/${hotelId}`,
+          { withCredentials: true },
+        );
+
+        const history = response.data?.data?.bookingHistory || response.data?.bookingHistory || [];
+        if (!Array.isArray(history)) {
+          return;
+        }
+
+        setBookings(
+          history
+            .map((item: HotelBookingHistoryEntry) => mapHistoryBooking(item))
+            .filter((item: Booking, index: number, array: Booking[]) =>
+              array.findIndex((candidate) => candidate.id === item.id) === index,
+            )
+            .slice(0, 30),
+        );
+      } catch {
+        try {
+          const raw = localStorage.getItem(RECENT_BOOKINGS_STORAGE_KEY);
+          if (!raw) {
+            return;
+          }
+
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) {
+            return;
+          }
+
+          const restored = parsed
+            .map((item: IncomingBookingEvent) => mapIncomingBooking(item))
+            .filter((item: Booking, index: number, array: Booking[]) =>
+              array.findIndex((candidate) => candidate.id === item.id) === index,
+            )
+            .slice(0, 30);
+
+          setBookings(restored);
+        } catch {
+          // Ignore local storage parse issues.
+        }
       }
+    };
 
-      const restored = parsed
-        .map((item: IncomingBookingEvent) => mapIncomingBooking(item))
-        .filter((item: Booking, index: number, array: Booking[]) =>
-          array.findIndex((candidate) => candidate.id === item.id) === index,
-        )
-        .slice(0, 30);
-
-      setBookings(restored);
-    } catch {
-      // Ignore local storage parse issues.
-    }
-  }, []);
+    void fetchBookingHistory();
+  }, [hotelId]);
 
   useEffect(() => {
     if (!hotelId) {
