@@ -11,6 +11,8 @@ export default function AppPage() {
 
   return (
     <>
+  
+    
       {/* App Config */}
       <div className="full-panel">
         <div className="panel-hd">

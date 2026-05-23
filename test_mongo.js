@@ -185,7 +185,7 @@ const hotels = [
   },
 ];
 
-const url =
+const url = 
   "mongodb+srv://kcprabin2063_db_user:rambabu123@data.pstsfqw.mongodb.net/test?retryWrites=true&w=majority";
 
 async function run() {
