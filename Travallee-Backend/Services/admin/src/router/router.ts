@@ -1,11 +1,11 @@
 import { Router } from "express";
-import{ getBookingConfirmations } from "../controller/admin/controller.js";
+import{ getBookingDataNOtification } from "../controller/admin/controller.js";
 
 
 
 
 const router = Router();
     
-router.get("/booking-confirmations", getBookingConfirmations);
+router.get("/booking-confirmations", getBookingDataNOtification);
 
 export default router;  

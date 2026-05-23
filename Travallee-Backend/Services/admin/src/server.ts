@@ -8,7 +8,7 @@ try {
     console.log("Connected to database starting  admin server");
     const PORT = process.env.PORT ;
     server.listen(PORT, () => {
-        console.log(`Admin server is running on port ${PORT}`);
+        console.log(`socket server is running on port ${PORT}`);
     });
 } catch (error) {
     console.error("Failed to connect to database:", error);

@@ -18,7 +18,9 @@ const io = new Server(server, {
 }); 
 
 io.on("connection", (socket) => {
-    console.log("Admin client connected:", socket.id);
+    const adminId = socket.handshake.query.HotelId;
+    console.log("Admin client connected:", socket.id, "with HotelId:", adminId);
+    socket.join(`hotel_${adminId}`); 
     socket.on("disconnect", () => {
         console.log("Admin client disconnected:", socket.id);
     });
@@ -35,4 +37,4 @@ app.use(cookieParser());
 app.use('/api/v1/admin', adminRoutes);
 
 
-export default server;
+export { io, server };

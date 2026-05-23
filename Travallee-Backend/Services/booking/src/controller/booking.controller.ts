@@ -9,6 +9,7 @@ import { BookingConfirmationJobData, createBookingSchema } from "../schema/bokin
 import { z } from "zod";
 import { Queue } from "bullmq"
 import redis from "ioredis";
+import { createClient } from "redis";
 
 
 
@@ -16,23 +17,23 @@ const connection = {
     host: process.env.REDIS_HOST as string,
     port: Number(process.env.REDIS_PORT)
 }
-
 //@ts-ignore this is for saving otp and booking data temporarily before confirmation, it will be deleted after confirmation or expiration
 const bookingRedis = new redis(connection);
-
-//@ts-ignore this is for pub sub model 
-const boookingPub = new redis(connection);
-
 const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingConfirmationOtp", {
     connection
 })
 
 
+const pub = createClient({
+    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+pub.connect()
+
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
     let validated: any;
     const userId = req.user.id;
-    const { email ,Name } = req.user;
+    const { email, Name } = req.user;
 
 
     try {
@@ -88,7 +89,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     };
     const otp = Math.floor(1000 + Math.random() * 9000);
     await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
-     bookingConfirmationQueue.add("bookingConfirmationOtp", {
+    bookingConfirmationQueue.add("bookingConfirmationOtp", {
         email: validated.userEmail,
         userName: validated.userName,
         bookingId: "",
@@ -98,8 +99,8 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
         roomNumber: validated.roomNumber,
         otp
     });
-    
-  
+
+
     await bookingRedis.set(`booking:${validated.userId}`, JSON.stringify(newBooking), "EX", 15 * 60);
 
     return apiResponse(res, 201, true, "Otp sent successfully", { otpSent: true, expiresIn: 15 * 60 });
@@ -124,11 +125,11 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         return apiError(res, 400, "Booking data has expired. Please try booking again.");
     }
     const bookingData = JSON.parse(bookingDataString);
-     if(bookingData.paymentMethod === "COD"){
+    if (bookingData.paymentMethod === "COD") {
         bookingData.bookingPayment = "NOTPAID";
         bookingData.status = "PENDING";
-     }
-    
+    }
+
     const newBooking = new bookingModel({
         user: userId,
         hotel: bookingData.hotelId,
@@ -139,7 +140,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         totalPrice: bookingData.totalPrice,
         paymentMethod: bookingData.paymentMethod,
         bookingPayment: bookingData.paymentMethod,
-        status: bookingData.paymentMethod ,
+        status: bookingData.paymentMethod,
         hotelName: bookingData.hotelName,
         roomNumber: bookingData.roomNumber,
         email: bookingData.email || bookingData.userEmail || req.user.email,
@@ -148,7 +149,10 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 
     await bookingRedis.del(`booking_otp:${userId}`);
     await bookingRedis.del(`booking:${userId}`);
-    await boookingPub.publish("bookingConfirmed", JSON.stringify({
+    await pub.publish("bookingConfirmed", JSON.stringify({
+        hotelId: bookingData.hotelId,
+        roomId: bookingData.roomId,
+        hotelName: bookingData.hotelName,
         name,
         email: bookingData.userEmail,
         userName: bookingData.userName,
@@ -158,7 +162,8 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
         roomNumber: bookingData.roomNumber,
         status: bookingData.status,
     }));
-    return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking );
+    console.log("Published booking confirmation for booking ID:", newBooking._id);
+    return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
 });
 
 

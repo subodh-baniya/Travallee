@@ -12,14 +12,12 @@
     "start": "nodemon "
   },
   "dependencies": {
-    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.16.1",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.71.1",
     "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
-    "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "ioredis": "^5.10.1",
