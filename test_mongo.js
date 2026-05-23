@@ -245,10 +245,6 @@ const hotels = [
     roomIDs: ["room_gh1", "room_gh2", "room_gh3"]
   }
 ];
-
-const url =
-  "mongodb+srv://kcprabin2063_db_user:rambabu123@data.pstsfqw.mongodb.net/test?retryWrites=true&w=majority";
-
 async function run() {
   const client = new MongoClient(url);
 

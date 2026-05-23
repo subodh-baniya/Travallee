@@ -230,7 +230,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
   try {
     // Coerce incoming values (multipart/form fields are strings) to expected types
     const coerceRoomBody = (body: any) => {
-      const out: any = { ...body };
+      const out: any = { ...body, hotelId };
       const toNumber = (v: any, fallback = 0) => {
         const n = Number(v);
         return Number.isFinite(n) ? n : fallback;
@@ -263,6 +263,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 
       out.amenities = parseArray(body.amenities);
       out.specialFeatures = parseArray(body.specialFeatures);
+      out.roomImages = parseArray(body.roomImages);
 
       // Booleans
       const parseBool = (v: any) => {
