@@ -12,7 +12,6 @@ const roomSchema = new mongoose.Schema(
     roomNumber: {
       type: String,
       required: true,
-      unique: true,
     },
 
     roomType: {
@@ -187,5 +186,7 @@ const roomSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+roomSchema.index({ hotelId: 1, roomNumber: 1 }, { unique: true });
 
 export const roomModel = mongoose.model("rooms", roomSchema);
