@@ -28,14 +28,10 @@ const normalizeNotification = (payload: any): PanelNotification => ({
 
 const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const auth = useAuth();
-<<<<<<< HEAD
- if (!auth) return null;
-=======
   const [notifications, setNotifications] = useState<PanelNotification[]>([]);
   const [openNotifications, setOpenNotifications] = useState(false);
 
   if (!auth) return null;
->>>>>>> c50f7ac35026e87278d1e8ba12e3567d47ce1021
 
   const { user, logout, hotelId } = auth;
   const displayName = user?.Name || user?.Username || "User";
