@@ -224,6 +224,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     UserProfileRedis.set(`user:${user._id}`, JSON.stringify(user), "EX", 24 * 60 * 60);
     const token = user.generateJWT();
     user.refreshToken = token;
+    user.role = req.body.role || user.role;
     await user.save();
     res.setHeader("Authorization", `Bearer ${token}`);
     res.cookie("token", token, options);

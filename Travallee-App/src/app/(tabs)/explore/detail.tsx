@@ -63,6 +63,7 @@ const RATING_PERCENTAGES = [60, 20, 10, 1, 5];
 export default function HotelDetailScreen() {
   const router = useRouter();
   const { hotelId } = useLocalSearchParams();
+  const resolvedHotelId = Array.isArray(hotelId) ? hotelId[0] : hotelId;
   
   // Safe navigation handler
   const handleGoBack = () => {
@@ -103,18 +104,19 @@ export default function HotelDetailScreen() {
   useEffect(() => {
     const fetchHotelData = async () => {
       try {
-        if (!hotelId) {
+        if (!resolvedHotelId) {
           setError('Hotel ID not found');
           setLoading(false);
           return;
         }
-        const url = API_ENDPOINTS_HOTEL.GET_HOTEL_BY_ID.replace(':id', hotelId as string);
+        const url = API_ENDPOINTS_HOTEL.GET_HOTEL_BY_ID.replace(':id', resolvedHotelId);
         const response = await apiClient.get(url);
         const data = response.data?.success ? response.data.data : response.data;
         if (data?._id) {
           setHotel(data);
+          setRooms(normalizeRoomsPayload(data.rooms));
           // Fetch room data for this hotel
-          fetchRoomData(hotelId as string);
+          await fetchRoomData(resolvedHotelId);
         } else {
           setError('Failed to load hotel data');
         }
@@ -125,23 +127,30 @@ export default function HotelDetailScreen() {
       }
     };
     fetchHotelData();
-  }, [hotelId]);
+  }, [resolvedHotelId]);
 
   const fetchRoomData = async (hotelId: string) => {
     try {
       setRoomsLoading(true);
-      // Use the display-rooms endpoint
-      const roomsEndpoint = `${API_ENDPOINTS_HOTEL.DISPLAY_ROOMS}`.replace(':hotelId', hotelId);
+      // Use the route that resolves rooms by the hotel's ObjectId.
+      const roomsEndpoint = API_ENDPOINTS_HOTEL.GET_ROOMS.replace(':hotelId', hotelId);
       
       const response = await apiClient.get(roomsEndpoint);
-      // Response.data is directly the array of rooms
-      const roomData = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      const roomData = normalizeRoomsPayload(response.data);
       setRooms(roomData);
     } catch (err: any) {
-      setRooms([]);
+      console.warn('Failed to load rooms for hotel', hotelId, err?.response?.data || err?.message || err);
     } finally {
       setRoomsLoading(false);
     }
+  };
+
+  const normalizeRoomsPayload = (payload: any) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.rooms)) return payload.rooms;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.rooms)) return payload.data.rooms;
+    return [];
   };
 
   // ─── Loading ────────────────────────────────────────────────────────────────
