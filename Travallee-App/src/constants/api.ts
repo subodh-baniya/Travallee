@@ -31,7 +31,7 @@ const API_ENDPOINTS_HOTEL: ApiEndpoints = {
   FEATURED_HOTELS: `${API_HOTEL}/featured`,
   HIGH_REVIEWED_HOTELS: `${API_HOTEL}/high-reviewed`,
   GET_HOTEL_BY_ID: `${API_HOTEL}/:id`,
-  GET_ROOMS: `${API_HOTEL}/:hotelId/rooms`,
+  GET_ROOMS: `${API_HOTEL}/rooms/:hotelId`,
   DISPLAY_ROOMS: `${API_HOTEL}/display-rooms/:hotelId`,
 };
 

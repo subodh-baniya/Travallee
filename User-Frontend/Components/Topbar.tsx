@@ -193,8 +193,8 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
         <motion.button
           onClick={async () => {
+             await logout();
             window.location.href="/initialhome/herosection"
-              await logout();
               }}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}

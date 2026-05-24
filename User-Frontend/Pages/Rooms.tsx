@@ -1,95 +1,28 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { useRooms, type Room } from "../Hooks/useRooms";
 
-/* ---------------- TYPES ---------------- */
-
-type RoomType = "DELUXE" | "SUITE" | "STANDARD";
-type StatusFilter = "ALL" | "AVAILABLE" | "BOOKED" | "MAINTENANCE";
-type TypeFilter = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
-
-interface Room {
-  id: string;
-  roomNumber: string;
-  roomType: RoomType;
-  pricePerNight: number;
-  capacity: number;
-  images: string[];
-  status: "AVAILABLE" | "BOOKED" | "MAINTENANCE";
-}
-
-interface RoomResponse {
-  rooms: Room[];
-}
-
-/* ---------------- MOCK ---------------- */
-
-const mockData: RoomResponse = {
-  rooms: [
-    {
-      id: "1",
-      roomNumber: "101",
-      roomType: "DELUXE",
-      pricePerNight: 4200,
-      capacity: 2,
-      images: [
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85",
-      ],
-      status: "AVAILABLE",
-    },
-    {
-      id: "2",
-      roomNumber: "202",
-      roomType: "SUITE",
-      pricePerNight: 8400,
-      capacity: 4,
-      images: [
-        "https://media.designcafe.com/wp-content/uploads/2023/07/05141750/aesthetic-room-decor.jpg",
-      ],
-      status: "BOOKED",
-    },
-    {
-      id: "3",
-      roomNumber: "105",
-      roomType: "DELUXE",
-      pricePerNight: 4200,
-      capacity: 2,
-      images: [
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2",
-      ],
-      status: "MAINTENANCE",
-    },
-  ],
-};
-
-/* ---------------- STATUS STYLE ---------------- */
+type StatusFilter = "ALL" | "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+type TypeFilter   = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
 
 const statusMap: Record<string, string> = {
-  AVAILABLE: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  BOOKED: "bg-blue-50 text-blue-600 border-blue-100",
+  AVAILABLE:   "bg-emerald-50 text-emerald-600 border-emerald-100",
+  OCCUPIED:    "bg-blue-50 text-blue-600 border-blue-100",
   MAINTENANCE: "bg-rose-50 text-rose-600 border-rose-100",
 };
 
-/* ---------------- COMPONENT ---------------- */
-
 const Rooms = () => {
-  const [data, setData] = useState<RoomResponse | null>(null);
-  const [filter, setFilter] = useState<StatusFilter>("ALL");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
-  const [search, setSearch] = useState("");
+  const { rooms, pagination, page, setPage, loading, error, refetch } = useRooms();
 
-  useEffect(() => {
-    setData(mockData);
-  }, []);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [typeFilter, setTypeFilter]     = useState<TypeFilter>("ALL");
+  const [search, setSearch]             = useState("");
 
-  if (!data) return <div>Loading...</div>;
-
-  const filtered = data.rooms.filter((room) => {
-    return (
-      (filter === "ALL" || room.status === filter) &&
-      (typeFilter === "ALL" || room.roomType === typeFilter) &&
-      room.roomNumber.includes(search)
-    );
-  });
+  const filtered = rooms.filter((room: Room) =>
+    (statusFilter === "ALL" || room.status === statusFilter) &&
+    (typeFilter   === "ALL" || room.roomType === typeFilter) &&
+    room.roomNumber.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
@@ -97,39 +30,41 @@ const Rooms = () => {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Rooms
-          </h1>
+          <h1 className="text-lg font-semibold text-slate-900">Rooms</h1>
           <p className="text-xs text-slate-500">
-            Manage room inventory
+            {pagination ? `${pagination.total} total rooms` : "Manage room inventory"}
           </p>
         </div>
-
         <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
           + Add Room
         </button>
       </div>
 
+      {/* ERROR */}
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-600 text-sm px-4 py-3 rounded-xl flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={refetch} className="underline text-xs ml-4">Retry</button>
+        </div>
+      )}
+
       {/* FILTER BAR */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
-
-        {/* SEARCH */}
         <input
           type="text"
           placeholder="Search room number..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
           className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
         />
 
-        {/* STATUS FILTER */}
-        <div className="flex gap-2">
-          {["ALL", "AVAILABLE", "BOOKED", "MAINTENANCE"].map((s) => (
+        <div className="flex gap-2 flex-wrap">
+          {(["ALL", "AVAILABLE", "OCCUPIED", "MAINTENANCE"] as StatusFilter[]).map(s => (
             <button
               key={s}
-              onClick={() => setFilter(s as StatusFilter)}
+              onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 text-xs rounded-full transition ${
-                filter === s
+                statusFilter === s
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
@@ -139,10 +74,9 @@ const Rooms = () => {
           ))}
         </div>
 
-        {/* ROOM TYPE DROPDOWN */}
         <select
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+          onChange={e => setTypeFilter(e.target.value as TypeFilter)}
           className="px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:border-blue-400 bg-white"
         >
           <option value="ALL">ALL TYPES</option>
@@ -152,83 +86,129 @@ const Rooms = () => {
         </select>
       </div>
 
+      {/* LOADING SKELETON */}
+      {loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden animate-pulse">
+              <div className="h-40 bg-slate-100" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-slate-100 rounded w-1/2" />
+                <div className="h-3 bg-slate-100 rounded w-1/3" />
+                <div className="h-3 bg-slate-100 rounded w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* GRID */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {!loading && (
+        <>
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-slate-400 text-sm">
+              No rooms match your filters
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filtered.map(room => (
+                <motion.div
+                  key={room._id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-1 transition"
+                >
+                  {/* IMAGE */}
+                  <div className="relative">
+                    <img
+                      src={room.roomImages?.[0] ?? "/placeholder-room.jpg"}
+                      alt={`Room ${room.roomNumber}`}
+                      className="h-40 w-full object-cover"
+                    />
+                    <span className={`absolute top-3 right-3 text-[11px] px-2 py-1 rounded-full border ${statusMap[room.status]}`}>
+                      {room.status}
+                    </span>
+                  </div>
 
-        {filtered.map((room) => (
-          <motion.div
-            key={room.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="
-              bg-white border border-slate-200 rounded-xl
-              overflow-hidden
-              hover:shadow-md hover:-translate-y-1
-              transition
-            "
-          >
+                  {/* CONTENT */}
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-xl font-semibold text-blue-600">{room.roomNumber}</h3>
+                        <p className="text-[11px] text-slate-400 tracking-wide">{room.roomType}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-slate-900">
+                          Rs. {room.pricePerNight.toLocaleString()}
+                        </p>
+                        <p className="text-[11px] text-slate-400">per night</p>
+                      </div>
+                    </div>
 
-            {/* IMAGE */}
-            <div className="relative">
-              <img
-                src={room.images[0]}
-                className="h-40 w-full object-cover"
-              />
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>Capacity: {room.capacity}</span>
+                      <span className="text-blue-600 font-medium">Floor {room.floorNumber}</span>
+                    </div>
 
-              <span
-                className={`
-                  absolute top-3 right-3 text-[11px] px-2 py-1 rounded-full border
-                  ${statusMap[room.status]}
-                `}
+                    {room.amenities?.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {room.amenities.slice(0, 3).map((a, i) => (
+                          <span key={i} className="text-[10px] bg-slate-50 border border-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                            {a}
+                          </span>
+                        ))}
+                        {room.amenities.length > 3 && (
+                          <span className="text-[10px] text-slate-400">
+                            +{room.amenities.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {room.discount > 0 && (
+                      <p className="text-[11px] text-emerald-600 font-medium">
+                        {room.discount}% discount applied
+                      </p>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-400 text-xs">★</span>
+                        <span className="text-xs text-slate-500">{room.rating.toFixed(1)}</span>
+                      </div>
+                      <button className="text-xs text-blue-600 hover:underline">Manage</button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* PAGINATION */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition"
               >
-                {room.status}
+                Previous
+              </button>
+              <span className="text-xs text-slate-500">
+                Page {pagination.currentPage} of {pagination.totalPages}
               </span>
+              <button
+                onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                disabled={page === pagination.totalPages}
+                className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg disabled:opacity-40 hover:bg-slate-50 transition"
+              >
+                Next
+              </button>
             </div>
+          )}
+        </>
+      )}
 
-            {/* CONTENT */}
-            <div className="p-4 space-y-3">
-
-              <div className="flex justify-between items-center">
-
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-600">
-                    {room.roomNumber}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 tracking-wide">
-                    {room.roomType}
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Rs. {room.pricePerNight}
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    per night
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>Capacity: {room.capacity}</span>
-                <span className="text-blue-600 font-medium">
-                  Floor {room.roomNumber[0]}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex justify-end">
-                <button className="text-xs text-blue-600 hover:underline">
-                  Manage
-                </button>
-              </div>
-
-            </div>
-
-          </motion.div>
-        ))}
-
-      </div>
     </div>
   );
 };

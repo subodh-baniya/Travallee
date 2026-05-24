@@ -25,9 +25,8 @@ const hotels = [
     rating: 4.7,
     numberOfReviews: 320,
     isFeatured: true,
-    roomIDs: ["room_1a", "room_1b", "room_1c"],
+    roomIDs: [""],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c02",
     ownerName: "Sita Karki",
@@ -35,8 +34,8 @@ const hotels = [
     hotelLocation: "Bhaktapur, Nepal",
     hotelName: "Heritage Palace Hotel",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+1",
-      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+2"
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtjGV2PAijSOkn60es1e2Eo9gF1WvCAHKgoA&s",
+      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/173372452.jpg?k=e618be6f84562c35d985e07187388f97f16b54c9ef15015da4872102512b4893&o="
     ],
     propertyType: "Hotel",
     verified: true,
@@ -50,9 +49,8 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 210,
     isFeatured: true,
-    roomIDs: ["room_2a", "room_2b"],
+    roomIDs: [""],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c03",
     ownerName: "Bikash Thapa",
@@ -60,8 +58,8 @@ const hotels = [
     hotelLocation: "Sauraha, Chitwan, Nepal",
     hotelName: "Safari Jungle Camp",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+1",
-      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+2"
+  
+      "https://www.travelandleisureasia.com/in/hotels/india-hotels/a-tiger-safari-through-the-jungle-camps-of-madhya-pradesh/"
     ],
     propertyType: "Jungle Camp",
     verified: true,
@@ -75,9 +73,8 @@ const hotels = [
     rating: 4.3,
     numberOfReviews: 145,
     isFeatured: false,
-    roomIDs: ["room_3a", "room_3b", "room_3c"],
+    roomIDs: [""],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c04",
     ownerName: "Nabin Adhikari",
@@ -86,8 +83,8 @@ const hotels = [
     hotelLocation: "Nagarkot, Nepal",
     hotelName: "Mountain View Resort",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+1",
-      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+2"
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHKqAqE0ES3Rfb-pOHVMOVYsRB2nE4yPJPXC1kJ-dwbKcDeilYIp5ggeATA4XfxDVfoUeSwWOQf6g4ndliR-kMkU6ZQJTiXWLbrh_2NZUkDYg-2lDg25gmD2Z6F5-XWGlCBKSkx=w253-h337-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFI1PRgP1gwqHo_BLFnqTFReuOJ7TWsM-vj4vEPKo9OEGIAn5YRCSf6qcTt7QRXpRBsr3Zmg40qWj3zi4nNxCBFqFpkKaPGUcsO2oPkc1gVvOeoXEWptK9f5NCejlStfnkqB4kmNA=w253-h379-k-no"
     ],
     propertyType: "Resort",
     verified: true,
@@ -101,9 +98,8 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 410,
     isFeatured: true,
-    roomIDs: ["room_4a", "room_4b"],
+    roomIDs: [""],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c05",
     ownerName: "Anita Gurung",
@@ -112,8 +108,8 @@ const hotels = [
     hotelLocation: "Pokhara, Nepal",
     hotelName: "Lakeside Retreat",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+1",
-      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+2"
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHmFhJSPTFgXCBBrvmQT74Xv1IQaBDKehSJWkY3WDCDoPsgDZc6cWKCw01fZq_LEGjgP5MaEC657xirsXtW6zk7qVfa2eEwbrWhCHaYFuuKKqZnywfV1IT1_jyFZ6U2aOY9roVV=s1360-w1360-h1020-rw",
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFUWBygF2pF9pwp9PmHnmE21Drh-tVUqA75iJ6VPpPMj1Y1aTRPKXvXqO1jiSU-KQnEDK97jODJBXuKyCZTOCcCYsD0OVXWlUNQXWAIBonSpu5wTzAu4zfJficeM4dOjVj8dqgr=s1360-w1360-h1020-rw"
     ],
     propertyType: "Boutique Hotel",
     verified: true,
@@ -127,17 +123,16 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: ["room_5a", "room_5b", "room_5c"],
+    roomIDs: [" "],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
-    ownerName: "String Variant Hotel",
+    ownerName: "Hari Acharya",
     hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
-    hotelLocation: "Testville, Testland",
-    hotelName: "String Variant Inn",
+    hotelLocation: "Bharatpur Chitwan",
+    hotelName: "Green HAmlet Resort",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=String+Variant+Inn"
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7HkFwGkSFHgbSSw42eH4ykTK64owOU7L7Mw&s"
     ],
     propertyType: "Guest House",
     verified: "true",
@@ -151,9 +146,8 @@ const hotels = [
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
-    roomIDs: ["room_6a", "room_6b"],
+    roomIDs: [" "],
   },
-
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
     ownerName: "Bijaya Neupane",
@@ -176,61 +170,79 @@ const hotels = [
     rating: 4.4,
     numberOfReviews: 128,
     isFeatured: false,
-    roomIDs: ["room_7a", "room_7b"],
+    roomIDs: [" "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
-    ownerName: "Imanatha Poudel", 
+    ownerName: "Imanatha Poudel",
     hotelDescription: "A beautiful and expansive resort featuring lush gardens, modern comfortable twin-bed rooms, and excellent hospitality in Bharatpur.",
     hotelLocation: "Bharatpur, Chitwan, Nepal",
     hotelName: "Chitwan Garden Resort",
-    hotelImages: [ 
-     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo_Qo143FfaC5IYA5tkM2c8mHieh5bsW52Mg&s", 
-     "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg", 
+    hotelImages: [
+      "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg"
     ],
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Business License", "Citizenship"],
-    contactNumber: "9855012345", 
+    contactNumber: "9855012345",
     isactive: true,
     facilities: ["Garden", "Free WiFi", "Air Conditioning", "Restaurant", "Parking", "Flat-screen TV"],
     checkinTime: "2:00 PM",
     checkoutTime: "12:00 PM",
-    pricePerNight: 1500, 
+    pricePerNight: 1500,
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: ["room_8a", "room_8b", "room_8c"],
-  }, 
+    roomIDs: [""],
+  },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
-    ownerName: "Bishal Gurung", // Placeholder name
+    ownerName: "Bishal Gurung",
     hotelDescription: "A serene riverside resort nestled along the banks of the Trishuli River, offering a perfect blend of relaxation and adventure.",
     hotelLocation: "Kurintar, Chitwan, Nepal",
     hotelName: "Kurintar Retreat",
     hotelImages: [
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJ0vwaIpKqJ1o5eHRHgjY7TvSpcsVuBfypg&s", 
-      "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg", 
+      "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg"
     ],
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Business License", "Citizenship"],
-    contactNumber: "9800011223", 
+    contactNumber: "9800011223",
     isactive: true,
     facilities: ["Swimming Pool", "Riverside Dining", "Free WiFi", "Parking", "Bar"],
     checkinTime: "2:00 PM",
     checkoutTime: "11:00 AM",
-    pricePerNight: 1500, 
+    pricePerNight: 1500,
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: ["room_9a", "room_9b", "room_9c"],
+    roomIDs: [""],
+  },
+  {
+    userID: "682a1f2b3c4d5e6f7a8b9c13",
+    ownerName: "Aama Gurung",
+    hotelDescription: "An authentic Gurung family-run homestay offering traditional stone-house architecture, home-cooked local organic meals, and direct panoramic views of Annapurna South, Machhapuchhre, and Hiunchuli.",
+    hotelLocation: "Annapurna-10, Ghandruk, Kaski, Nepal",
+    hotelName: "Ashish Aama Homestay",
+    hotelImages: [
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/a5/3a/83/night-shot.jpg?w=900&h=-1&s=1", 
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/45/57/52/morning-view-from-ashish.jpg?w=700&h=-1&s=1"
+    ],
+    propertyType: "Homestay",
+    verified: true,
+    VerificationDocuments: ["Local Ward Registration Certificate", "Citizenship"],
+    contactNumber: "9806673025",
+    isactive: true,
+    facilities: ["Traditional Dining", "Mountain View Terrace", "Free WiFi", "Hot Shower", "Gurung Cultural Dress Experience"],
+    checkinTime: "2:00 PM",
+    checkoutTime: "11:00 AM",
+    pricePerNight: 2000,
+    rating: 4.8,
+    numberOfReviews: 124,
+    isFeatured: true,
+    roomIDs: [""]
   }
 ];
-
-const url =
-  "mongodb+srv://kcprabin2063_db_user:rambabu123@data.pstsfqw.mongodb.net/test?retryWrites=true&w=majority";
-
 async function run() {
   const client = new MongoClient(url);
 
