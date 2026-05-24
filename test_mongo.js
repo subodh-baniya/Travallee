@@ -25,7 +25,7 @@ const hotels = [
     rating: 4.7,
     numberOfReviews: 320,
     isFeatured: true,
-    roomIDs: ["room_1a", "room_1b", "room_1c"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c02",
@@ -34,8 +34,8 @@ const hotels = [
     hotelLocation: "Bhaktapur, Nepal",
     hotelName: "Heritage Palace Hotel",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+1",
-      "https://via.placeholder.com/1200x800.png?text=Heritage+Palace+Hotel+2"
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtjGV2PAijSOkn60es1e2Eo9gF1WvCAHKgoA&s",
+      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/173372452.jpg?k=e618be6f84562c35d985e07187388f97f16b54c9ef15015da4872102512b4893&o="
     ],
     propertyType: "Hotel",
     verified: true,
@@ -49,7 +49,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 210,
     isFeatured: true,
-    roomIDs: ["room_2a", "room_2b"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c03",
@@ -58,8 +58,8 @@ const hotels = [
     hotelLocation: "Sauraha, Chitwan, Nepal",
     hotelName: "Safari Jungle Camp",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+1",
-      "https://via.placeholder.com/1200x800.png?text=Safari+Jungle+Camp+2"
+  
+      "https://www.travelandleisureasia.com/in/hotels/india-hotels/a-tiger-safari-through-the-jungle-camps-of-madhya-pradesh/"
     ],
     propertyType: "Jungle Camp",
     verified: true,
@@ -73,7 +73,7 @@ const hotels = [
     rating: 4.3,
     numberOfReviews: 145,
     isFeatured: false,
-    roomIDs: ["room_3a", "room_3b", "room_3c"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c04",
@@ -83,8 +83,8 @@ const hotels = [
     hotelLocation: "Nagarkot, Nepal",
     hotelName: "Mountain View Resort",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+1",
-      "https://via.placeholder.com/1200x800.png?text=Mountain+View+Resort+2"
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHKqAqE0ES3Rfb-pOHVMOVYsRB2nE4yPJPXC1kJ-dwbKcDeilYIp5ggeATA4XfxDVfoUeSwWOQf6g4ndliR-kMkU6ZQJTiXWLbrh_2NZUkDYg-2lDg25gmD2Z6F5-XWGlCBKSkx=w253-h337-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFI1PRgP1gwqHo_BLFnqTFReuOJ7TWsM-vj4vEPKo9OEGIAn5YRCSf6qcTt7QRXpRBsr3Zmg40qWj3zi4nNxCBFqFpkKaPGUcsO2oPkc1gVvOeoXEWptK9f5NCejlStfnkqB4kmNA=w253-h379-k-no"
     ],
     propertyType: "Resort",
     verified: true,
@@ -98,7 +98,7 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 410,
     isFeatured: true,
-    roomIDs: ["room_4a", "room_4b"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c05",
@@ -108,8 +108,8 @@ const hotels = [
     hotelLocation: "Pokhara, Nepal",
     hotelName: "Lakeside Retreat",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+1",
-      "https://via.placeholder.com/1200x800.png?text=Lakeside+Retreat+2"
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHmFhJSPTFgXCBBrvmQT74Xv1IQaBDKehSJWkY3WDCDoPsgDZc6cWKCw01fZq_LEGjgP5MaEC657xirsXtW6zk7qVfa2eEwbrWhCHaYFuuKKqZnywfV1IT1_jyFZ6U2aOY9roVV=s1360-w1360-h1020-rw",
+      "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFUWBygF2pF9pwp9PmHnmE21Drh-tVUqA75iJ6VPpPMj1Y1aTRPKXvXqO1jiSU-KQnEDK97jODJBXuKyCZTOCcCYsD0OVXWlUNQXWAIBonSpu5wTzAu4zfJficeM4dOjVj8dqgr=s1360-w1360-h1020-rw"
     ],
     propertyType: "Boutique Hotel",
     verified: true,
@@ -123,16 +123,16 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: ["room_5a", "room_5b", "room_5c"],
+    roomIDs: [" "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
-    ownerName: "String Variant Hotel",
+    ownerName: "Hari Acharya",
     hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
-    hotelLocation: "Testville, Testland",
-    hotelName: "String Variant Inn",
+    hotelLocation: "Bharatpur Chitwan",
+    hotelName: "Green HAmlet Resort",
     hotelImages: [
-      "https://via.placeholder.com/1200x800.png?text=String+Variant+Inn"
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7HkFwGkSFHgbSSw42eH4ykTK64owOU7L7Mw&s"
     ],
     propertyType: "Guest House",
     verified: "true",
@@ -146,7 +146,7 @@ const hotels = [
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
-    roomIDs: ["room_6a", "room_6b"],
+    roomIDs: [" "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
@@ -170,7 +170,7 @@ const hotels = [
     rating: 4.4,
     numberOfReviews: 128,
     isFeatured: false,
-    roomIDs: ["room_7a", "room_7b"],
+    roomIDs: [" "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
@@ -179,7 +179,6 @@ const hotels = [
     hotelLocation: "Bharatpur, Chitwan, Nepal",
     hotelName: "Chitwan Garden Resort",
     hotelImages: [
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo_Qo143FfaC5IYA5tkM2c8mHieh5bsW52Mg&s",
       "https://cdn.esewahotels.com/hotels/1669957030-108704049.jpeg"
     ],
     propertyType: "Resort",
@@ -194,7 +193,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: ["room_8a", "room_8b", "room_8c"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
@@ -203,7 +202,6 @@ const hotels = [
     hotelLocation: "Kurintar, Chitwan, Nepal",
     hotelName: "Kurintar Retreat",
     hotelImages: [
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJ0vwaIpKqJ1o5eHRHgjY7TvSpcsVuBfypg&s",
       "https://cdn.esewahotels.com/hotels/1727841459-1345421675.jpg"
     ],
     propertyType: "Resort",
@@ -218,7 +216,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: ["room_9a", "room_9b", "room_9c"],
+    roomIDs: [""],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c13",
@@ -242,7 +240,7 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 124,
     isFeatured: true,
-    roomIDs: ["room_gh1", "room_gh2", "room_gh3"]
+    roomIDs: [""]
   }
 ];
 async function run() {
