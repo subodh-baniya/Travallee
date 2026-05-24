@@ -1,7 +1,20 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
+import dotenv from "dotenv";
+
+
+dotenv.config();
+
+
+const url = process.env.MONGO_URI;
+
+if (!url) {
+  console.error("❌ Error: MONGO_URI is not defined in your .env file!");
+  process.exit(1);
+}
+
 const rooms = [
- {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c01",
+  {
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "101",
     roomType: "Deluxe Double",
     suitetype: "Standard Suite",
@@ -36,7 +49,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c01",
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "102",
     roomType: "Family Safari View",
     suitetype: "Executive Suite",
@@ -70,32 +83,173 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+  {
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
+    roomNumber: "201",
+    roomType: "Heritage Premium",
+    suitetype: "Classic Royal",
+    roomDescription: "Traditional Newari architecture blended with modern comforts. Features intricate hand-carved wood accents.",
+    maxOccupancy: 2,
+    capacity: 2,
+    roomSize: 410,
+    bedType: "Queen Bed",
+    floorNumber: 2,
+    viewType: "city",
+    basePrice: 110,
+    pricePerNight: 110,
+    weekendPrice: 130,
+    taxRate: 13,
+    minStayNights: 1,
+    cancellationPolicy: "Non-refundable rate.",
+    amenities: ["Traditional Decor", "Wardrobe", "Telephone", "Safe"],
+    specialFeatures: ["Hand-carved wooden windows", "Heritage layout"],
+    roomImages: ["https://via.placeholder.com/1200x800.png?text=Heritage+Room+1"],
+    isAccessible: false,
+    hasBathtub: true,
+    hasShower: true,
+    hasBalcony: false,
+    hasAC: true,
+    hasHeating: true,
+    hasWifi: true,
+    isActive: true,
+    isFeatured: true,
+    rating: 4.5,
+    numberOfReviews: 44,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
+    roomNumber: "202",
+    roomType: "King Heritage Suite",
+    suitetype: "Presidential Suite",
+    roomDescription: "Luxury regal suite featuring handcrafted brick linings and vintage royal design accents ideal for extended cultural vacations.",
+    maxOccupancy: 2,
+    capacity: 2,
+    roomSize: 480,
+    bedType: "King Bed",
+    floorNumber: 2,
+    viewType: "city",
+    basePrice: 160,
+    pricePerNight: 160,
+    weekendPrice: 185,
+    taxRate: 13,
+    minStayNights: 1,
+    cancellationPolicy: "Cancel 7 days ahead for an eighty percent refund.",
+    amenities: ["Premium Slippers", "Bathrobe", "Smart TV", "Local tea basket"],
+    specialFeatures: ["Courtyard view alcove", "Complimentary traditional clay pottery gift"],
+    roomImages: ["https://via.placeholder.com/1200x800.png?text=Heritage+Room+2"],
+    isAccessible: true,
+    hasBathtub: true,
+    hasShower: true,
+    hasBalcony: true,
+    hasAC: true,
+    hasHeating: true,
+    hasWifi: true,
+    isActive: true,
+    isFeatured: false,
+    rating: 4.7,
+    numberOfReviews: 18,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },   {
+    hotelId: "682a1f2b3c4d5e6f7a8b9c03",
+    roomNumber: "C10",
+    roomType: "Jungle Cottage",
+    suitetype: "Standard Cabin",
+    roomDescription: "Thatch-roofed cottage built with local materials offering an immersive wildlife experience.",
+    maxOccupancy: 3,
+    capacity: 3,
+    roomSize: 280,
+    bedType: "1 Double, 1 Single",
+    floorNumber: 0,
+    viewType: "garden",
+    basePrice: 85,
+    pricePerNight: 85,
+    weekendPrice: 95,
+    taxRate: 10,
+    minStayNights: 1,
+    cancellationPolicy: "Cancel 7 days before arrival for a full refund.",
+    amenities: ["Mosquito Nets", "Private Veranda", "Bottled Water"],
+    specialFeatures: ["Wake up to bird songs", "Closest to the national park border"],
+    roomImages: ["https://www.penchjunglecamp.com/img/accommodation/1m.jpg"],
+    isAccessible: true,
+    hasBathtub: false,
+    hasShower: true,
+    hasBalcony: true,
+    hasAC: true,
+    hasHeating: false,
+    hasWifi: true,
+    isActive: true,
+    isFeatured: false,
+    rating: 4.3,
+    numberOfReviews: 38,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    hotelId: "682a1f2b3c4d5e6f7a8b9c03",
+    roomNumber: "C11",
+    roomType: "Riverside Jungle Tent",
+    suitetype: "Luxury Glamping Tent",
+    roomDescription: "Heavy-duty canvas luxury glamping accommodation resting along the Rapti River banks.",
+    maxOccupancy: 2,
+    capacity: 2,
+    roomSize: 310,
+    bedType: "King Bed",
+    floorNumber: 0,
+    viewType: "garden",
+    basePrice: 115,
+    pricePerNight: 115,
+    weekendPrice: 130,
+    taxRate: 10,
+    minStayNights: 1,
+    cancellationPolicy: "Cancel 5 days out for full voucher conversion.",
+    amenities: ["Lantern lighting", "Custom bamboo fans", "Insect repellent kits"],
+    specialFeatures: ["Sunset river watch porch", "Direct marshland walking trails access"],
+    roomImages: ["https://www.wildlife-camp-india.com/tadoba-jungle-camp.html"],
+    isAccessible: false,
+    hasBathtub: false,
+    hasShower: true,
+    hasBalcony: true,
+    hasAC: false,
+    hasHeating: false,
+    hasWifi: true,
+    isActive: true,
+    isFeatured: true,
+    rating: 4.6,
+    numberOfReviews: 54,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
 
 ];
-
 
 async function run() {
   const client = new MongoClient(url);
 
   try {
+    console.log("🔄 Connecting to MongoDB Atlas Cloud...");
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log("✅ Connected successfully!");
 
-    const db = client.db("test");
-    const collection = db.collection("rooms"); // Using 'rooms' collection
+    // Automatically selects the database specified in your URI connection string path
+    const db = client.db(); 
+    const collection = db.collection("rooms");
 
-    // Clear old data
+    console.log("🧹 Clearing old rooms data...");
     await collection.deleteMany({});
-    console.log("Old rooms data deleted");
+    console.log("🗑️ Old rooms collection cleared.");
 
-    // Insert new rooms
-    await collection.insertMany(rooms);
-    console.log(`${rooms.length} rooms inserted successfully!`);
+    console.log("📤 Seeding new data...");
+    const result = await collection.insertMany(rooms);
+    console.log(`🚀 Success! ${result.insertedCount} rooms successfully seeded to Atlas!`);
+    
   } catch (err) {
-    console.log("Error:", err);
+    console.error("❌ Database seeding failed:", err);
   } finally {
     await client.close();
-    console.log("Connection closed");
+    console.log("🔌 Database connection cleanly closed.");
   }
 }
 
