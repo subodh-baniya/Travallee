@@ -127,7 +127,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: [" "],
+    roomIDs: [" 205,206"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
@@ -150,7 +150,7 @@ const hotels = [
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
-    roomIDs: [" 206, 102-S"],
+    roomIDs: [" 101-S, 102-S"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
@@ -174,7 +174,7 @@ const hotels = [
     rating: 4.4,
     numberOfReviews: 128,
     isFeatured: false,
-    roomIDs: [" "],
+    roomIDs: [" 402, 403 "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
@@ -197,7 +197,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["G-12, G-14, "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
@@ -220,7 +220,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["P-302, P-304"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c13",
@@ -244,7 +244,7 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 124,
     isFeatured: true,
-    roomIDs: [""]
+    roomIDs: ["G-01,G-02"]
   }
 ];
 
