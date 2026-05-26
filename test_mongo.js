@@ -1,4 +1,8 @@
+import 'dotenv/config'; // Loads your .env file
 import { MongoClient } from "mongodb";
+
+// Access the environment variable
+const url = process.env.MONGO_URI;
 
 // 🔥 HOTELS DATA
 const hotels = [
@@ -25,7 +29,7 @@ const hotels = [
     rating: 4.7,
     numberOfReviews: 320,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["101, 102"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c02",
@@ -49,7 +53,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 210,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["201, 202"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c03",
@@ -73,7 +77,7 @@ const hotels = [
     rating: 4.3,
     numberOfReviews: 145,
     isFeatured: false,
-    roomIDs: [""],
+    roomIDs: [" C10, C11"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c04",
@@ -98,7 +102,7 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 410,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["304, 305"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c05",
@@ -123,7 +127,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: [" "],
+    roomIDs: [" 205,206"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
@@ -146,7 +150,7 @@ const hotels = [
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
-    roomIDs: [" "],
+    roomIDs: [" 101-S, 102-S"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
@@ -170,7 +174,7 @@ const hotels = [
     rating: 4.4,
     numberOfReviews: 128,
     isFeatured: false,
-    roomIDs: [" "],
+    roomIDs: [" 402, 403 "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
@@ -193,7 +197,7 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["G-12, G-14, "],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
@@ -216,7 +220,7 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: [""],
+    roomIDs: ["P-302, P-304"],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c13",
@@ -240,29 +244,36 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 124,
     isFeatured: true,
-    roomIDs: [""]
+    roomIDs: ["G-01,G-02"]
   }
 ];
+
+
 async function run() {
+  if (!url) {
+    console.error("❌ Error: MONGO_URI is not defined in your .env file!");
+    return;
+  }
+
   const client = new MongoClient(url);
 
   try {
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log("✅ Connected to MongoDB");
 
     const db = client.db("test");
     const collection = db.collection("hotels");
 
     await collection.deleteMany({});
-    console.log("Old data deleted");
+    console.log("🗑️  Old data deleted");
 
     await collection.insertMany(hotels);
-    console.log("New data inserted successfully");
+    console.log("🚀 New data inserted successfully");
   } catch (err) {
-    console.log("Error:", err);
+    console.error("❌ Error:", err);
   } finally {
     await client.close();
-    console.log("Connection closed");
+    console.log("🔒 Connection closed");
   }
 }
 
