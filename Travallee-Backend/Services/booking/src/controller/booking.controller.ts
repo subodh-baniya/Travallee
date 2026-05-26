@@ -26,6 +26,8 @@ const pub = createClient({
 
 pub.connect();
 
+
+
 const createBooking = asyncHandler(async (req: any, res: any) => {
   let validated: any;
   const userId = req.user.id;
@@ -87,7 +89,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
   const otp = Math.floor(1000 + Math.random() * 9000);
   await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
 
-  void bookingConfirmationQueue.add("bookingConfirmationOtp", {
+   bookingConfirmationQueue.add("bookingConfirmationOtp", {
     email: validated.userEmail,
     userName: validated.userName,
     bookingId: "",
@@ -182,6 +184,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     }),
   );
 
+
   try {
     await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
       bookingId: String(newBooking._id),
@@ -246,4 +249,42 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-export { createBooking, esewaSuccess, verifyBookingOtp };
+//admin
+const getGuestStatus = asyncHandler(async (req: any, res: any) => {
+  const { bookingId } = req.params;
+  let status: string = "UNKNOWN";
+  if (!bookingId) {
+    return apiError(res, 400, "Booking ID is required");
+  }
+  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+    return apiError(res, 400, "Invalid booking ID format");
+  }
+  const Booking = await bookingModel.findById(bookingId);
+  if (!Booking) {
+    return apiError(res, 404, "Booking not found");
+  }
+  if (Booking.checkIn > new Date()) {
+    status = "UPCOMING";
+
+  }
+  if(Booking.checkOut < new Date()){
+    status = "Checked Out";
+  }
+  if(Booking.checkIn <= new Date() && Booking.checkOut >= new Date()){
+    status = "CHECKED IN";
+  }
+
+  const responseData = {
+    status,
+    bookingName: Booking.Name,
+    BookingtotalNights: Booking.totalNights,
+    BookingCheckIn: Booking.checkIn,
+    BookingCheckOut: Booking.checkOut,
+    TotalMoneySpent: Booking.totalPrice,
+    BookingPayment: Booking.bookingPayment,
+  };
+
+  return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
+});
+
+export { createBooking, esewaSuccess, verifyBookingOtp ,getGuestStatus};

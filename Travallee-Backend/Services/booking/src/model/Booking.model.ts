@@ -6,12 +6,14 @@ const bookingSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserModel"
     },
-
+    Name:{
+        type:String,
+        required:true
+    },
     hotel: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "hotelModel"
     },
-
     room: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "roomModel"
@@ -69,6 +71,10 @@ const bookingSchema = new mongoose.Schema({
     },
     email:{
         type:String,
+        required:true
+    },
+    totalNights:{
+        type:Number,
         required:true
     },
 

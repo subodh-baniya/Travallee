@@ -21,7 +21,7 @@ const connection = {
     port: Number(process.env.REDIS_PORT)
 }
 // @ts-ignore this is for pub sub model
-const adminPub = new redis(connection);
+const adminData = new redis(connection);
 
 
 sub.subscribe("bookingConfirmed", (message) => {
@@ -31,21 +31,35 @@ sub.subscribe("bookingConfirmed", (message) => {
         io.to(`hotel_${hotelId}`).emit("bookingConfirmed", data);
     } catch (err) {
         console.error("Error parsing booking confirmation message:", err);
-    } 
+    }
 });
 
 
 
 const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
     const { hotelId } = req.params;
-
     if (!hotelId) {
         return apiError(res, 400, "Hotel ID is required");
+    }
+    try {
+        const cachedData = await adminData.get(`booking_history_${hotelId}`);
+        if (cachedData) {
+            return apiResponse(
+                res,
+                200,
+                true,
+                "Booking history retrieved successfully (from cache)",
+                JSON.parse(cachedData),
+            );
+        }
+    } catch (error) {
+        console.error("Error accessing Redis cache:", error);
     }
 
     try {
         const hotelServiceUrl = process.env.HOTEL_SERVICE_URL || "http://hotel:3001/api/v1/hotels";
         const response = await axios.get(`${hotelServiceUrl}/booking-history/${hotelId}`);
+        adminData.set(`booking_history_${hotelId}`, JSON.stringify(response.data?.data ?? response.data), "EX", 60 * 60 * 24 * 5);
 
         return apiResponse(
             res,
@@ -54,6 +68,8 @@ const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
             "Booking history retrieved successfully",
             response.data?.data ?? response.data,
         );
+
+
     } catch (error: any) {
         console.error("Error fetching booking history from Hotel service:", error?.response?.data || error?.message || error);
         return apiError(
@@ -65,8 +81,39 @@ const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
     }
 });
 
+const getGuestStatus = asyncHandler(async (req: any, res: any) => {
+    const { bookingId } = req.params;
+    if (!bookingId) {
+        return apiError(res, 400, "Booking ID is required");
+    }
 
+    try {
+        const bookingServiceUrl = process.env.BOOKING_SERVICE_URL;;
+        const response = await axios.get(`${bookingServiceUrl}/guest-status/${bookingId}`);
+        console.log("Guest status response from Booking service:", response.data.data ?? response.data);
+        return apiResponse(
+            res,
+            200,
+            true,
+            "Guest status retrieved successfully",
+            response.data?.data ?? response.data,
+        );
+    } catch (error: any) {
+        console.error("Error fetching guest status from Booking service:", error?.response?.data || error?.message || error);
+        return apiError(
+            res,
+            error?.response?.status || 500,
+            error?.response?.data?.message || "Unable to retrieve guest status",
+            error?.response?.data?.error || error?.message,
+        );
+    }
+});
+
+
+const displayGuest = asyncHandler(async (req: any, res: any) => {
+});
 
 export {
     getBookingHistoryByHotelId,
+    getGuestStatus
 }
