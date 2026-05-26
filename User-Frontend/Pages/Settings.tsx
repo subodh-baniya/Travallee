@@ -130,7 +130,6 @@ const SettingsPage: React.FC = () => {
 
     setCreatingRoom(true);
     try {
-      // include auth token if available (backend requires authenticate middleware)
       const token = auth?.user?.token;
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;

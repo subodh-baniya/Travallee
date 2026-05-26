@@ -1,9 +1,9 @@
 
-import {asyncHandler} from "../config/asynchandler.js"
+import { asyncHandler } from "../config/asynchandler.js"
 import { apiError, apiResponse } from "../config/response/api.response.js";
 import { hotelModel } from "../model/Hotel.model.js"
 import { roomModel } from "../model/Room.model.js"
-import {uploadToCloudinary} from "../config/Func/cloudinary.js"
+import { uploadToCloudinary } from "../config/Func/cloudinary.js"
 import type { HotelInput, RoomInput } from "../validator/hotel.validator.js";
 import {
   createHotelSchema,
@@ -11,15 +11,17 @@ import {
 } from "../validator/hotel.validator.js";
 import mongoose, { mongo } from "mongoose";
 import redis from "ioredis"
-import { Queue } from "bullmq"; 
+import { Queue } from "bullmq";
 import { createClient } from "redis";
 
-const connection ={
+const connection = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
 }
 //@ts-ignore
 const registerHotel = new redis(connection);
+//@ts-ignore
+const hoteldataCache = new redis(connection);
 
 const registerHotelQueue = new Queue("HotelRegistration", {
   connection
@@ -39,7 +41,7 @@ Promise.all([sub.connect(), pub.connect()]).then(() => {
 
 sub.subscribe("bookingHistory", async (message: string) => {
   const bookingData = JSON.parse(message);
-  const {hotelId} = bookingData;
+  const { hotelId } = bookingData;
   console.log("Received booking history update for hotelId:", hotelId, "with data:", bookingData);
   try {
     await hotelModel.findByIdAndUpdate(hotelId, {
@@ -140,15 +142,15 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     const hotelData: HotelInput = parsedData.data;
     registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 1);// Cache for 1 day
 
-  const emailData = {
-    userID,
-    hotelName: parsedData.data.hotelName,
-    location: parsedData.data.hotelLocation,
-    description: parsedData.data.hotelDescription,
-    contactEmail: email,
-    contactPhone: parsedData.data.contactNumber,
-  };
-    
+    const emailData = {
+      userID,
+      hotelName: parsedData.data.hotelName,
+      location: parsedData.data.hotelLocation,
+      description: parsedData.data.hotelDescription,
+      contactEmail: email,
+      contactPhone: parsedData.data.contactNumber,
+    };
+
     await registerHotelQueue.add("HotelRegistration", emailData);
 
     return apiResponse(
@@ -161,15 +163,15 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
 
 
 
-    
-   
 
 
-    
 
-   
 
-    
+
+
+
+
+
 
   } catch (error: any) {
     if (error.name === "ValidationError") {
@@ -367,7 +369,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 });
 
 const HotelData = asyncHandler(async (req: any, res: any) => {
-   console.log("HotelData endpoint hit with params:", req.user);
+  console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
 
   if (!hotelId) {
@@ -739,27 +741,35 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
 });
 
 const getHotelInfo = asyncHandler(async (req: any, res: any) => {
-  const userId = req.user?.id || req.user?._id;
-  console.log("User from req.user:", req.user);
-  console.log("Fetching hotel information for user ID:", userId);
-  console.log("User ID type:", typeof userId);
 
+  const userId = req.user?.id || req.user?._id;
   if (!userId) {
     return apiError(res, 401, "User not authenticated");
   }
 
+  try {
+    const cachedHotel = await hoteldataCache.get(`hotel_${userId}`);
+    if (cachedHotel) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Hotel information retrieved from cache",
+        JSON.parse(cachedHotel)
+      );
+    }
+  } catch (error) {
+    console.error("Error accessing hotel data cache:", error);
+  }
   const hotelData = await hotelModel.findOne({
     userID: new mongo.ObjectId(userId),
   });
-
-  console.log("Query result:", hotelData);
-
   if (!hotelData) {
-    // Try alternative query for debugging
     const allHotels = await hotelModel.find({});
-    console.log("All hotels in DB:", allHotels);
     return apiError(res, 404, "Hotel not found for this user");
   }
+
+  hoteldataCache.set(`hotel_${hotelData._id}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 3); // Cache for 3 days
 
   apiResponse(
     res,
@@ -930,22 +940,22 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
 });
 
 
-  export {
-    registerHotelRequest,
-    createroom,
-    // deleteRoom,
-    featuredHotels,
-    HotelData,
-    syncBookingHistory,
-    getBookingHistoryByHotelId,
-    RoomData,
-    searchHotels,
-    searchRooms,
-    getHotelInfo,
-    highReviewedHotels,
-    getAllHotels,
-    getAllResortHotels,
-    displayRooms,
-    getHotelByLocation,
-  };
+export {
+  registerHotelRequest,
+  createroom,
+  // deleteRoom,
+  featuredHotels,
+  HotelData,
+  syncBookingHistory,
+  getBookingHistoryByHotelId,
+  RoomData,
+  searchHotels,
+  searchRooms,
+  getHotelInfo,
+  highReviewedHotels,
+  getAllHotels,
+  getAllResortHotels,
+  displayRooms,
+  getHotelByLocation,
+};
 

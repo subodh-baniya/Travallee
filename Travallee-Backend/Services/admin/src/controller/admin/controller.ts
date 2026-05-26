@@ -65,6 +65,8 @@ const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
     }
 });
 
+
+
 export {
     getBookingHistoryByHotelId,
 }
