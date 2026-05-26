@@ -18,13 +18,7 @@ const roomSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
-    status:{
-      type:String,
-       enum: ["AVAILABLE", "OCCUPIED", "MAINTENANCE"],
-       default:"AVAILABLE"
-    },
-
+    
     suitetype: {
       type: String,
       required: true,
