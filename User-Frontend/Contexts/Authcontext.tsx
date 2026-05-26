@@ -4,6 +4,7 @@ import { useContext } from 'react';
 
 export type user={
   Name?:string,
+  name?:string,
   Username:string,
   id:string,
   role:string,
