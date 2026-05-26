@@ -251,15 +251,17 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
 
 //admin
 const getGuestStatus = asyncHandler(async (req: any, res: any) => {
-  const { bookingId } = req.params;
+  const { HotelId } = req.params;
+  console.log("Received request for guest status with hotelId:", HotelId);
   let status: string = "UNKNOWN";
-  if (!bookingId) {
-    return apiError(res, 400, "Booking ID is required");
+  let Booking: any = null;
+  if (!HotelId) {
+    return apiError(res, 400, "Hotel ID is required");
   }
-  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-    return apiError(res, 400, "Invalid booking ID format");
+  if (!mongoose.Types.ObjectId.isValid(HotelId)) {
+    return apiError(res, 400, "Invalid Hotel ID format");
   }
-  const Booking = await bookingModel.findById(bookingId);
+  Booking = await bookingModel.findOne({ hotel: HotelId})
   if (!Booking) {
     return apiError(res, 404, "Booking not found");
   }
@@ -282,6 +284,8 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
     BookingCheckOut: Booking.checkOut,
     TotalMoneySpent: Booking.totalPrice,
     BookingPayment: Booking.bookingPayment,
+    BookingPaymentMethod: Booking.paymentMethod,
+    bookingRoomNumber: Booking.roomNumber,
   };
 
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);

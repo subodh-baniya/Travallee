@@ -8,7 +8,7 @@ const router = Router();
 router.post("/esewa/success", esewaSuccess)
 router.post("/create-booking", authenticate , createBooking)
 router.post("/verify-otp", authenticate, verifyBookingOtp)
-router.get("/guest-status/:bookingId", getGuestStatus)
+router.get("/guest-status/:HotelId", getGuestStatus)
 
 
 

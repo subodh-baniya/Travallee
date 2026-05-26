@@ -82,14 +82,15 @@ const getBookingHistoryByHotelId = asyncHandler(async (req: any, res: any) => {
 });
 
 const getGuestStatus = asyncHandler(async (req: any, res: any) => {
-    const { bookingId } = req.params;
-    if (!bookingId) {
-        return apiError(res, 400, "Booking ID is required");
+    const { hotelId } = req.params;
+    console.log("Received request for guest status with hotelId:", hotelId);
+    if (!hotelId) {
+        return apiError(res, 400, "Hotel ID is required");
     }
 
     try {
         const bookingServiceUrl = process.env.BOOKING_SERVICE_URL;;
-        const response = await axios.get(`${bookingServiceUrl}/guest-status/${bookingId}`);
+        const response = await axios.get(`${bookingServiceUrl}/guest-status/${hotelId}`);
         console.log("Guest status response from Booking service:", response.data.data ?? response.data);
         return apiResponse(
             res,
