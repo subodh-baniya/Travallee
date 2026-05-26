@@ -17,74 +17,13 @@ interface Guest {
 }
 
 const ChatPage: React.FC = () => {
-  const [activeName, setActiveName] = useState("Shirshak Shrestha");
+  const [activeName, setActiveName] = useState("");
 
-  const [messages, setMessages] = useState<{
-    [key: string]: Message[];
-  }>({
-    "Shirshak Shrestha": [
-      {
-        from: "them",
-        text: "Is this room available for tonight?",
-        time: "10:30 AM",
-      },
-      {
-        from: "me",
-        text: "Yes, Room 305 is available.",
-        time: "10:32 AM",
-      },
-      {
-        from: "them",
-        text: "Great. Please reserve it for me.",
-        time: "10:33 AM",
-      },
-    ],
-  });
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
   const [msgInput, setMsgInput] = useState("");
 
-  const guests: Guest[] = [
-    {
-      name: "Shirshak Shrestha",
-      initials: "SS",
-      preview: "Is this room available?",
-      time: "2m",
-      unread: 4,
-      online: true,
-    },
-    {
-      name: "Bipin Ranabhat",
-      initials: "BR",
-      preview: "Thank you",
-      time: "1h",
-      unread: 0,
-      online: true,
-    },
-    {
-      name: "Kushal Khadka",
-      initials: "KK",
-      preview: "Can I extend my stay?",
-      time: "3h",
-      unread: 0,
-      online: false,
-    },
-    {
-      name: "Luffy Gear 5",
-      initials: "LG",
-      preview: "I'm on my way",
-      time: "Yesterday",
-      unread: 0,
-      online: true,
-    },
-    {
-      name: "Stuti Acharya",
-      initials: "SA",
-      preview: "Is restaurant open?",
-      time: "Yesterday",
-      unread: 0,
-      online: false,
-    },
-  ];
+  const guests: Guest[] = [];
 
   const openChat = (name: string) => {
     setActiveName(name);
@@ -99,6 +38,8 @@ const ChatPage: React.FC = () => {
 
   const sendMsg = () => {
     if (!msgInput.trim()) return;
+
+    if (!activeName) return;
 
     const d = new Date();
 
@@ -165,7 +106,12 @@ const ChatPage: React.FC = () => {
 
           <div className="overflow-y-auto flex-1">
 
-            {guests.map((guest) => (
+            {guests.length === 0 ? (
+              <div className="p-4 text-sm text-slate-500">
+                No guest conversations yet.
+              </div>
+            ) : (
+              guests.map((guest) => (
               <button
                 key={guest.name}
                 onClick={() => openChat(guest.name)}
@@ -241,7 +187,8 @@ const ChatPage: React.FC = () => {
                   </div>
                 </div>
               </button>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -274,11 +221,11 @@ const ChatPage: React.FC = () => {
 
             <div>
               <h2 className="text-sm font-semibold text-slate-800">
-                {activeName}
+                {activeName || "No conversation selected"}
               </h2>
 
-              <p className="text-xs text-emerald-600">
-                ● Online
+              <p className="text-xs text-slate-500">
+                {activeName ? "● Online" : "Select a guest to start chatting"}
               </p>
             </div>
           </div>
@@ -287,7 +234,12 @@ const ChatPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
 
-            {messages[activeName]?.map((msg, i) => (
+            {!activeName ? (
+              <div className="h-full flex items-center justify-center text-sm text-slate-500 text-center">
+                Choose a guest from the list to view or send messages.
+              </div>
+            ) : (
+              messages[activeName]?.map((msg, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 6 }}
@@ -329,7 +281,8 @@ const ChatPage: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* INPUT */}

@@ -136,10 +136,6 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 
   const checkInDate = new Date(bookingData.checkIn);
   const checkOutDate = new Date(bookingData.checkOut);
-  const stayDurationNights = Math.max(
-    1,
-    Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
-  );
 
   const newBooking = new bookingModel({
     user: userId,
@@ -175,7 +171,6 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
       bookingId: newBooking._id,
       checkInDate: bookingData.checkIn,
       checkOutDate: bookingData.checkOut,
-      stayDurationNights,
       amount: bookingData.totalPrice,
       paymentMethod: bookingData.paymentMethod,
       bookingPayment,
@@ -201,7 +196,6 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
       status,
       guests: bookingData.guests,
       email: req.user.email,
-      stayDurationNights,
     });
   } catch (error: any) {
     console.error("Failed to sync booking history with Hotel service:", error?.message || error);
