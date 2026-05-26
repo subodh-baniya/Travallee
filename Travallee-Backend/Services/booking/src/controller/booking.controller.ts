@@ -249,6 +249,50 @@ const esewaSuccess = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+
+const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
+  const userId = req.params.userId;
+  try {
+    const bookings = await bookingModel.find({ user: userId })
+    const response ={
+      bookings: bookings.map((booking) => ({
+        bookingId: booking._id,
+        hotelName: booking.hotelName,
+        roomNumber: booking.roomNumber,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+      }))
+    };
+    return apiResponse(res, 200, true, "Booking history retrieved successfully", response);
+  } catch (error: any) {
+    console.error("Error retrieving booking history:", error);
+    return apiError(res, 500, "Unable to retrieve booking history");
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //admin
 const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   const { HotelId } = req.params;
@@ -291,4 +335,4 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
 
-export { createBooking, esewaSuccess, verifyBookingOtp ,getGuestStatus};
+export { createBooking, esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};

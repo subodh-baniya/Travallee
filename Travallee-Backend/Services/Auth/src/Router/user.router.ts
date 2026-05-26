@@ -7,7 +7,6 @@ import {
   updateUserProfile,
   getUserProfile,
   verifyOTP,
-  updateUserRole,
 } from "../Controllers/user.controller.js";
 
 import passport from "passport";
@@ -36,7 +35,6 @@ router.get("/profile", authenticate, getUserProfile);
 router.post("/update-profile", authenticate, upload.single("profileImage"), updateUserProfile);
 router.post("/verify-otp", verifyOTP);
 router.get("/user-profile", authenticate, getUserProfile);
-router.patch("/internal/update-role", updateUserRole);
 
 
 
