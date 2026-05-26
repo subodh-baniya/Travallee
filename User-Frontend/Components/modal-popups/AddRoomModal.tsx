@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Toast } from "./Toast";
 
 type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 type ViewType =
@@ -134,6 +135,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof AddRoomFormData, string>>>({});
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const { toast, showToast, clearToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const update = (field: keyof AddRoomFormData, value: unknown) => {
@@ -193,7 +195,6 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
       if (!form.pricePerNight) errs.pricePerNight = "Price per night is required";
       if (!form.capacity) errs.capacity = "Capacity is required";
       if (!form.maxOccupancy) errs.maxOccupancy = "Max occupancy is required";
-      if (!form.basePrice) errs.basePrice = "Base price is required";
       if (!form.cancellationPolicy) errs.cancellationPolicy = "Cancellation policy is required";
     }
     if (step === 2) {
@@ -201,8 +202,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
     }
     if (step === 3) {
       if (form.roomImages.length === 0) {
-        // We don't have a specific error field for images in the UI, but let's add one or alert
-        alert("Please upload at least one room image before submitting.");
+        showToast('error', "Please upload at least one room image before submitting.");
         return false;
       }
     }
@@ -241,7 +241,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
 
       formData.append("viewType", form.viewType);
 
-      formData.append("basePrice", String(form.basePrice));
+      formData.append("basePrice", String(form.pricePerNight));
       formData.append("pricePerNight", String(form.pricePerNight));
       if (form.weekendPrice && Number(form.weekendPrice) > 0) {
         formData.append("weekendPrice", String(form.weekendPrice));
@@ -272,16 +272,21 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
       });
 
       await onSubmit(formData);
+      showToast('success', "Room added successfully!");
 
-      setForm(initialForm);
-      setImagePreviews([]);
-      setStep(0);
-      onClose();
+      setTimeout(() => {
+        setForm(initialForm);
+        setImagePreviews([]);
+        setStep(0);
+        clearToast();
+        onClose();
+      }, 1500);
+
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message;
       const validationErrors = error.response?.data?.errors || error.response?.data?.data || [];
       console.error("Backend validation error:", error.response?.data);
-      alert(`Failed to save room: ${errorMessage}\n${JSON.stringify(validationErrors, null, 2)}`);
+      showToast('error', `Failed to add room: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }
@@ -315,9 +320,12 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative"
             style={{ maxHeight: "90vh" }}
           >
+            {/* TOAST NOTIFICATION */}
+            <Toast toast={toast} />
+
             {/* HEADER */}
             <div className="px-6 pt-6 pb-4 border-b border-slate-100">
               <div className="flex justify-between items-start">
@@ -552,22 +560,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1.5">Base Price (Rs.) *</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">Rs.</span>
-                          <input
-                            type="number"
-                            value={form.basePrice}
-                            onChange={e => update("basePrice", e.target.value === "" ? "" : Number(e.target.value))}
-                            placeholder="0"
-                            min={0}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.basePrice ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                              }`}
-                          />
-                        </div>
-                        {errors.basePrice && <p className="text-xs text-rose-500 mt-1">{errors.basePrice}</p>}
-                      </div>
+
 
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1.5">Cancellation Policy *</label>
