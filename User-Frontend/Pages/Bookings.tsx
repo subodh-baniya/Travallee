@@ -338,25 +338,25 @@ const Bookings = () => {
 
       {/* SUMMARY */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white border-l-4 border-rose-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border-l-4 border-rose-500 border rounded-xl p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-slate-500">Revenue</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">Rs. {totalRevenue.toLocaleString("en-US")}</p>
           <p className="text-xs text-slate-500 mt-1">Total booking value</p>
         </div>
 
-        <div className="bg-white border-l-4 border-blue-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border-l-4 border-blue-500 border rounded-xl p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-slate-500">Rooms Occupied</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{occupiedRooms} / {bookings.length}</p>
           <p className="text-xs text-slate-500 mt-1">Unique rooms currently booked</p>
         </div>
 
-        <div className="bg-white border-l-4 border-amber-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border-l-4 border-amber-500 border rounded-xl p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-slate-500">Average Rating</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">0 / 5</p>
           <p className="text-xs text-slate-500 mt-1">Waiting for review data</p>
         </div>
 
-        <div className="bg-white border-l-4 border-emerald-500 border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border-l-4 border-emerald-500 border rounded-xl p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-slate-500">Today's Check-ins</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{todaysCheckIns}</p>
           <p className="text-xs text-slate-500 mt-1">Bookings starting today</p>
