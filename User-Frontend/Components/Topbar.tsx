@@ -34,7 +34,10 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   if (!auth) return null;
 
   const { user, logout, hotelId } = auth;
-  const displayName = user?.Name || user?.Username || "User";
+  const displayName = user?.Name || user?.Username || user?.name||"User";
+
+  // At the top of the component:
+console.log("Topbar render:", { user, displayName });
 
   const syncUnreadNotifications = (items: PanelNotification[]) => {
     try {
@@ -192,8 +195,8 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
         </motion.div>
 
         <motion.button
-          onClick={async () => {
-             await logout();
+          onClick={() => {
+             logout();
             window.location.href="/initialhome/herosection"
               }}
           whileHover={{ y: -1 }}

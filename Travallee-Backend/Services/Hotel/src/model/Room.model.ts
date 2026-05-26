@@ -19,7 +19,7 @@ const roomSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    
     suitetype: {
       type: String,
       required: true,

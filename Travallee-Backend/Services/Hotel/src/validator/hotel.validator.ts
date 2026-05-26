@@ -38,6 +38,7 @@ export const createRoomSchema = z.object({
   roomType: z.string().min(1, 'Room type is required'),
   suitetype: z.string().min(1, 'Suite type is required'),
   roomDescription: z.string().min(1, 'Room description is required'),
+  status: z.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE"]).default("AVAILABLE"),
   
   // Capacity & Physical Details
   maxOccupancy: z.number().min(1, 'Max occupancy must be at least 1'),
