@@ -1,4 +1,3 @@
-// src/pages/Hotels/RegisterHotels.jsx
 const hotels = [
   { emoji: "🏨", name: "Grand Vista Hotel", stars: "4 star", rooms: "120 rooms", owner: "Rohan Sharma", location: "Kathmandu", date: "May 25, 2026", status: "pending"  },
   { emoji: "🏩", name: "Sunrise Inn",        stars: "3 star", rooms: "45 rooms",  owner: "Priya Thapa",  location: "Pokhara",   date: "May 24, 2026", status: "pending"  },
