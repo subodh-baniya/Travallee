@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toast } from "./Toast";
-import { useToast } from "./useToast";
+import { useToast } from "../../Hooks/useToast";
 
 type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 type ViewType =
@@ -287,7 +287,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
       const errorMessage = error.response?.data?.message || error.message;
       const validationErrors = error.response?.data?.errors || error.response?.data?.data || [];
       console.error("Backend validation error:", error.response?.data);
-      showToast('error', `Failed to add room: ${errorMessage}`);
+      showToast('error', `Failed to add room: ${errorMessage}, ${validationErrors}`);
     } finally {
       setSubmitting(false);
     }

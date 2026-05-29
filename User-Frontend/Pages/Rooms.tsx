@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRooms, type Room } from "../Hooks/useRooms";
-import { AddRoomModal } from "../components/modal-popups/AddRoomModal"; // adjust path as needed
+import { AddRoomModal } from "../components/modal-popups/AddRoomModal"; 
 import { createRoom } from "../Services/hotel.api";
 import { useAuth } from "../Contexts/Authcontext";
+import {RoomDetailModal} from "../Components/modal-popups/RoomDetailModal"
 
 type StatusFilter = "ALL" | "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 type TypeFilter   = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
@@ -22,6 +23,8 @@ const Rooms = () => {
   const [typeFilter, setTypeFilter]     = useState<TypeFilter>("ALL");
   const [search, setSearch]             = useState("");
   const [showAddRoom, setShowAddRoom]   = useState(false);
+
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const filtered = rooms.filter((room: Room) =>
     (statusFilter === "ALL" || room.status === statusFilter) &&
@@ -133,6 +136,7 @@ const Rooms = () => {
                   key={room._id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  onClick={() => setSelectedRoom(room)}
                   className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-1 transition"
                 >
                   {/* IMAGE */}
@@ -225,6 +229,11 @@ const Rooms = () => {
           )}
         </>
       )}
+
+      <RoomDetailModal
+        room={selectedRoom}
+        isOpen={!!selectedRoom}
+         onClose={() => setSelectedRoom(null)}/>
 
       {/* ADD ROOM MODAL */}
       <AddRoomModal
