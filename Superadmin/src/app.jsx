@@ -4,26 +4,40 @@ import { globalCSS } from "./theme";
 import Sidebar        from "./components/Sidebar";
 import Topbar         from "./components/Topbar";
 
+// Hotels
 import RegisterHotels from "./pages/Hotels/RegisterHotels";
 import Bookings       from "./pages/Hotels/Bookings";
 import HotelStatus    from "./pages/Hotels/HotelStatus";
-import AppPage        from "./pages/AppPage";
+
+// App
+import Banners        from "./pages/App/Banners";
+import RedeemCode     from "./pages/App/RedeemCode";
+import AppUsers       from "./pages/App/AppUsers";
+import BlockUsers     from "./pages/App/BlockUsers";
+
+// Other
 import Analysis       from "./pages/Analysis";
 
 export default function App() {
-  const [page,     setPage]     = useState("register");
+  const [page,     setPage]     = useState("banners");
   const [mini,     setMini]     = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
-  // keep hotels dropdown state globally so Sidebar can read it
-  window.__hotelsOpen = ["register","bookings","status"].includes(page);
+  const appPages    = ["banners","redeem","users","block"];
+  const hotelPages  = ["register","bookings","status"];
+
+  window.__appOpen   = appPages.includes(page);
+  window.__hotelsOpen = hotelPages.includes(page);
 
   const handleSetPage = (p) => {
-    if (p === "hotels-toggle") {
+    if (p === "app-toggle") {
+      window.__appOpen = !window.__appOpen;
+      setPage((prev) => prev + " "); // force re-render trick
+    } else if (p === "hotels-toggle") {
       window.__hotelsOpen = !window.__hotelsOpen;
-      setPage((prev) => prev); // force re-render
+      setPage((prev) => prev + " ");
     } else {
-      setPage(p);
+      setPage(p.trim());
     }
   };
 
@@ -33,13 +47,19 @@ export default function App() {
   };
 
   const renderPage = () => {
-    switch (page) {
-      case "register": return <RegisterHotels />;
-      case "bookings": return <Bookings />;
-      case "status":   return <HotelStatus />;
-      case "app":      return <AppPage />;
-      case "analysis": return <Analysis />;
-      default:         return <RegisterHotels />;
+    switch (page.trim()) {
+      // App
+      case "banners":   return <Banners />;
+      case "redeem":    return <RedeemCode />;
+      case "users":     return <AppUsers />;
+      case "block":     return <BlockUsers />;
+      // Hotels
+      case "register":  return <RegisterHotels />;
+      case "bookings":  return <Bookings />;
+      case "status":    return <HotelStatus />;
+      // Other
+      case "analysis":  return <Analysis />;
+      default:          return <Banners />;
     }
   };
 
@@ -48,14 +68,14 @@ export default function App() {
       <style>{globalCSS}</style>
       <div className="dash-wrap">
         <Sidebar
-          page={page}
+          page={page.trim()}
           setPage={handleSetPage}
           mini={mini}
           setMini={setMini}
         />
         <div className="main">
           <Topbar
-            page={page}
+            page={page.trim()}
             mini={mini}
             setMini={setMini}
             onSave={handleSave}
