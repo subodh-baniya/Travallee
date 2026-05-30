@@ -31,7 +31,7 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
 
   const handleSubClick = (id) => {
     setPage(id);
-    setMini(true);
+    setMini(true); // collapse on item click
   };
 
   const handleTopClick = (item) => {
@@ -39,13 +39,13 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
       if (item.id === "app") {
         setAppOpen((o) => !o);
         setHotelsOpen(false);
-      } else if (item.id === "hotels") {
+      } else {
         setHotelsOpen((o) => !o);
         setAppOpen(false);
       }
     } else {
       setPage(item.id);
-      setMini(true);
+      setMini(true); // collapse on item click
     }
   };
 
@@ -56,6 +56,19 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
 
   return (
     <div className={`sidebar${mini ? " mini" : ""}`}>
+
+      {/* Expand button — only visible when mini */}
+      {mini && (
+        <button
+          className="sidebar-expand-btn"
+          onClick={() => setMini(false)}
+          title="Expand sidebar"
+        >
+          ›
+        </button>
+      )}
+
+      {/* Logo */}
       <div className="s-logo">
         <div className="s-logo-icon">
           <i className="ti ti-shield-lock" aria-hidden="true" />
@@ -66,6 +79,7 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
         </div>
       </div>
 
+      {/* Nav */}
       <nav className="s-nav">
         {NAV.map((item, i) => {
           if (item.section) return <div className="s-section" key={i}>{item.section}</div>;
@@ -77,13 +91,17 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
               <div
                 className={`s-item${isActive(item) ? " active" : ""}`}
                 onClick={() => handleTopClick(item)}
+                title={mini ? item.label : ""}
               >
                 <div className="s-icon">
                   <i className={`ti ${item.icon}`} aria-hidden="true" />
                 </div>
                 <span className="s-label">{item.label}</span>
                 {item.children && (
-                  <i className={`ti ti-chevron-down s-chevron${open ? " open" : ""}`} aria-hidden="true" />
+                  <i
+                    className={`ti ti-chevron-down s-chevron${open ? " open" : ""}`}
+                    aria-hidden="true"
+                  />
                 )}
               </div>
 
@@ -106,6 +124,7 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
         })}
       </nav>
 
+      {/* Footer */}
       <div className="s-footer">
         <div className="s-user">
           <div className="s-av">SA</div>
