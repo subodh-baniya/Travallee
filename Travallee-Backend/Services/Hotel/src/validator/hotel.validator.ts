@@ -53,6 +53,7 @@ export const createRoomSchema = z.object({
   pricePerNight: z.number().positive('Price per night must be greater than 0'),
   weekendPrice: z.number().positive('Weekend price must be greater than 0').optional(),
   taxRate: z.number().min(0).max(100).default(0),
+  discount: z.number().min(0).max(100).default(0),
   
   // Policies
   minStayNights: z.number().min(1).default(1),

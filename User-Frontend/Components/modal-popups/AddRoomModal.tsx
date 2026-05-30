@@ -4,46 +4,30 @@ import { Toast } from "./Toast";
 import { useToast } from "../../Hooks/useToast";
 
 type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
-type ViewType =
-  | "city"
-  | "garden"
-  | "beach"
-  | "mountain"
-  | "street"
-  | "pool"
-  | "none";
+type RoomType = "standard" | "deluxe" | "suite";
+type ViewType = "city" | "garden" | "beach" | "mountain" | "street" | "pool" | "none";
 
 interface AddRoomFormData {
   roomNumber: string;
-  roomType: "STANDARD" | "DELUXE" | "SUITE";
+  roomType: RoomType;
   status: RoomStatus;
   suitetype: string;
-
   roomDescription: string;
-
   maxOccupancy: number | "";
   capacity: number | "";
   roomSize: number | "";
   bedType: string;
   floorNumber: number | "";
-
   viewType: ViewType;
-
   basePrice: number | "";
   pricePerNight: number | "";
   weekendPrice: number | "";
-
-  taxRate: number;
-
+  taxRate: number | "";
   minStayNights: number;
-
   cancellationPolicy: string;
-
   amenities: string[];
   specialFeatures: string[];
-
   roomImages: File[];
-
   isAccessible: boolean;
   hasBathtub: boolean;
   hasShower: boolean;
@@ -51,12 +35,8 @@ interface AddRoomFormData {
   hasAC: boolean;
   hasHeating: boolean;
   hasWifi: boolean;
-
   isActive: boolean;
   isFeatured: boolean;
-
-  rating: number;
-  numberOfReviews: number;
   discount: number | "";
 }
 
@@ -76,36 +56,25 @@ const SUITE_TYPES = ["Junior Suite", "Executive Suite", "Presidential Suite", "P
 
 const initialForm: AddRoomFormData = {
   roomNumber: "",
-  roomType: "STANDARD",
+  roomType: "standard",
   suitetype: "N/A",
-
   status: "AVAILABLE",
-
   roomDescription: "",
-
   maxOccupancy: "",
   capacity: "",
   roomSize: "",
-
   bedType: "",
   floorNumber: "",
-
   viewType: "none",
-
   basePrice: "",
   pricePerNight: "",
   weekendPrice: "",
-
   taxRate: 0,
   minStayNights: 1,
-
   cancellationPolicy: "",
-
   amenities: [],
   specialFeatures: [],
-
   roomImages: [],
-
   isAccessible: false,
   hasBathtub: false,
   hasShower: false,
@@ -113,22 +82,42 @@ const initialForm: AddRoomFormData = {
   hasAC: true,
   hasHeating: false,
   hasWifi: true,
-
   isActive: true,
   isFeatured: false,
-
-  rating: 0,
-  numberOfReviews: 0,
   discount: "",
 };
 
-const steps = ["Basic Info", "Pricing & Capacity", "Amenities", "Images"];
+const steps = ["Basic Info", "Pricing & Policy", "Amenities & Facilities", "Images & Settings"];
 
 const statusStyles: Record<RoomStatus, string> = {
   AVAILABLE: "bg-emerald-50 border-emerald-300 text-emerald-700",
-  OCCUPIED: "bg-blue-50 border-blue-300 text-blue-700",
+  OCCUPIED:  "bg-blue-50 border-blue-300 text-blue-700",
   MAINTENANCE: "bg-rose-50 border-rose-300 text-rose-700",
 };
+
+// ─── Toggle Switch ─────────────────────────────────────────────────────────────
+const Toggle = ({
+  label, checked, onChange, description,
+}: { label: string; checked: boolean; onChange: (v: boolean) => void; description?: string }) => (
+  <label className="flex items-center justify-between gap-3 cursor-pointer group">
+    <div>
+      <p className="text-xs font-medium text-slate-700 group-hover:text-slate-900 transition">{label}</p>
+      {description && <p className="text-[11px] text-slate-400 mt-0.5">{description}</p>}
+    </div>
+    <div
+      onClick={() => onChange(!checked)}
+      className={`relative w-9 h-5 rounded-full transition-colors duration-200 flex-shrink-0 ${
+        checked ? "bg-blue-500" : "bg-slate-200"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-4" : "translate-x-0"
+        }`}
+      />
+    </div>
+  </label>
+);
 
 export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) => {
   const [form, setForm] = useState<AddRoomFormData>(initialForm);
@@ -136,6 +125,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof AddRoomFormData, string>>>({});
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [featureInput, setFeatureInput] = useState(""); // ✅ controlled input for special features
   const { toast, showToast, clearToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,28 +143,28 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
     }));
   };
 
+  // ✅ controlled add for special features
+  const addSpecialFeature = () => {
+    const val = featureInput.trim();
+    if (val && !form.specialFeatures.includes(val)) {
+      update("specialFeatures", [...form.specialFeatures, val]);
+      setFeatureInput("");
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
+    if (!files.length) return;
     const newFiles = files.filter(
-      f => !form.roomImages.some(existing => existing.name === f.name && existing.size === f.size)
+      f => !form.roomImages.some(ex => ex.name === f.name && ex.size === f.size)
     );
-
-    if (newFiles.length === 0) return;
-
-    // Generate preview URLs
+    if (!newFiles.length) return;
     newFiles.forEach(file => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImagePreviews(prev => [...prev, ev.target?.result as string]);
-      };
+      reader.onload = ev => setImagePreviews(prev => [...prev, ev.target?.result as string]);
       reader.readAsDataURL(file);
     });
-
     update("roomImages", [...form.roomImages, ...newFiles]);
-
-    // Reset input so same file can be re-selected if removed
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -186,24 +176,26 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
   const validateStep = () => {
     const errs: typeof errors = {};
     if (step === 0) {
-      if (!form.roomNumber.trim()) errs.roomNumber = "Room number is required";
-      if (!form.roomType) errs.roomType = "Room type is required";
-      if (!form.floorNumber && form.floorNumber !== 0) errs.floorNumber = "Floor number is required";
-      if (!form.roomDescription.trim()) errs.roomDescription = "Room description is required";
-      if (!form.bedType) errs.bedType = "Bed type is required";
+      if (!form.roomNumber.trim())       errs.roomNumber      = "Room number is required";
+      if (!form.roomType)                errs.roomType        = "Room type is required";
+      if (form.floorNumber === "")       errs.floorNumber     = "Floor number is required";
+      if (!form.roomDescription.trim())  errs.roomDescription = "Description is required";
+      if (!form.bedType)                 errs.bedType         = "Bed type is required";
+      if (form.roomType === "suite" && (!form.suitetype || form.suitetype === "N/A"))
+        errs.suitetype = "Please select a suite type";
     }
     if (step === 1) {
-      if (!form.pricePerNight) errs.pricePerNight = "Price per night is required";
-      if (!form.capacity) errs.capacity = "Capacity is required";
-      if (!form.maxOccupancy) errs.maxOccupancy = "Max occupancy is required";
-      if (!form.cancellationPolicy) errs.cancellationPolicy = "Cancellation policy is required";
+      if (!form.pricePerNight)         errs.pricePerNight      = "Price per night is required";
+      if (!form.capacity)              errs.capacity           = "Capacity is required";
+      if (!form.maxOccupancy)          errs.maxOccupancy       = "Max occupancy is required";
+      if (!form.cancellationPolicy)    errs.cancellationPolicy = "Cancellation policy is required";
     }
     if (step === 2) {
       if (form.amenities.length === 0) errs.amenities = "Select at least one amenity";
     }
     if (step === 3) {
       if (form.roomImages.length === 0) {
-        showToast('error', "Please upload at least one room image before submitting.");
+        showToast("error", "Please upload at least one room image before submitting.");
         return false;
       }
     }
@@ -211,99 +203,78 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
     return Object.keys(errs).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep()) setStep(s => Math.min(steps.length - 1, s + 1));
-  };
-
+  const handleNext = () => { if (validateStep()) setStep(s => Math.min(steps.length - 1, s + 1)); };
   const handleBack = () => setStep(s => Math.max(0, s - 1));
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
     setSubmitting(true);
-
     try {
-      const formData = new FormData();
+      const fd = new FormData();
+      fd.append("roomNumber",form.roomNumber);
+      fd.append("roomType",form.roomType);
+      fd.append("status", form.status);
+      fd.append("suitetype",form.suitetype);
+      fd.append("roomDescription",form.roomDescription);
+      fd.append("maxOccupancy",String(form.maxOccupancy));
+      fd.append("capacity",String(form.capacity));
+      if (form.roomSize && Number(form.roomSize) > 0)
+        fd.append("roomSize",String(form.roomSize));
+      fd.append("bedType",form.bedType);
+      fd.append("floorNumber",String(form.floorNumber));
+      fd.append("viewType",form.viewType);
+      fd.append("basePrice",String(form.pricePerNight));
+      fd.append("pricePerNight",String(form.pricePerNight));
+      if (form.weekendPrice && Number(form.weekendPrice) > 0)
+        fd.append("weekendPrice",String(form.weekendPrice));
+      fd.append("taxRate",String(form.taxRate || 0));
+      fd.append("minStayNights",String(form.minStayNights));
+      fd.append("cancellationPolicy",form.cancellationPolicy);
+      fd.append("discount",String(form.discount || 0));
 
-      formData.append("roomNumber", form.roomNumber);
-      formData.append("roomType", form.roomType);
-      formData.append("status", form.status);
-      formData.append("suitetype", form.suitetype);
+      form.amenities.forEach(a => fd.append("amenities", a));
 
-      formData.append("roomDescription", form.roomDescription);
+      form.specialFeatures.forEach(f => fd.append("specialFeatures", f));
 
-      formData.append("maxOccupancy", String(form.maxOccupancy));
-      formData.append("capacity", String(form.capacity));
-      if (form.roomSize && Number(form.roomSize) > 0) {
-        formData.append("roomSize", String(form.roomSize));
-      }
+      fd.append("isAccessible",String(form.isAccessible));
+      fd.append("hasBathtub",String(form.hasBathtub));
+      fd.append("hasShower",String(form.hasShower));
+      fd.append("hasBalcony",String(form.hasBalcony));
+      fd.append("hasAC",String(form.hasAC));
+      fd.append("hasHeating",String(form.hasHeating));
+      fd.append("hasWifi",String(form.hasWifi));
 
-      formData.append("bedType", form.bedType);
-      formData.append("floorNumber", String(form.floorNumber));
+      form.roomImages.forEach(file => fd.append("roomImages", file));
 
-      formData.append("viewType", form.viewType);
-
-      formData.append("basePrice", String(form.pricePerNight));
-      formData.append("pricePerNight", String(form.pricePerNight));
-      if (form.weekendPrice && Number(form.weekendPrice) > 0) {
-        formData.append("weekendPrice", String(form.weekendPrice));
-      }
-
-      formData.append("taxRate", String(form.taxRate));
-      formData.append("minStayNights", String(form.minStayNights));
-
-      formData.append("cancellationPolicy", form.cancellationPolicy);
-
-      formData.append("amenities", form.amenities.join(","));
-      if (form.specialFeatures.length > 0) {
-        formData.append("specialFeatures", form.specialFeatures.join(","));
-      }
-
-      formData.append("isAccessible", String(form.isAccessible));
-      formData.append("hasBathtub", String(form.hasBathtub));
-      formData.append("hasShower", String(form.hasShower));
-      formData.append("hasBalcony", String(form.hasBalcony));
-      formData.append("hasAC", String(form.hasAC));
-      formData.append("hasHeating", String(form.hasHeating));
-      formData.append("hasWifi", String(form.hasWifi));
-
-      formData.append("discount", String(form.discount || 0));
-
-      form.roomImages.forEach(file => {
-        formData.append("roomImages", file);
-      });
-
-      await onSubmit(formData);
-      showToast('success', "Room added successfully!");
-
-      setTimeout(() => {
-        setForm(initialForm);
-        setImagePreviews([]);
-        setStep(0);
-        clearToast();
-        onClose();
-      }, 1500);
-
+      await onSubmit(fd);
+      showToast("success", "Room added successfully!");
+      setTimeout(() => { resetAndClose(); clearToast(); }, 1500);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message;
-      const validationErrors = error.response?.data?.errors || error.response?.data?.data || [];
-      console.error("Backend validation error:", error.response?.data);
-      showToast('error', `Failed to add room: ${errorMessage}, ${validationErrors}`);
+      const msg = error.response?.data?.message || error.message;
+      const errs = error.response?.data?.errors || error.response?.data?.data || [];
+      showToast("error", `Failed to add room: ${msg}${errs.length ? ", " + errs : ""}`);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resetAndClose = () => {
+    setForm(initialForm);
+    setImagePreviews([]);
+    setFeatureInput(""); 
+    setStep(0);
+    setErrors({});
+    onClose();
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
-  const resetAndClose = () => {
-    setForm(initialForm);
-    setImagePreviews([]);
-    setStep(0);
-    setErrors({});
-    onClose();
-  };
+  const inputCls = (err?: string) =>
+    `w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${
+      err ? "border-rose-300 bg-rose-50" : "border-slate-200"
+    }`;
 
   return (
     <AnimatePresence>
@@ -314,7 +285,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={handleOverlayClick}
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(4px)" }}
+          style={{ backgroundColor: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -324,7 +295,6 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative"
             style={{ maxHeight: "90vh" }}
           >
-            {/* TOAST NOTIFICATION */}
             <Toast toast={toast} />
 
             {/* HEADER */}
@@ -332,7 +302,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-base font-semibold text-slate-900">Add New Room</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">Step {step + 1} of {steps.length} — {steps[step]}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Step {step + 1} of {steps.length} — {steps[step]}
+                  </p>
                 </div>
                 <button
                   onClick={resetAndClose}
@@ -343,15 +315,10 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                   </svg>
                 </button>
               </div>
-
-              {/* STEPPER */}
               <div className="flex items-center gap-1 mt-4">
                 {steps.map((s, i) => (
                   <div key={s} className="flex items-center flex-1">
-                    <div
-                      className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-blue-500" : "bg-slate-100"
-                        }`}
-                    />
+                    <div className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-blue-500" : "bg-slate-100"}`} />
                   </div>
                 ))}
               </div>
@@ -368,7 +335,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                   transition={{ duration: 0.18 }}
                 >
 
-                  {/* STEP 0 — Basic Info */}
+                  {/*Basic Info*/}
                   {step === 0 && (
                     <div className="space-y-4">
                       <div>
@@ -378,8 +345,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                           value={form.roomNumber}
                           onChange={e => update("roomNumber", e.target.value)}
                           placeholder="e.g. 101, A-202"
-                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.roomNumber ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                            }`}
+                          className={inputCls(errors.roomNumber)}
                         />
                         {errors.roomNumber && <p className="text-xs text-rose-500 mt-1">{errors.roomNumber}</p>}
                       </div>
@@ -392,9 +358,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                             onChange={e => update("roomType", e.target.value as RoomType)}
                             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
                           >
-                            <option value="STANDARD">Standard</option>
-                            <option value="DELUXE">Deluxe</option>
-                            <option value="SUITE">Suite</option>
+                            <option value="standard">Standard</option>
+                            <option value="deluxe">Deluxe</option>
+                            <option value="suite">Suite</option>
                           </select>
                         </div>
                         <div>
@@ -405,23 +371,26 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                             onChange={e => update("floorNumber", e.target.value === "" ? "" : Number(e.target.value))}
                             placeholder="e.g. 1"
                             min={0}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.floorNumber ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                              }`}
+                            className={inputCls(errors.floorNumber)}
                           />
                           {errors.floorNumber && <p className="text-xs text-rose-500 mt-1">{errors.floorNumber}</p>}
                         </div>
                       </div>
 
-                      {form.roomType === "SUITE" && (
+                      {form.roomType === "suite" && (
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1.5">Suite Type</label>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">Suite Type *</label>
                           <select
                             value={form.suitetype}
                             onChange={e => update("suitetype", e.target.value)}
-                            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
+                            className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 bg-white ${errors.suitetype ? "border-rose-300 bg-rose-50" : "border-slate-200"}`}
                           >
-                            {SUITE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            <option value="N/A">Select suite type</option>
+                            {SUITE_TYPES.filter(t => t !== "N/A").map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
                           </select>
+                          {errors.suitetype && <p className="text-xs text-rose-500 mt-1">{errors.suitetype}</p>}
                         </div>
                       )}
 
@@ -433,10 +402,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                               key={s}
                               type="button"
                               onClick={() => update("status", s)}
-                              className={`flex-1 py-2 text-xs rounded-xl border transition font-medium ${form.status === s
-                                  ? statusStyles[s]
-                                  : "border-slate-200 text-slate-400 hover:bg-slate-50"
-                                }`}
+                              className={`flex-1 py-2 text-xs rounded-xl border transition font-medium ${
+                                form.status === s ? statusStyles[s] : "border-slate-200 text-slate-400 hover:bg-slate-50"
+                              }`}
                             >
                               {s}
                             </button>
@@ -451,8 +419,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                           onChange={e => update("roomDescription", e.target.value)}
                           placeholder="Brief description of the room..."
                           rows={3}
-                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 resize-none ${errors.roomDescription ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                            }`}
+                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 resize-none ${
+                            errors.roomDescription ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                          }`}
                         />
                         {errors.roomDescription && <p className="text-xs text-rose-500 mt-1">{errors.roomDescription}</p>}
                       </div>
@@ -463,8 +432,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                           <select
                             value={form.bedType}
                             onChange={e => update("bedType", e.target.value)}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 bg-white ${errors.bedType ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                              }`}
+                            className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 bg-white ${
+                              errors.bedType ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                            }`}
                           >
                             <option value="">Select bed type</option>
                             <option value="Single">Single</option>
@@ -480,7 +450,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                           <label className="block text-xs font-medium text-slate-600 mb-1.5">View Type</label>
                           <select
                             value={form.viewType}
-                            onChange={e => update("viewType", e.target.value)}
+                            onChange={e => update("viewType", e.target.value as ViewType)}
                             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
                           >
                             <option value="none">None</option>
@@ -493,10 +463,25 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                           </select>
                         </div>
                       </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                          Room Size (sq ft)
+                          <span className="ml-1 text-slate-400 font-normal">optional</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={form.roomSize}
+                          onChange={e => update("roomSize", e.target.value === "" ? "" : Number(e.target.value))}
+                          placeholder="e.g. 350"
+                          min={1}
+                          className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
+                        />
+                      </div>
                     </div>
                   )}
 
-                  {/* STEP 1 — Pricing & Capacity */}
+                  {/* Pricing & Policy */}
                   {step === 1 && (
                     <div className="space-y-4">
                       <div>
@@ -509,29 +494,63 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                             onChange={e => update("pricePerNight", e.target.value === "" ? "" : Number(e.target.value))}
                             placeholder="0"
                             min={0}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.pricePerNight ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                              }`}
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${
+                              errors.pricePerNight ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                            }`}
                           />
                         </div>
                         {errors.pricePerNight && <p className="text-xs text-rose-500 mt-1">{errors.pricePerNight}</p>}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1.5">Capacity (guests) *</label>
-                        <input
-                          type="number"
-                          value={form.capacity}
-                          onChange={e => update("capacity", e.target.value === "" ? "" : Number(e.target.value))}
-                          placeholder="e.g. 2"
-                          min={1}
-                          max={20}
-                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.capacity ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                            }`}
-                        />
-                        {errors.capacity && <p className="text-xs text-rose-500 mt-1">{errors.capacity}</p>}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                            Weekend Price (Rs.)
+                            <span className="ml-1 text-slate-400 font-normal">optional</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">Rs.</span>
+                            <input
+                              type="number"
+                              value={form.weekendPrice}
+                              onChange={e => update("weekendPrice", e.target.value === "" ? "" : Number(e.target.value))}
+                              placeholder="0"
+                              min={0}
+                              className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                            Tax Rate (%)
+                            <span className="ml-1 text-slate-400 font-normal">optional</span>
+                          </label>
+                          <input
+                            type="number"
+                            value={form.taxRate}
+                            onChange={e => update("taxRate", e.target.value === "" ? "" : Number(e.target.value))}
+                            placeholder="0"
+                            min={0}
+                            max={100}
+                            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">Capacity (guests) *</label>
+                          <input
+                            type="number"
+                            value={form.capacity}
+                            onChange={e => update("capacity", e.target.value === "" ? "" : Number(e.target.value))}
+                            placeholder="e.g. 2"
+                            min={1}
+                            max={20}
+                            className={inputCls(errors.capacity)}
+                          />
+                          {errors.capacity && <p className="text-xs text-rose-500 mt-1">{errors.capacity}</p>}
+                        </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1.5">Max Occupancy *</label>
                           <input
@@ -540,36 +559,49 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                             onChange={e => update("maxOccupancy", e.target.value === "" ? "" : Number(e.target.value))}
                             placeholder="e.g. 4"
                             min={1}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50 ${errors.maxOccupancy ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                              }`}
+                            className={inputCls(errors.maxOccupancy)}
                           />
                           {errors.maxOccupancy && <p className="text-xs text-rose-500 mt-1">{errors.maxOccupancy}</p>}
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                            Room Size (sq ft)
-                            <span className="ml-1 text-slate-400 font-normal">optional</span>
-                          </label>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">Min Stay (nights)</label>
                           <input
                             type="number"
-                            value={form.roomSize}
-                            onChange={e => update("roomSize", e.target.value === "" ? "" : Number(e.target.value))}
-                            placeholder="e.g. 350"
+                            value={form.minStayNights}
+                            onChange={e => update("minStayNights", Math.max(1, Number(e.target.value)))}
+                            placeholder="1"
                             min={1}
                             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
                           />
                         </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                            Discount (%)
+                            <span className="ml-1 text-slate-400 font-normal">optional</span>
+                          </label>
+                          <input
+                            type="number"
+                            value={form.discount}
+                            onChange={e => update("discount", e.target.value === "" ? "" : Number(e.target.value))}
+                            placeholder="0"
+                            min={0}
+                            max={100}
+                            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
+                          />
+                        </div>
                       </div>
-
-
 
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1.5">Cancellation Policy *</label>
                         <select
                           value={form.cancellationPolicy}
                           onChange={e => update("cancellationPolicy", e.target.value)}
-                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 bg-white ${errors.cancellationPolicy ? "border-rose-300 bg-rose-50" : "border-slate-200"
-                            }`}
+                          className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:border-blue-400 bg-white ${
+                            errors.cancellationPolicy ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                          }`}
                         >
                           <option value="">Select policy</option>
                           <option value="Free cancellation up to 24 hours">Free cancellation up to 24 hours</option>
@@ -582,23 +614,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                         {errors.cancellationPolicy && <p className="text-xs text-rose-500 mt-1">{errors.cancellationPolicy}</p>}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                          Discount (%)
-                          <span className="ml-1 text-slate-400 font-normal">optional</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={form.discount}
-                          onChange={e => update("discount", e.target.value === "" ? "" : Number(e.target.value))}
-                          placeholder="0"
-                          min={0}
-                          max={100}
-                          className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
-                        />
-                      </div>
-
-                      {/* Summary card */}
+                      {/* Price preview */}
                       {form.pricePerNight !== "" && (
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                           <p className="text-xs text-blue-500 font-medium mb-2">Price Preview</p>
@@ -608,158 +624,216 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                               Rs. {Number(form.pricePerNight).toLocaleString()}
                             </span>
                           </div>
+                          {Number(form.taxRate) > 0 && (
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-sm text-slate-500">Tax ({form.taxRate}%)</span>
+                              <span className="text-sm text-slate-500">
+                                + Rs. {(Number(form.pricePerNight) * Number(form.taxRate) / 100).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                           {Number(form.discount) > 0 && (
-                            <>
-                              <div className="flex justify-between items-center mt-1">
-                                <span className="text-sm text-emerald-600">Discount ({form.discount}%)</span>
-                                <span className="text-sm text-emerald-600">
-                                  − Rs. {(Number(form.pricePerNight) * Number(form.discount) / 100).toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="border-t border-blue-100 mt-2 pt-2 flex justify-between">
-                                <span className="text-sm font-medium text-slate-700">Final price</span>
-                                <span className="text-sm font-bold text-blue-700">
-                                  Rs. {(Number(form.pricePerNight) * (1 - Number(form.discount) / 100)).toLocaleString()}
-                                </span>
-                              </div>
-                            </>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-sm text-emerald-600">Discount ({form.discount}%)</span>
+                              <span className="text-sm text-emerald-600">
+                                − Rs. {(Number(form.pricePerNight) * Number(form.discount) / 100).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {(Number(form.discount) > 0 || Number(form.taxRate) > 0) && (
+                            <div className="border-t border-blue-100 mt-2 pt-2 flex justify-between">
+                              <span className="text-sm font-medium text-slate-700">Final price</span>
+                              <span className="text-sm font-bold text-blue-700">
+                                Rs. {(
+                                  Number(form.pricePerNight) *
+                                  (1 + Number(form.taxRate) / 100) *
+                                  (1 - Number(form.discount) / 100)
+                                ).toLocaleString()}
+                              </span>
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* STEP 2 — Amenities */}
+                  {/*Amenities & Facilities */}
                   {step === 2 && (
-                    <div className="space-y-4">
-                      <p className="text-xs text-slate-500">Select amenities available in this room</p>
-                      <div className="flex flex-wrap gap-2">
-                        {AMENITY_OPTIONS.map(a => {
-                          const selected = form.amenities.includes(a);
-                          return (
-                            <button
-                              key={a}
-                              type="button"
-                              onClick={() => toggleAmenity(a)}
-                              className={`px-3 py-1.5 text-xs rounded-full border transition font-medium ${selected
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                    <div className="space-y-5">
+                      {/* Amenities */}
+                      <div>
+                        <p className="text-xs font-medium text-slate-600 mb-2">Amenities *</p>
+                        <p className="text-xs text-slate-400 mb-3">Select all amenities available in this room</p>
+                        <div className="flex flex-wrap gap-2">
+                          {AMENITY_OPTIONS.map(a => {
+                            const selected = form.amenities.includes(a);
+                            return (
+                              <button
+                                key={a}
+                                type="button"
+                                onClick={() => toggleAmenity(a)}
+                                className={`px-3 py-1.5 text-xs rounded-full border transition font-medium ${
+                                  selected
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
                                 }`}
-                            >
-                              {selected && <span className="mr-1">✓</span>}
-                              {a}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {errors.amenities && <p className="text-xs text-rose-500 mt-1">{errors.amenities}</p>}
-
-                      {form.amenities.length > 0 && (
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                          <p className="text-[11px] text-slate-400 mb-2">Selected ({form.amenities.length})</p>
-                          <div className="flex flex-wrap gap-1">
-                            {form.amenities.map(a => (
-                              <span key={a} className="text-[11px] bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                                {a}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* STEP 3 — Images */}
-                  {step === 3 && (
-                    <div className="space-y-4">
-                      {/* Hidden file input */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-
-                      {/* Drop zone / trigger */}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full border-2 border-dashed border-slate-200 rounded-xl py-8 flex flex-col items-center gap-2 text-slate-400 hover:border-blue-300 hover:bg-blue-50/40 transition group"
-                      >
-                        <svg
-                          className="w-8 h-8 opacity-40 group-hover:opacity-70 transition"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <div className="text-center">
-                          <p className="text-xs font-medium text-slate-500 group-hover:text-blue-500 transition">
-                            Click to upload images
-                          </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">JPG, PNG, WEBP — multiple allowed</p>
-                        </div>
-                      </button>
-
-                      {form.roomImages.length > 0 && (
-                        <>
-                          <p className="text-[11px] text-slate-400">
-                            {form.roomImages.length} image{form.roomImages.length > 1 ? "s" : ""} selected — first is the cover
-                          </p>
-                          <div className="grid grid-cols-2 gap-3">
-                            {imagePreviews.map((preview, idx) => (
-                              <div
-                                key={idx}
-                                className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video"
                               >
-                                <img
-                                  src={preview}
-                                  alt={`Room image ${idx + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                                {idx === 0 && (
-                                  <span className="absolute top-1.5 left-1.5 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
-                                    Cover
-                                  </span>
-                                )}
-                                {/* File name tooltip */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 opacity-0 group-hover:opacity-100 transition">
-                                  <p className="text-[10px] text-white truncate">
-                                    {form.roomImages[idx]?.name}
-                                  </p>
-                                </div>
+                                {selected && <span className="mr-1">✓</span>}
+                                {a}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {errors.amenities && <p className="text-xs text-rose-500 mt-2">{errors.amenities}</p>}
+                        {form.amenities.length > 0 && (
+                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mt-3">
+                            <p className="text-[11px] text-slate-400 mb-1.5">Selected ({form.amenities.length})</p>
+                            <div className="flex flex-wrap gap-1">
+                              {form.amenities.map(a => (
+                                <span key={a} className="text-[11px] bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                                  {a}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Room Facilities */}
+                      <div>
+                        <p className="text-xs font-medium text-slate-600 mb-3">Room Facilities</p>
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3.5">
+                          <Toggle label="Air Conditioning"      checked={form.hasAC}         onChange={v => update("hasAC", v)} />
+                          <Toggle label="WiFi"                  checked={form.hasWifi}        onChange={v => update("hasWifi", v)} />
+                          <Toggle label="Heating"               checked={form.hasHeating}     onChange={v => update("hasHeating", v)} />
+                          <Toggle label="Shower"                checked={form.hasShower}      onChange={v => update("hasShower", v)} />
+                          <Toggle label="Bathtub"               checked={form.hasBathtub}     onChange={v => update("hasBathtub", v)} />
+                          <Toggle label="Balcony"               checked={form.hasBalcony}     onChange={v => update("hasBalcony", v)} />
+                          <Toggle
+                            label="Wheelchair Accessible"
+                            description="Room meets accessibility requirements"
+                            checked={form.isAccessible}
+                            onChange={v => update("isAccessible", v)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Special Features — controlled input with Add button */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                          Special Features
+                          <span className="ml-1 text-slate-400 font-normal">optional</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={featureInput}
+                            onChange={e => setFeatureInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                addSpecialFeature();
+                              }
+                            }}
+                            placeholder="e.g. Private pool, Rooftop terrace..."
+                            className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={addSpecialFeature}
+                            className="px-4 py-2.5 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium"
+                          >
+                            Add
+                          </button>
+                        </div>
+                        {form.specialFeatures.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {form.specialFeatures.map((f, i) => (
+                              <span
+                                key={i}
+                                className="flex items-center gap-1 text-[11px] bg-violet-50 border border-violet-100 text-violet-600 px-2 py-0.5 rounded-full"
+                              >
+                                {f}
                                 <button
                                   type="button"
-                                  onClick={() => removeImage(idx)}
-                                  className="absolute top-1.5 right-1.5 bg-white/90 text-rose-500 rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition hover:bg-rose-50"
+                                  onClick={() => update("specialFeatures", form.specialFeatures.filter((_, j) => j !== i))}
+                                  className="hover:text-rose-500 transition"
                                 >
                                   ✕
                                 </button>
-                              </div>
+                              </span>
                             ))}
-
-                            {/* Add more button */}
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="aspect-video rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-300 hover:bg-blue-50/40 transition"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              <span className="text-[11px]">Add more</span>
-                            </button>
                           </div>
-                        </>
-                      )}
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/*Images & Settings  */}
+                  {step === 3 && (
+                    <div className="space-y-5">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600 mb-2">Room Images *</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full border-2 border-dashed border-slate-200 rounded-xl py-8 flex flex-col items-center gap-2 text-slate-400 hover:border-blue-300 hover:bg-blue-50/40 transition group"
+                        >
+                          <svg className="w-8 h-8 opacity-40 group-hover:opacity-70 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-slate-500 group-hover:text-blue-500 transition">Click to upload images</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">JPG, PNG, WEBP — multiple allowed</p>
+                          </div>
+                        </button>
+
+                        {form.roomImages.length > 0 && (
+                          <>
+                            <p className="text-[11px] text-slate-400 mt-2">
+                              {form.roomImages.length} image{form.roomImages.length > 1 ? "s" : ""} selected — first is the cover
+                            </p>
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                              {imagePreviews.map((preview, idx) => (
+                                <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video">
+                                  <img src={preview} alt={`Room ${idx + 1}`} className="w-full h-full object-cover" />
+                                  {idx === 0 && (
+                                    <span className="absolute top-1.5 left-1.5 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">Cover</span>
+                                  )}
+                                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 opacity-0 group-hover:opacity-100 transition">
+                                    <p className="text-[10px] text-white truncate">{form.roomImages[idx]?.name}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(idx)}
+                                    className="absolute top-1.5 right-1.5 bg-white/90 text-rose-500 rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition hover:bg-rose-50"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="aspect-video rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-300 hover:bg-blue-50/40 transition"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span className="text-[11px]">Add more</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
 
