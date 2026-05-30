@@ -1,4 +1,3 @@
-// src/pages/App/AppUsers.jsx
 const users = [
   { initials:"AK", color:"#38bdf8", name:"Arjun K.",  email:"arjun@mail.com", joined:"Jan 12, 2025", lastActive:"2 min ago",   status:"active"   },
   { initials:"ST", color:"#818cf8", name:"Sita T.",   email:"sita@mail.com",  joined:"Mar 5, 2025",  lastActive:"1 hr ago",    status:"active"   },
