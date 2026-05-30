@@ -1,13 +1,19 @@
 const PAGE_META = {
-  register: { title: "Register Hotels",  path: "/ hotels / register" },
-  bookings: { title: "Bookings",         path: "/ hotels / bookings" },
-  status:   { title: "Hotel Status",     path: "/ hotels / status"   },
-  app:      { title: "App",              path: "/ app"               },
-  analysis: { title: "Analysis",         path: "/ analysis"          },
+  // App
+  banners:  { title: "Banners",           path: "/ app / banners"   },
+  redeem:   { title: "Redeem Code",       path: "/ app / redeem"    },
+  users:    { title: "App Users",         path: "/ app / users"     },
+  block:    { title: "Block / Unblock",   path: "/ app / block"     },
+  // Hotels
+  register: { title: "Register Hotels",   path: "/ hotels / register" },
+  bookings: { title: "Bookings",          path: "/ hotels / bookings" },
+  status:   { title: "Hotel Status",      path: "/ hotels / status"   },
+  // Other
+  analysis: { title: "Analysis",          path: "/ analysis"          },
 };
 
 export default function Topbar({ page, mini, setMini, onSave, savedMsg }) {
-  const meta = PAGE_META[page] || { title: "Dashboard", path: "/" };
+  const meta  = PAGE_META[page] || { title: "Dashboard", path: "/" };
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", year: "numeric",
   });
