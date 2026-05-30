@@ -28,6 +28,7 @@ export const globalCSS = `
     background: #f0f6ff;
     font-family: 'DM Sans', sans-serif;
     overflow: hidden;
+    position: relative;
   }
 
   /* ── Sidebar ── */
@@ -43,6 +44,33 @@ export const globalCSS = `
     flex-shrink: 0;
   }
   .sidebar.mini { width: 58px; min-width: 58px; }
+
+  .sidebar-expand-btn {
+  position: absolute;
+  top: 50%;
+  left: 58px;
+  transform: translateY(-50%);
+  z-index: 100;
+  width: 20px;
+  height: 40px;
+  background: #fff;
+  border: 0.5px solid rgba(99,120,210,0.22);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #0284c7;
+  cursor: pointer;
+  box-shadow: 2px 0 6px rgba(99,120,210,0.1);
+  transition: background 0.15s;
+  font-weight: 700;
+}
+.sidebar-expand-btn:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+}
 
   .s-logo {
     padding: 18px 14px 14px;
