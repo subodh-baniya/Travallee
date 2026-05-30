@@ -1,4 +1,3 @@
-// src/pages/App/Banners.jsx
 export default function Banners() {
   const banners = [
     { emoji: "🏖️", name: "Summer Sale Banner",  date: "May 25", status: "active" },
