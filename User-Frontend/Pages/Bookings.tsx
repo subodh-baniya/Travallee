@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
-import { useNavigate } from "react-router-dom";
 import { useBookings } from "../Hooks/useBooking";
+import BookingDetails from "../Components/modal-popups/BookingDetailModal";
 
 type Status = "ALL" | "PAID" | "NOTPAID";
 type BookingStatus = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
@@ -21,13 +21,13 @@ const bookingStatusMap: Record<string, string> = {
 const Bookings = () => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
-  const navigate = useNavigate();
 
   const { bookings, newBookingIds, loading, error, refetch } = useBookings(hotelId);
 
   const [payFilter, setPayFilter] = useState<Status>("ALL");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
@@ -48,30 +48,10 @@ const Bookings = () => {
   const cancelledCount = bookings.filter((b) => b.bookingStatus === "CANCELLED").length;
 
   const summaryCards = [
-    {
-      label: "Confirmed",
-      value: confirmedCount,
-      sub: "Active reservations",
-      color: "text-blue-600",
-    },
-    {
-      label: "Pending",
-      value: pendingCount,
-      sub: "Awaiting confirmation",
-      color: "text-amber-600",
-    },
-    {
-      label: "Unpaid",
-      value: unpaidCount,
-      sub: "Payment not received",
-      color: "text-red-500",
-    },
-    {
-      label: "Cancelled",
-      value: cancelledCount,
-      sub: "Cancelled bookings",
-      color: "text-slate-400",
-    },
+    { label: "Confirmed",  value: confirmedCount, sub: "Active reservations",   color: "text-blue-600"  },
+    { label: "Pending",    value: pendingCount,   sub: "Awaiting confirmation",  color: "text-amber-600" },
+    { label: "Unpaid",     value: unpaidCount,    sub: "Payment not received",   color: "text-red-500"   },
+    { label: "Cancelled",  value: cancelledCount, sub: "Cancelled bookings",     color: "text-slate-400" },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -94,10 +74,7 @@ const Bookings = () => {
       {error && (
         <div className="flex items-center justify-between bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
           <span>{error}</span>
-          <button
-            onClick={refetch}
-            className="ml-4 text-xs underline hover:no-underline"
-          >
+          <button onClick={refetch} className="ml-4 text-xs underline hover:no-underline">
             Retry
           </button>
         </div>
@@ -106,13 +83,12 @@ const Bookings = () => {
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {summaryCards.map((card) => (
-          <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              {card.label}
-            </p>
-            <p className={`mt-2 text-2xl font-semibold ${card.color}`}>
-              {card.value}
-            </p>
+          <div
+            key={card.label}
+            className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:-translate-y-1 duration-200 hover:shadow-md"
+          >
+            <p className="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
+            <p className={`mt-2 text-2xl font-semibold ${card.color}`}>{card.value}</p>
             <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
           </div>
         ))}
@@ -125,10 +101,9 @@ const Bookings = () => {
           placeholder="Search guest, room, booking ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+          className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition"
         />
 
-        {/* Payment status filter */}
         <div className="flex gap-2">
           {(["ALL", "PAID", "NOTPAID"] as Status[]).map((s) => (
             <button
@@ -145,7 +120,6 @@ const Bookings = () => {
           ))}
         </div>
 
-        {/* Booking status filter */}
         <div className="flex gap-2">
           {(["ALL", "CONFIRMED", "PENDING", "CANCELLED"] as BookingStatus[]).map((s) => (
             <button
@@ -165,21 +139,18 @@ const Bookings = () => {
 
       {/* BOOKINGS TABLE */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+
+        {/* Card header — same pattern as Overview */}
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">All Bookings</h2>
-            <p className="text-xs text-slate-500">
-              Every booking currently in the system
-            </p>
+            <p className="text-xs text-slate-500">Every booking currently in the system</p>
           </div>
           <span className="text-xs text-slate-500">{filtered.length} shown</span>
         </div>
 
         <div className="overflow-x-auto">
-          <table
-            className="w-full text-sm"
-            style={{ tableLayout: "fixed", minWidth: "900px" }}
-          >
+          <table className="w-full text-sm" style={{ tableLayout: "fixed", minWidth: "900px" }}>
             <thead className="bg-slate-50 text-slate-500 text-xs">
               <tr>
                 <th className="text-left px-4 py-3 font-medium" style={{ width: "130px" }}>Booking ID</th>
@@ -203,7 +174,7 @@ const Bookings = () => {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-10 text-center text-slate-500" colSpan={9}>
+                  <td className="px-4 py-10 text-center text-slate-400" colSpan={9}>
                     No bookings available.
                   </td>
                 </tr>
@@ -213,7 +184,7 @@ const Bookings = () => {
                     key={b.id || i}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
+                    onClick={() => setSelectedBookingId(b.id)}
                     className="hover:bg-slate-50 transition cursor-pointer"
                   >
                     <td className="px-4 py-3 align-middle font-mono text-xs text-slate-400 truncate">
@@ -223,12 +194,8 @@ const Bookings = () => {
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
                         <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-slate-800 truncate">
-                            {b.guest}
-                          </span>
-                          <span className="text-[11px] text-slate-400 truncate">
-                            {b.email || "-"}
-                          </span>
+                          <span className="font-medium text-slate-800 truncate">{b.guest}</span>
+                          <span className="text-[11px] text-slate-400 truncate">{b.email || "-"}</span>
                         </div>
                         {newBookingIds.includes(b.id) && (
                           <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
@@ -243,28 +210,19 @@ const Bookings = () => {
                     </td>
 
                     <td className="px-4 py-3 text-center align-middle">
-                      <span
-                        className={`text-xs px-2.5 py-1 rounded-full border ${paymentStatusMap[b.status]}`}
-                      >
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${paymentStatusMap[b.status]}`}>
                         {b.status === "PAID" ? "Paid" : "Unpaid"}
                       </span>
                     </td>
 
                     <td className="px-4 py-3 text-center align-middle">
-                      <span
-                        className={`text-xs px-2.5 py-1 rounded-full border ${bookingStatusMap[b.bookingStatus]}`}
-                      >
-                        {b.bookingStatus.charAt(0) +
-                          b.bookingStatus.slice(1).toLowerCase()}
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${bookingStatusMap[b.bookingStatus]}`}>
+                        {b.bookingStatus.charAt(0) + b.bookingStatus.slice(1).toLowerCase()}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-                      {b.checkIn}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-                      {b.checkOut}
-                    </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkIn}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkOut}</td>
 
                     <td className="px-4 py-3 text-right align-middle text-blue-600 font-medium text-xs">
                       {b.amount}
@@ -280,6 +238,16 @@ const Bookings = () => {
           </table>
         </div>
       </div>
+
+      {/* BOOKING DETAILS MODAL */}
+      <AnimatePresence>
+        {selectedBookingId && (
+          <BookingDetails
+            bookingId={selectedBookingId}
+            onClose={() => setSelectedBookingId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
