@@ -36,9 +36,6 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const { user, logout, hotelId } = auth;
   const displayName = user?.Name || user?.Username || user?.name||"User";
 
-  // At the top of the component:
-console.log("Topbar render:", { user, displayName });
-
   const syncUnreadNotifications = (items: PanelNotification[]) => {
     try {
       localStorage.setItem(UNREAD_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items.slice(0, 15)));

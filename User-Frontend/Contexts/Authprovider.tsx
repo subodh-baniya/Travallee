@@ -87,8 +87,6 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setHotelId(null);
   }
 };
-// In AuthProvider, just before the return:
-console.log("AuthProvider render:", { user, authChecked });
   return (
     <Authcontext.Provider
       value={{

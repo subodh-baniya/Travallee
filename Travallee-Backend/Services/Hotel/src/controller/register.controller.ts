@@ -247,6 +247,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       if (body.weekendPrice !== undefined) out.weekendPrice = toNumber(body.weekendPrice, undefined);
       out.taxRate = toNumber(body.taxRate, 0);
       out.minStayNights = toNumber(body.minStayNights, 1);
+      out.discount = toNumber(body.discount, 0);
 
       // Arrays: accept JSON string or comma-separated string
       const parseArray = (v: any) => {
@@ -297,6 +298,8 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 
     // Validate room data (after coercion)
     const coerced = coerceRoomBody(req.body);
+
+
     const parsedData = createRoomSchema.safeParse(coerced);
     if (!parsedData.success) {
       const validationErrors = parsedData.error.issues.map((issue) => ({

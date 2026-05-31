@@ -30,7 +30,7 @@ export const deleteRoom = (  hotelId: string,roomId: string,password: string) =>
     .then(res => res.data);
 };
 
-export const getRooms = (hotelId: string, page = 1, limit = 10) => {
+export const getRooms = (hotelId: string, page = 1, limit = 12) => {
   return hotelClient
     .get(`/rooms/${hotelId}`, {
       params: { page, limit },
