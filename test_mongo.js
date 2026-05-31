@@ -3,6 +3,19 @@ import { MongoClient, ObjectId } from "mongodb";
 
 const url = process.env.MONGO_URI;
 
+// ─── Room _id map (must match seed_rooms.js) ─────────────────────────────────
+// hotelId → [roomId1, roomId2]
+// 9c01 CMT Resort               → a1, a2
+// 9c02 Heritage Palace Hotel    → b1, b2
+// 9c03 Safari Jungle Camp       → c1, c2
+// 9c04 Mountain View Resort     → d1, d2
+// 9c05 Lakeside Retreat         → e1, e2
+// 9c06 Green HAmlet Resort      → f1, f2
+// 9c07 Hotel Pauwa Bharatpur    → 71, 72
+// 9c11 Chitwan Garden Resort    → ab, ac
+// 9c12 Kurintar Retreat         → ad, ae
+// 9c13 Ashish Aama Homestay     → af, b0
+
 const hotels = [
   {
     userID: "682a1f2b3c4d5e6f7a8b9c01",
@@ -15,7 +28,6 @@ const hotels = [
       "https://www.cmthotel.com/images/gallery/galleryimages/fLw6W-davnj-room8-min.jpg",
       "https://www.cmthotel.com/images/gallery/galleryimages/GzyLG-apmgw-room7-min.jpg"
     ],
-
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Citizenship", "Passport"],
@@ -29,8 +41,8 @@ const hotels = [
     numberOfReviews: 320,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b000000000000000000a1"),
-      new ObjectId("682b000000000000000000a2"),
+      new ObjectId("682c000000000000000000a1"),
+      new ObjectId("682c000000000000000000a2"),
     ],
   },
   {
@@ -39,12 +51,10 @@ const hotels = [
     hotelDescription: "A heritage-style luxury hotel located in Bhaktapur.",
     hotelLocation: "Bhaktapur, Nepal",
     hotelName: "Heritage Palace Hotel",
-       hotelName: "Heritage Palace Hotel",
     hotelImages: [
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtjGV2PAijSOkn60es1e2Eo9gF1WvCAHKgoA&s",
       "https://cf.bstatic.com/xdata/images/hotel/max1024x768/173372452.jpg?k=e618be6f84562c35d985e07187388f97f16b54c9ef15015da4872102512b4893&o="
     ],
-
     propertyType: "Hotel",
     verified: true,
     VerificationDocuments: ["Driving License", "NID"],
@@ -58,8 +68,8 @@ const hotels = [
     numberOfReviews: 210,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b000000000000000000b1"),
-      new ObjectId("682b000000000000000000b2"),
+      new ObjectId("682c000000000000000000b1"),
+      new ObjectId("682c000000000000000000b2"),
     ],
   },
   {
@@ -68,11 +78,9 @@ const hotels = [
     hotelDescription: "Safari Jungle Camp in Chitwan with jungle safari experience.",
     hotelLocation: "Sauraha, Chitwan, Nepal",
     hotelName: "Safari Jungle Camp",
-       hotelImages: [
-  
+    hotelImages: [
       "https://www.travelandleisureasia.com/in/hotels/india-hotels/a-tiger-safari-through-the-jungle-camps-of-madhya-pradesh/"
     ],
-
     propertyType: "Jungle Camp",
     verified: true,
     VerificationDocuments: ["NID", "Passport"],
@@ -86,8 +94,8 @@ const hotels = [
     numberOfReviews: 145,
     isFeatured: false,
     roomIDs: [
-      new ObjectId("682b000000000000000000c1"),
-      new ObjectId("682b000000000000000000c2"),
+      new ObjectId("682c000000000000000000c1"),
+      new ObjectId("682c000000000000000000c2"),
     ],
   },
   {
@@ -97,11 +105,10 @@ const hotels = [
       "A peaceful mountain resort famous for sunrise and Himalayan views.",
     hotelLocation: "Nagarkot, Nepal",
     hotelName: "Mountain View Resort",
-        hotelImages: [
+    hotelImages: [
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHKqAqE0ES3Rfb-pOHVMOVYsRB2nE4yPJPXC1kJ-dwbKcDeilYIp5ggeATA4XfxDVfoUeSwWOQf6g4ndliR-kMkU6ZQJTiXWLbrh_2NZUkDYg-2lDg25gmD2Z6F5-XWGlCBKSkx=w253-h337-k-no",
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFI1PRgP1gwqHo_BLFnqTFReuOJ7TWsM-vj4vEPKo9OEGIAn5YRCSf6qcTt7QRXpRBsr3Zmg40qWj3zi4nNxCBFqFpkKaPGUcsO2oPkc1gVvOeoXEWptK9f5NCejlStfnkqB4kmNA=w253-h379-k-no"
     ],
-
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Citizenship", "Driving License"],
@@ -115,8 +122,8 @@ const hotels = [
     numberOfReviews: 410,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b000000000000000000d1"),
-      new ObjectId("682b000000000000000000d2"),
+      new ObjectId("682c000000000000000000d1"),
+      new ObjectId("682c000000000000000000d2"),
     ],
   },
   {
@@ -126,11 +133,10 @@ const hotels = [
       "A relaxing lakeside retreat with modern rooms and scenic views of Phewa Lake.",
     hotelLocation: "Pokhara, Nepal",
     hotelName: "Lakeside Retreat",
-        hotelImages: [
+    hotelImages: [
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHmFhJSPTFgXCBBrvmQT74Xv1IQaBDKehSJWkY3WDCDoPsgDZc6cWKCw01fZq_LEGjgP5MaEC657xirsXtW6zk7qVfa2eEwbrWhCHaYFuuKKqZnywfV1IT1_jyFZ6U2aOY9roVV=s1360-w1360-h1020-rw",
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFUWBygF2pF9pwp9PmHnmE21Drh-tVUqA75iJ6VPpPMj1Y1aTRPKXvXqO1jiSU-KQnEDK97jODJBXuKyCZTOCcCYsD0OVXWlUNQXWAIBonSpu5wTzAu4zfJficeM4dOjVj8dqgr=s1360-w1360-h1020-rw"
     ],
-
     propertyType: "Boutique Hotel",
     verified: true,
     VerificationDocuments: ["NID", "Citizenship", "Passport"],
@@ -144,8 +150,8 @@ const hotels = [
     numberOfReviews: 275,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b000000000000000000e1"),
-      new ObjectId("682b000000000000000000e2"),
+      new ObjectId("682c000000000000000000e1"),
+      new ObjectId("682c000000000000000000e2"),
     ],
   },
   {
@@ -154,10 +160,9 @@ const hotels = [
     hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
     hotelLocation: "Bharatpur Chitwan",
     hotelName: "Green HAmlet Resort",
-       hotelImages: [
+    hotelImages: [
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7HkFwGkSFHgbSSw42eH4ykTK64owOU7L7Mw&s"
     ],
-
     propertyType: "Guest House",
     verified: "true",
     VerificationDocuments: "NID, Citizenship, Passport",
@@ -171,8 +176,8 @@ const hotels = [
     numberOfReviews: "10",
     isFeatured: "false",
     roomIDs: [
-      new ObjectId("682b000000000000000000f1"),
-      new ObjectId("682b000000000000000000f2"),
+      new ObjectId("682c000000000000000000f1"),
+      new ObjectId("682c000000000000000000f2"),
     ],
   },
   {
@@ -198,8 +203,8 @@ const hotels = [
     numberOfReviews: 128,
     isFeatured: false,
     roomIDs: [
-      new ObjectId("682b000000000000000000a7"),
-      new ObjectId("682b000000000000000000a8"),
+      new ObjectId("682c00000000000000000071"),
+      new ObjectId("682c00000000000000000072"),
     ],
   },
   {
@@ -224,8 +229,8 @@ const hotels = [
     numberOfReviews: 215,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b00000000000000000ab1"),
-      new ObjectId("682b00000000000000000ab2"),
+      new ObjectId("682c000000000000000000ab"),
+      new ObjectId("682c000000000000000000ac"),
     ],
   },
   {
@@ -250,8 +255,8 @@ const hotels = [
     numberOfReviews: 180,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b00000000000000000ac1"),
-      new ObjectId("682b00000000000000000ac2"),
+      new ObjectId("682c000000000000000000ad"),
+      new ObjectId("682c000000000000000000ae"),
     ],
   },
   {
@@ -277,8 +282,8 @@ const hotels = [
     numberOfReviews: 124,
     isFeatured: true,
     roomIDs: [
-      new ObjectId("682b00000000000000000ad1"),
-      new ObjectId("682b00000000000000000ad2"),
+      new ObjectId("682c000000000000000000af"),
+      new ObjectId("682c000000000000000000b0"),
     ],
   }
 ];

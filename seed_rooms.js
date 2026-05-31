@@ -10,10 +10,11 @@ if (!url) {
   process.exit(1);
 }
 
+// ─── Pre-assigned room _ids (matched in test_mongo.js) ───────────────────────
 const rooms = [
-  // ── CMT Resort (9c01) ──────────────────────────────────────────────
+  // ── CMT Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c01 ──────────────────────
   {
-    _id: new ObjectId("682b000000000000000000a1"),
+    _id: new ObjectId("682c000000000000000000a1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "101",
     roomType: "Deluxe Double",
@@ -49,7 +50,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000a2"),
+    _id: new ObjectId("682c000000000000000000a2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "102",
     roomType: "Family Safari View",
@@ -85,9 +86,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Heritage Palace Hotel (9c02) ───────────────────────────────────
+  // ── Heritage Palace Hotel · hotelId: 682a1f2b3c4d5e6f7a8b9c02 ────────────
   {
-    _id: new ObjectId("682b000000000000000000b1"),
+    _id: new ObjectId("682c000000000000000000b1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
     roomNumber: "201",
     roomType: "Heritage Premium",
@@ -123,7 +124,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000b2"),
+    _id: new ObjectId("682c000000000000000000b2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
     roomNumber: "202",
     roomType: "King Heritage Suite",
@@ -159,9 +160,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Safari Jungle Camp (9c03) ──────────────────────────────────────
+  // ── Safari Jungle Camp · hotelId: 682a1f2b3c4d5e6f7a8b9c03 ──────────────
   {
-    _id: new ObjectId("682b000000000000000000c1"),
+    _id: new ObjectId("682c000000000000000000c1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c03"),
     roomNumber: "C10",
     roomType: "Jungle Cottage",
@@ -197,7 +198,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000c2"),
+    _id: new ObjectId("682c000000000000000000c2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c03"),
     roomNumber: "C11",
     roomType: "Riverside Jungle Tent",
@@ -233,9 +234,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Mountain View Resort (9c04) ────────────────────────────────────
+  // ── Mountain View Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c04 ────────────
   {
-    _id: new ObjectId("682b000000000000000000d1"),
+    _id: new ObjectId("682c000000000000000000d1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c04"),
     roomNumber: "304",
     roomType: "Sunrise Deluxe",
@@ -271,7 +272,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000d2"),
+    _id: new ObjectId("682c000000000000000000d2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c04"),
     roomNumber: "305",
     roomType: "Himalayan Twin",
@@ -307,9 +308,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Lakeside Retreat (9c05) ────────────────────────────────────────
+  // ── Lakeside Retreat · hotelId: 682a1f2b3c4d5e6f7a8b9c05 ─────────────────
   {
-    _id: new ObjectId("682b000000000000000000e1"),
+    _id: new ObjectId("682c000000000000000000e1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c05"),
     roomNumber: "205",
     roomType: "Premium Lakeside Single",
@@ -345,7 +346,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000e2"),
+    _id: new ObjectId("682c000000000000000000e2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c05"),
     roomNumber: "206",
     roomType: "Lakeside Double",
@@ -381,9 +382,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Green HAmlet Resort (9c06) ─────────────────────────────────────
+  // ── Green HAmlet Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c06 ─────────────
   {
-    _id: new ObjectId("682b000000000000000000f1"),
+    _id: new ObjectId("682c000000000000000000f1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c06"),
     roomNumber: "101-S",
     roomType: "Standard Single",
@@ -419,7 +420,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000f2"),
+    _id: new ObjectId("682c000000000000000000f2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c06"),
     roomNumber: "102-S",
     roomType: "Variant Double",
@@ -455,9 +456,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Hotel Pauwa (9c07) ─────────────────────────────────────────────
+  // ── Hotel Pauwa Bharatpur · hotelId: 682a1f2b3c4d5e6f7a8b9c07 ────────────
   {
-    _id: new ObjectId("682b000000000000000000a7"),
+    _id: new ObjectId("682c00000000000000000071"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c07"),
     roomNumber: "402",
     roomType: "Executive Double",
@@ -493,7 +494,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b000000000000000000a8"),
+    _id: new ObjectId("682c00000000000000000072"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c07"),
     roomNumber: "403",
     roomType: "Pauwa Club Suite",
@@ -529,9 +530,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Chitwan Garden Resort (9c11) ───────────────────────────────────
+  // ── Chitwan Garden Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c11 ────────────
   {
-    _id: new ObjectId("682b00000000000000000ab1"),
+    _id: new ObjectId("682c000000000000000000ab"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c11"),
     roomNumber: "G-12",
     roomType: "Twin Bed Garden Room",
@@ -567,7 +568,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b00000000000000000ab2"),
+    _id: new ObjectId("682c000000000000000000ac"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c11"),
     roomNumber: "G-14",
     roomType: "Honeymoon King Villa",
@@ -603,9 +604,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Kurintar Retreat (9c12) ────────────────────────────────────────
+  // ── Kurintar Retreat · hotelId: 682a1f2b3c4d5e6f7a8b9c12 ─────────────────
   {
-    _id: new ObjectId("682b00000000000000000ac1"),
+    _id: new ObjectId("682c000000000000000000ad"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c12"),
     roomNumber: "P-302",
     roomType: "Riverside Pool Suite",
@@ -641,7 +642,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b00000000000000000ac2"),
+    _id: new ObjectId("682c000000000000000000ae"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c12"),
     roomNumber: "P-304",
     roomType: "Adventure Quad Bed",
@@ -676,9 +677,9 @@ const rooms = [
     updatedAt: new Date()
   },
 
-  // ── Ashish Aama Homestay (9c13) ────────────────────────────────────
+  // ── Ashish Aama Homestay · hotelId: 682a1f2b3c4d5e6f7a8b9c13 ────────────
   {
-    _id: new ObjectId("682b00000000000000000ad1"),
+    _id: new ObjectId("682c000000000000000000af"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c13"),
     roomNumber: "G-01",
     roomType: "Traditional Gurung Twin Room",
@@ -714,7 +715,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    _id: new ObjectId("682b00000000000000000ad2"),
+    _id: new ObjectId("682c000000000000000000b0"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c13"),
     roomNumber: "G-02",
     roomType: "Aama Family Attic",
