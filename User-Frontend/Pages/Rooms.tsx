@@ -231,9 +231,10 @@ const Rooms = () => {
       )}
 
       <RoomDetailModal
-        room={selectedRoom}
+        room={selectedRoom ? { ...selectedRoom, hotelId } : null}
         isOpen={!!selectedRoom}
-         onClose={() => setSelectedRoom(null)}/>
+        onClose={() => setSelectedRoom(null)}
+      />
 
       {/* ADD ROOM MODAL */}
       <AddRoomModal
