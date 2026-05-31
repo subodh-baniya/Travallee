@@ -1,9 +1,7 @@
 import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 
-
 dotenv.config();
-
 
 const url = process.env.MONGO_URI;
 
@@ -13,7 +11,9 @@ if (!url) {
 }
 
 const rooms = [
+  // ── CMT Resort (9c01) ──────────────────────────────────────────────
   {
+    _id: new ObjectId("682b000000000000000000a1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "101",
     roomType: "Deluxe Double",
@@ -49,6 +49,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
+    _id: new ObjectId("682b000000000000000000a2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
     roomNumber: "102",
     roomType: "Family Safari View",
@@ -59,7 +60,7 @@ const rooms = [
     roomSize: 520,
     bedType: "2 Queen Beds",
     floorNumber: 1,
-    viewType: "forest", 
+    viewType: "forest",
     basePrice: 210,
     pricePerNight: 210,
     weekendPrice: 240,
@@ -83,7 +84,10 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+
+  // ── Heritage Palace Hotel (9c02) ───────────────────────────────────
   {
+    _id: new ObjectId("682b000000000000000000b1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
     roomNumber: "201",
     roomType: "Heritage Premium",
@@ -119,6 +123,7 @@ const rooms = [
     updatedAt: new Date()
   },
   {
+    _id: new ObjectId("682b000000000000000000b2"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
     roomNumber: "202",
     roomType: "King Heritage Suite",
@@ -152,8 +157,12 @@ const rooms = [
     numberOfReviews: 18,
     createdAt: new Date(),
     updatedAt: new Date()
-  },   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c03",
+  },
+
+  // ── Safari Jungle Camp (9c03) ──────────────────────────────────────
+  {
+    _id: new ObjectId("682b000000000000000000c1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c03"),
     roomNumber: "C10",
     roomType: "Jungle Cottage",
     suitetype: "Standard Cabin",
@@ -188,7 +197,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c03",
+    _id: new ObjectId("682b000000000000000000c2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c03"),
     roomNumber: "C11",
     roomType: "Riverside Jungle Tent",
     suitetype: "Luxury Glamping Tent",
@@ -222,8 +232,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-    {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c04",
+
+  // ── Mountain View Resort (9c04) ────────────────────────────────────
+  {
+    _id: new ObjectId("682b000000000000000000d1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c04"),
     roomNumber: "304",
     roomType: "Sunrise Deluxe",
     suitetype: "Executive Mountain View",
@@ -258,7 +271,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c04",
+    _id: new ObjectId("682b000000000000000000d2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c04"),
     roomNumber: "305",
     roomType: "Himalayan Twin",
     suitetype: "Standard Mountain Room",
@@ -292,8 +306,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-    {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c05",
+
+  // ── Lakeside Retreat (9c05) ────────────────────────────────────────
+  {
+    _id: new ObjectId("682b000000000000000000e1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c05"),
     roomNumber: "205",
     roomType: "Premium Lakeside Single",
     suitetype: "Boutique Suite",
@@ -328,7 +345,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c05",
+    _id: new ObjectId("682b000000000000000000e2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c05"),
     roomNumber: "206",
     roomType: "Lakeside Double",
     suitetype: "Standard Double Room",
@@ -362,8 +380,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+
+  // ── Green HAmlet Resort (9c06) ─────────────────────────────────────
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c06",
+    _id: new ObjectId("682b000000000000000000f1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c06"),
     roomNumber: "101-S",
     roomType: "Standard Single",
     suitetype: "Basic Economy",
@@ -398,7 +419,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c06",
+    _id: new ObjectId("682b000000000000000000f2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c06"),
     roomNumber: "102-S",
     roomType: "Variant Double",
     suitetype: "Standard Testing",
@@ -432,8 +454,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-    {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c07",
+
+  // ── Hotel Pauwa (9c07) ─────────────────────────────────────────────
+  {
+    _id: new ObjectId("682b000000000000000000a7"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c07"),
     roomNumber: "402",
     roomType: "Executive Double",
     suitetype: "Business Standard",
@@ -468,7 +493,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c07",
+    _id: new ObjectId("682b000000000000000000a8"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c07"),
     roomNumber: "403",
     roomType: "Pauwa Club Suite",
     suitetype: "Premium Suite",
@@ -502,8 +528,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+
+  // ── Chitwan Garden Resort (9c11) ───────────────────────────────────
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c11",
+    _id: new ObjectId("682b00000000000000000ab1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c11"),
     roomNumber: "G-12",
     roomType: "Twin Bed Garden Room",
     suitetype: "Lush Comfort Deluxe",
@@ -538,7 +567,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c11",
+    _id: new ObjectId("682b00000000000000000ab2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c11"),
     roomNumber: "G-14",
     roomType: "Honeymoon King Villa",
     suitetype: "Luxury Garden Suite",
@@ -572,8 +602,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+
+  // ── Kurintar Retreat (9c12) ────────────────────────────────────────
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c12",
+    _id: new ObjectId("682b00000000000000000ac1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c12"),
     roomNumber: "P-302",
     roomType: "Riverside Pool Suite",
     suitetype: "Premium Luxury Suite",
@@ -608,7 +641,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c12",
+    _id: new ObjectId("682b00000000000000000ac2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c12"),
     roomNumber: "P-304",
     roomType: "Adventure Quad Bed",
     suitetype: "Group Standard Room",
@@ -641,8 +675,11 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
+
+  // ── Ashish Aama Homestay (9c13) ────────────────────────────────────
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c13",
+    _id: new ObjectId("682b00000000000000000ad1"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c13"),
     roomNumber: "G-01",
     roomType: "Traditional Gurung Twin Room",
     suitetype: "Authentic Village Stay",
@@ -677,7 +714,8 @@ const rooms = [
     updatedAt: new Date()
   },
   {
-    hotelId: "682a1f2b3c4d5e6f7a8b9c13",
+    _id: new ObjectId("682b00000000000000000ad2"),
+    hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c13"),
     roomNumber: "G-02",
     roomType: "Aama Family Attic",
     suitetype: "Family Village Stay",
@@ -711,9 +749,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   }
-
-
-
 ];
 
 async function run() {
@@ -724,8 +759,7 @@ async function run() {
     await client.connect();
     console.log("✅ Connected successfully!");
 
-    // Automatically selects the database specified in your URI connection string path
-    const db = client.db(); 
+    const db = client.db();
     const collection = db.collection("rooms");
 
     console.log("🧹 Clearing old rooms data...");
@@ -735,7 +769,7 @@ async function run() {
     console.log("📤 Seeding new data...");
     const result = await collection.insertMany(rooms);
     console.log(`🚀 Success! ${result.insertedCount} rooms successfully seeded to Atlas!`);
-    
+
   } catch (err) {
     console.error("❌ Database seeding failed:", err);
   } finally {

@@ -1,10 +1,8 @@
-import 'dotenv/config'; // Loads your .env file
-import { MongoClient } from "mongodb";
+import 'dotenv/config';
+import { MongoClient, ObjectId } from "mongodb";
 
-// Access the environment variable
 const url = process.env.MONGO_URI;
 
-// 🔥 HOTELS DATA
 const hotels = [
   {
     userID: "682a1f2b3c4d5e6f7a8b9c01",
@@ -17,6 +15,7 @@ const hotels = [
       "https://www.cmthotel.com/images/gallery/galleryimages/fLw6W-davnj-room8-min.jpg",
       "https://www.cmthotel.com/images/gallery/galleryimages/GzyLG-apmgw-room7-min.jpg"
     ],
+
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Citizenship", "Passport"],
@@ -29,7 +28,10 @@ const hotels = [
     rating: 4.7,
     numberOfReviews: 320,
     isFeatured: true,
-    roomIDs: ["101, 102"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000a1"),
+      new ObjectId("682b000000000000000000a2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c02",
@@ -37,10 +39,12 @@ const hotels = [
     hotelDescription: "A heritage-style luxury hotel located in Bhaktapur.",
     hotelLocation: "Bhaktapur, Nepal",
     hotelName: "Heritage Palace Hotel",
+       hotelName: "Heritage Palace Hotel",
     hotelImages: [
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtjGV2PAijSOkn60es1e2Eo9gF1WvCAHKgoA&s",
       "https://cf.bstatic.com/xdata/images/hotel/max1024x768/173372452.jpg?k=e618be6f84562c35d985e07187388f97f16b54c9ef15015da4872102512b4893&o="
     ],
+
     propertyType: "Hotel",
     verified: true,
     VerificationDocuments: ["Driving License", "NID"],
@@ -53,7 +57,10 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 210,
     isFeatured: true,
-    roomIDs: ["201, 202"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000b1"),
+      new ObjectId("682b000000000000000000b2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c03",
@@ -61,10 +68,11 @@ const hotels = [
     hotelDescription: "Safari Jungle Camp in Chitwan with jungle safari experience.",
     hotelLocation: "Sauraha, Chitwan, Nepal",
     hotelName: "Safari Jungle Camp",
-    hotelImages: [
+       hotelImages: [
   
       "https://www.travelandleisureasia.com/in/hotels/india-hotels/a-tiger-safari-through-the-jungle-camps-of-madhya-pradesh/"
     ],
+
     propertyType: "Jungle Camp",
     verified: true,
     VerificationDocuments: ["NID", "Passport"],
@@ -77,7 +85,10 @@ const hotels = [
     rating: 4.3,
     numberOfReviews: 145,
     isFeatured: false,
-    roomIDs: [" C10, C11"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000c1"),
+      new ObjectId("682b000000000000000000c2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c04",
@@ -86,10 +97,11 @@ const hotels = [
       "A peaceful mountain resort famous for sunrise and Himalayan views.",
     hotelLocation: "Nagarkot, Nepal",
     hotelName: "Mountain View Resort",
-    hotelImages: [
+        hotelImages: [
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHKqAqE0ES3Rfb-pOHVMOVYsRB2nE4yPJPXC1kJ-dwbKcDeilYIp5ggeATA4XfxDVfoUeSwWOQf6g4ndliR-kMkU6ZQJTiXWLbrh_2NZUkDYg-2lDg25gmD2Z6F5-XWGlCBKSkx=w253-h337-k-no",
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFI1PRgP1gwqHo_BLFnqTFReuOJ7TWsM-vj4vEPKo9OEGIAn5YRCSf6qcTt7QRXpRBsr3Zmg40qWj3zi4nNxCBFqFpkKaPGUcsO2oPkc1gVvOeoXEWptK9f5NCejlStfnkqB4kmNA=w253-h379-k-no"
     ],
+
     propertyType: "Resort",
     verified: true,
     VerificationDocuments: ["Citizenship", "Driving License"],
@@ -102,7 +114,10 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 410,
     isFeatured: true,
-    roomIDs: ["304, 305"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000d1"),
+      new ObjectId("682b000000000000000000d2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c05",
@@ -111,10 +126,11 @@ const hotels = [
       "A relaxing lakeside retreat with modern rooms and scenic views of Phewa Lake.",
     hotelLocation: "Pokhara, Nepal",
     hotelName: "Lakeside Retreat",
-    hotelImages: [
+        hotelImages: [
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHmFhJSPTFgXCBBrvmQT74Xv1IQaBDKehSJWkY3WDCDoPsgDZc6cWKCw01fZq_LEGjgP5MaEC657xirsXtW6zk7qVfa2eEwbrWhCHaYFuuKKqZnywfV1IT1_jyFZ6U2aOY9roVV=s1360-w1360-h1020-rw",
       "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFUWBygF2pF9pwp9PmHnmE21Drh-tVUqA75iJ6VPpPMj1Y1aTRPKXvXqO1jiSU-KQnEDK97jODJBXuKyCZTOCcCYsD0OVXWlUNQXWAIBonSpu5wTzAu4zfJficeM4dOjVj8dqgr=s1360-w1360-h1020-rw"
     ],
+
     propertyType: "Boutique Hotel",
     verified: true,
     VerificationDocuments: ["NID", "Citizenship", "Passport"],
@@ -127,7 +143,10 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 275,
     isFeatured: true,
-    roomIDs: [" 205,206"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000e1"),
+      new ObjectId("682b000000000000000000e2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c06",
@@ -135,9 +154,10 @@ const hotels = [
     hotelDescription: "Test hotel where some fields are provided as comma-strings or boolean-strings to exercise validators.",
     hotelLocation: "Bharatpur Chitwan",
     hotelName: "Green HAmlet Resort",
-    hotelImages: [
+       hotelImages: [
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7HkFwGkSFHgbSSw42eH4ykTK64owOU7L7Mw&s"
     ],
+
     propertyType: "Guest House",
     verified: "true",
     VerificationDocuments: "NID, Citizenship, Passport",
@@ -150,7 +170,10 @@ const hotels = [
     rating: "4.2",
     numberOfReviews: "10",
     isFeatured: "false",
-    roomIDs: [" 101-S, 102-S"],
+    roomIDs: [
+      new ObjectId("682b000000000000000000f1"),
+      new ObjectId("682b000000000000000000f2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c07",
@@ -174,7 +197,10 @@ const hotels = [
     rating: 4.4,
     numberOfReviews: 128,
     isFeatured: false,
-    roomIDs: [" 402, 403 "],
+    roomIDs: [
+      new ObjectId("682b000000000000000000a7"),
+      new ObjectId("682b000000000000000000a8"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c11",
@@ -197,7 +223,10 @@ const hotels = [
     rating: 4.5,
     numberOfReviews: 215,
     isFeatured: true,
-    roomIDs: ["G-12, G-14, "],
+    roomIDs: [
+      new ObjectId("682b00000000000000000ab1"),
+      new ObjectId("682b00000000000000000ab2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c12",
@@ -220,7 +249,10 @@ const hotels = [
     rating: 4.6,
     numberOfReviews: 180,
     isFeatured: true,
-    roomIDs: ["P-302, P-304"],
+    roomIDs: [
+      new ObjectId("682b00000000000000000ac1"),
+      new ObjectId("682b00000000000000000ac2"),
+    ],
   },
   {
     userID: "682a1f2b3c4d5e6f7a8b9c13",
@@ -229,7 +261,7 @@ const hotels = [
     hotelLocation: "Annapurna-10, Ghandruk, Kaski, Nepal",
     hotelName: "Ashish Aama Homestay",
     hotelImages: [
-      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/a5/3a/83/night-shot.jpg?w=900&h=-1&s=1", 
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/a5/3a/83/night-shot.jpg?w=900&h=-1&s=1",
       "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/45/57/52/morning-view-from-ashish.jpg?w=700&h=-1&s=1"
     ],
     propertyType: "Homestay",
@@ -244,10 +276,12 @@ const hotels = [
     rating: 4.8,
     numberOfReviews: 124,
     isFeatured: true,
-    roomIDs: ["G-01,G-02"]
+    roomIDs: [
+      new ObjectId("682b00000000000000000ad1"),
+      new ObjectId("682b00000000000000000ad2"),
+    ],
   }
 ];
-
 
 async function run() {
   if (!url) {
