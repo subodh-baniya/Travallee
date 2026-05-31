@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
 import { useNavigate } from "react-router-dom";
-import { useBookings } from "../Hooks/useBooking"; 
+import { useBookings } from "../Hooks/useBooking";
 
 type Status = "ALL" | "PAID" | "NOTPAID";
 type BookingStatus = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
@@ -18,12 +18,6 @@ const bookingStatusMap: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
 
-const parseCurrencyValue = (value?: string) => {
-  if (!value) return 0;
-  const numericValue = Number(String(value).replace(/[^0-9.-]+/g, ""));
-  return Number.isFinite(numericValue) ? numericValue : 0;
-};
-
 const Bookings = () => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
@@ -35,47 +29,52 @@ const Bookings = () => {
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
 
+  // ── Derived state ──────────────────────────────────────────────────────────
 
   const filtered = bookings.filter(
     (b) =>
       (payFilter === "ALL" || b.status === payFilter) &&
       (statusFilter === "ALL" || b.bookingStatus === statusFilter) &&
-      (b.guest.toLowerCase().includes(search.toLowerCase()) ||
+      (
+        b.guest.toLowerCase().includes(search.toLowerCase()) ||
         b.room.includes(search) ||
-        b.id.toLowerCase().includes(search.toLowerCase()))
+        b.id.toLowerCase().includes(search.toLowerCase())
+      )
   );
 
-  const totalRevenue = bookings.reduce(
-    (sum, b) => sum + parseCurrencyValue(b.amount),
-    0
-  );
-  const occupiedRooms = new Set(
-    bookings.map((b) => b.room).filter((r) => r && r !== "-")
-  ).size;
-  const todayKey = new Date().toDateString();
-  const todaysCheckIns = bookings.filter((b) => {
-    const d = new Date(b.checkIn);
-    return !Number.isNaN(d.getTime()) && d.toDateString() === todayKey;
-  }).length;
+  const confirmedCount = bookings.filter((b) => b.bookingStatus === "CONFIRMED").length;
+  const pendingCount   = bookings.filter((b) => b.bookingStatus === "PENDING").length;
+  const unpaidCount    = bookings.filter((b) => b.status === "NOTPAID").length;
+  const cancelledCount = bookings.filter((b) => b.bookingStatus === "CANCELLED").length;
 
   const summaryCards = [
     {
-      label: "Revenue",
-      value: `Rs. ${totalRevenue.toLocaleString("en-US")}`,
-      sub: "Total booking value",
+      label: "Confirmed",
+      value: confirmedCount,
+      sub: "Active reservations",
+      color: "text-blue-600",
     },
     {
-      label: "Rooms Occupied",
-      value: `${occupiedRooms} / ${bookings.length}`,
-      sub: "Unique rooms currently booked",
+      label: "Pending",
+      value: pendingCount,
+      sub: "Awaiting confirmation",
+      color: "text-amber-600",
     },
     {
-      label: "Today's Check-ins",
-      value: `${todaysCheckIns}`,
-      sub: "Bookings starting today",
+      label: "Unpaid",
+      value: unpaidCount,
+      sub: "Payment not received",
+      color: "text-red-500",
+    },
+    {
+      label: "Cancelled",
+      value: cancelledCount,
+      sub: "Cancelled bookings",
+      color: "text-slate-400",
     },
   ];
 
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
@@ -105,13 +104,13 @@ const Bookings = () => {
       )}
 
       {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {summaryCards.map((card) => (
           <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               {card.label}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">
+            <p className={`mt-2 text-2xl font-semibold ${card.color}`}>
               {card.value}
             </p>
             <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
