@@ -214,7 +214,6 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     if (validate.hotelId) {
     await UserModel.updateOne({ _id: user._id }, { hotelId: validate.hotelId || null });
     }
-    console.log(`Hotel ${validate.hotelId} authenticated successfully`);
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -228,7 +227,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     await user.save();
     res.setHeader("Authorization", `Bearer ${token}`);
     res.cookie("token", token, options);
-    UserProfileRedis.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3); // Cache token for 3 days
+    UserProfileRedis.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3); 
     return apiResponse(
       res,
       200,

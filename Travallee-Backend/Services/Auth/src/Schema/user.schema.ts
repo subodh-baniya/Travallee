@@ -45,3 +45,4 @@ export const loginSchema = zod.object({
 })
 
 export type UserType = zod.infer<typeof UserType>;
+
