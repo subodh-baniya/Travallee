@@ -1,485 +1,253 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import axios from "axios";
-import { io, Socket } from "socket.io-client";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
-import { useNavigate } from "react-router-dom";
-
-/* ---------------- DATA ---------------- */
+import { useBookings } from "../Hooks/useBooking";
+import BookingDetails from "../Components/modal-popups/BookingDetailModal";
 
 type Status = "ALL" | "PAID" | "NOTPAID";
+type BookingStatus = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
 
-type Booking = {
-  id: string;
-  userId: string;
-  guest: string;
-  email?: string;
-  room: string;
-  checkIn: string;
-  checkOut: string;
-  amount: string;
-  status: Exclude<Status, "ALL">;
-  bookingStatus: "CONFIRMED" | "PENDING" | "CANCELLED";
+const paymentStatusMap: Record<string, string> = {
+  PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  NOTPAID: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
-type IncomingBookingEvent = {
-  bookingId?: string;
-  userId?: string;
-  userName?: string;
-  name?: string;
-  email?: string;
-  roomNumber?: string;
-  checkInDate?: string;
-  checkOutDate?: string;
-  stayDurationNights?: number;
-  amount?: number | string;
-  paymentMethod?: string;
-  bookingPayment?: string;
-  status?: string;
+const bookingStatusMap: Record<string, string> = {
+  CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
+  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+  CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
-
-type HotelBookingHistoryEntry = {
-  bookingId?: string;
-  userId?: string;
-  guestName?: string;
-  roomNumber?: string;
-  checkinDate?: string;
-  checkoutDate?: string;
-  totalPrice?: number;
-  paymentMethod?: string;
-  bookingPayment?: string;
-  status?: string;
-  stayDurationNights?: number;
-  email?: string;
-};
-
-type StoredNotificationShape = {
-  bookingId?: string;
-  userId?: string;
-  userName?: string;
-  name?: string;
-  email?: string;
-  roomNumber?: string;
-  checkInDate?: string;
-  checkOutDate?: string;
-  stayDurationNights?: number;
-  amount?: number | string;
-  paymentMethod?: string;
-  bookingPayment?: string;
-  status?: string;
-  createdAt?: string;
-};
-
-const BOOKING_HISTORY_STORAGE_KEY = "recentBookingHistory";
-
-
-const statusMap: Record<string, string> = {
-  PAID: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  NOTPAID: "bg-amber-50 text-amber-600 border-amber-100",
-};
-
-const formatDisplayDate = (value?: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
-};
-
-const parseCurrencyValue = (value?: string) => {
-  if (!value) return 0;
-  const numericValue = Number(String(value).replace(/[^0-9.-]+/g, ""));
-  return Number.isFinite(numericValue) ? numericValue : 0;
-};
-
-const normalizePaymentStatus = (status?: string): Exclude<Status, "ALL"> => {
-  if (status === "PAID" || status === "NOTPAID") {
-    return status;
-  }
-  return "NOTPAID";
-};
-
-const normalizeBookingStatus = (status?: string): "CONFIRMED" | "PENDING" | "CANCELLED" => {
-  if (status === "CONFIRMED" || status === "PENDING" || status === "CANCELLED") {
-    return status;
-  }
-  return "PENDING";
-};
-
-const mapIncomingBooking = (payload: IncomingBookingEvent): Booking => {
-  return {
-    id: payload.bookingId || `TMP-${Date.now()}`,
-    userId: payload.userId || "-",
-    guest: payload.userName || payload.name || payload.email || "Guest",
-    email: payload.email,
-    room: payload.roomNumber || "-",
-    checkIn: formatDisplayDate(payload.checkInDate),
-    checkOut: formatDisplayDate(payload.checkOutDate),
-    amount: payload.amount !== undefined ? `Rs. ${payload.amount}` : "-",
-    status: normalizePaymentStatus(payload.bookingPayment),
-    bookingStatus: normalizeBookingStatus(payload.status),
-  };
-};
-
-const mapHistoryBooking = (payload: HotelBookingHistoryEntry): Booking => {
-  return {
-    id: payload.bookingId || `TMP-${Date.now()}`,
-    userId: payload.userId || "-",
-    guest: payload.guestName || payload.email || payload.userId || "Guest",
-    email: payload.email,
-    room: payload.roomNumber || "-",
-    checkIn: formatDisplayDate(payload.checkinDate),
-    checkOut: formatDisplayDate(payload.checkoutDate),
-    amount: payload.totalPrice !== undefined ? `Rs. ${payload.totalPrice}` : "-",
-    status: normalizePaymentStatus(payload.bookingPayment),
-    bookingStatus: normalizeBookingStatus(payload.status),
-  };
-};
-
-const mapHistoryToNotification = (payload: HotelBookingHistoryEntry): StoredNotificationShape => ({
-  bookingId: payload.bookingId,
-  userId: payload.userId,
-  userName: payload.guestName,
-  email: payload.email,
-  roomNumber: payload.roomNumber,
-  checkInDate: payload.checkinDate,
-  checkOutDate: payload.checkoutDate,
-  stayDurationNights: payload.stayDurationNights,
-  amount: payload.totalPrice,
-  paymentMethod: payload.paymentMethod,
-  bookingPayment: payload.bookingPayment,
-  status: payload.status,
-  createdAt: new Date().toISOString(),
-});
-
-const mapIncomingToStoredBooking = (payload: IncomingBookingEvent): StoredNotificationShape => ({
-  bookingId: payload.bookingId,
-  userId: payload.userId,
-  userName: payload.userName || payload.name || payload.email,
-  email: payload.email,
-  roomNumber: payload.roomNumber,
-  checkInDate: payload.checkInDate,
-  checkOutDate: payload.checkOutDate,
-  stayDurationNights: payload.stayDurationNights,
-  amount: payload.amount,
-  paymentMethod: payload.paymentMethod,
-  bookingPayment: payload.bookingPayment,
-  status: payload.status,
-  createdAt: new Date().toISOString(),
-});
-
 
 const Bookings = () => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
-  const navigate = useNavigate();
 
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [newBookingIds, setNewBookingIds] = useState<string[]>([]);
-  const [filter, setFilter] = useState<Status>("ALL");
+  const { bookings, newBookingIds, loading, error, refetch } = useBookings(hotelId);
+
+  const [payFilter, setPayFilter] = useState<Status>("ALL");
+  const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchBookingHistory = async () => {
-      if (!hotelId) {
-        return;
-      }
+  // ── Derived state ──────────────────────────────────────────────────────────
 
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001"}/api/v1/admin/booking-history/${hotelId}`,
-          { withCredentials: true },
-        );
+  const filtered = bookings.filter(
+    (b) =>
+      (payFilter === "ALL" || b.status === payFilter) &&
+      (statusFilter === "ALL" || b.bookingStatus === statusFilter) &&
+      (
+        b.guest.toLowerCase().includes(search.toLowerCase()) ||
+        b.room.includes(search) ||
+        b.id.toLowerCase().includes(search.toLowerCase())
+      )
+  );
 
-        const history = response.data?.data?.bookingHistory || response.data?.bookingHistory || [];
-        if (!Array.isArray(history)) {
-          return;
-        }
+  const confirmedCount = bookings.filter((b) => b.bookingStatus === "CONFIRMED").length;
+  const pendingCount   = bookings.filter((b) => b.bookingStatus === "PENDING").length;
+  const unpaidCount    = bookings.filter((b) => b.status === "NOTPAID").length;
+  const cancelledCount = bookings.filter((b) => b.bookingStatus === "CANCELLED").length;
 
-        try {
-          localStorage.setItem(
-            BOOKING_HISTORY_STORAGE_KEY,
-            JSON.stringify(
-              history.map((item: HotelBookingHistoryEntry) => mapHistoryToNotification(item)).slice(0, 30),
-            ),
-          );
-        } catch {
-          // Ignore local storage failures.
-        }
+  const summaryCards = [
+    { label: "Confirmed",  value: confirmedCount, sub: "Active reservations",   color: "text-blue-600"  },
+    { label: "Pending",    value: pendingCount,   sub: "Awaiting confirmation",  color: "text-amber-600" },
+    { label: "Unpaid",     value: unpaidCount,    sub: "Payment not received",   color: "text-red-500"   },
+    { label: "Cancelled",  value: cancelledCount, sub: "Cancelled bookings",     color: "text-slate-400" },
+  ];
 
-        setBookings(
-          history
-            .map((item: HotelBookingHistoryEntry) => mapHistoryBooking(item))
-            .filter((item: Booking, index: number, array: Booking[]) =>
-              array.findIndex((candidate) => candidate.id === item.id) === index,
-            )
-            .slice(0, 30),
-        );
-      } catch {
-        try {
-          const raw = localStorage.getItem(BOOKING_HISTORY_STORAGE_KEY);
-          if (!raw) {
-            return;
-          }
-
-          const parsed = JSON.parse(raw);
-          if (!Array.isArray(parsed)) {
-            return;
-          }
-
-          const restored = parsed
-            .map((item: IncomingBookingEvent) => mapIncomingBooking(item))
-            .filter((item: Booking, index: number, array: Booking[]) =>
-              array.findIndex((candidate) => candidate.id === item.id) === index,
-            )
-            .slice(0, 30);
-
-          setBookings(restored);
-        } catch {
-          // Ignore local storage parse issues.
-        }
-      }
-    };
-
-    void fetchBookingHistory();
-  }, [hotelId]);
-
-  useEffect(() => {
-    if (!hotelId) {
-      return;
-    }
-
-    const socket: Socket = io(import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001", {
-      path: "/api/v1/admin/socket.io",
-      query: { HotelId: hotelId },
-      withCredentials: true,
-      transports: ["websocket"],
-    });
-
-    const handleNewBooking = (payload: IncomingBookingEvent) => {
-      const incoming = mapIncomingBooking(payload);
-
-      try {
-        const previousRaw = localStorage.getItem(BOOKING_HISTORY_STORAGE_KEY);
-        const previous = previousRaw ? JSON.parse(previousRaw) : [];
-        const normalized = Array.isArray(previous) ? previous : [];
-        const withoutDuplicate = payload?.bookingId
-          ? normalized.filter((item: IncomingBookingEvent) => item?.bookingId !== payload.bookingId)
-          : normalized;
-        localStorage.setItem(
-          BOOKING_HISTORY_STORAGE_KEY,
-          JSON.stringify([mapIncomingToStoredBooking(payload), ...withoutDuplicate].slice(0, 30)),
-        );
-      } catch {
-        // Ignore local storage failures.
-      }
-
-      setBookings((prev) => {
-        const filteredExisting = prev.filter((item) => item.id !== incoming.id);
-        return [incoming, ...filteredExisting];
-      });
-
-      // mark booking as new briefly so UI can show red "new" badge next to email
-      setNewBookingIds((prev) => [incoming.id, ...prev].slice(0, 50));
-      setTimeout(() => {
-        setNewBookingIds((prev) => prev.filter((id) => id !== incoming.id));
-      }, 10000);
-    };
-
-    socket.on("new_booking", handleNewBooking);
-    socket.on("booking_notification", handleNewBooking);
-    socket.on("bookingConfirmed", handleNewBooking);
-
-    return () => {
-      socket.off("new_booking", handleNewBooking);
-      socket.off("booking_notification", handleNewBooking);
-      socket.off("bookingConfirmed", handleNewBooking);
-      socket.disconnect();
-    };
-  }, [hotelId]);
-
-  const filtered = bookings.filter((b) => {
-    return (
-      (filter === "ALL" || b.status === filter) &&
-      (b.guest.toLowerCase().includes(search.toLowerCase()) ||
-        b.room.includes(search))
-    );
-  });
-
-  const totalRevenue = bookings.reduce((sum, booking) => sum + parseCurrencyValue(booking.amount), 0);
-  const occupiedRooms = new Set(bookings.map((booking) => booking.room).filter((room) => room && room !== "-")).size;
-  const todayKey = new Date().toDateString();
-  const todaysCheckIns = bookings.filter((booking) => {
-    const checkInDate = new Date(booking.checkIn);
-    return !Number.isNaN(checkInDate.getTime()) && checkInDate.toDateString() === todayKey;
-  }).length;
-
-  const visibleBookings = filtered;
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* Banner removed per request */}
-
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Bookings
-          </h1>
-          <p className="text-xs text-slate-500">
-            Manage all reservations
-          </p>
+          <h1 className="text-lg font-semibold text-slate-900">Bookings</h1>
+          <p className="text-xs text-slate-500">Manage all reservations</p>
         </div>
-
         <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
           + New Booking
         </button>
       </div>
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white border-l-4 border-rose-500 border rounded-xl p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Revenue</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">Rs. {totalRevenue.toLocaleString("en-US")}</p>
-          <p className="text-xs text-slate-500 mt-1">Total booking value</p>
+      {/* ERROR BANNER */}
+      {error && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+          <span>{error}</span>
+          <button onClick={refetch} className="ml-4 text-xs underline hover:no-underline">
+            Retry
+          </button>
         </div>
+      )}
 
-        <div className="bg-white border-l-4 border-blue-500 border rounded-xl p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Rooms Occupied</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{occupiedRooms} / {bookings.length}</p>
-          <p className="text-xs text-slate-500 mt-1">Unique rooms currently booked</p>
-        </div>
-
-        <div className="bg-white border-l-4 border-amber-500 border rounded-xl p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Average Rating</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">0 / 5</p>
-          <p className="text-xs text-slate-500 mt-1">Waiting for review data</p>
-        </div>
-
-        <div className="bg-white border-l-4 border-emerald-500 border rounded-xl p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Today's Check-ins</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{todaysCheckIns}</p>
-          <p className="text-xs text-slate-500 mt-1">Bookings starting today</p>
-        </div>
+      {/* SUMMARY CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {summaryCards.map((card) => (
+          <div
+            key={card.label}
+            className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:-translate-y-1 duration-200 hover:shadow-md"
+          >
+            <p className="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
+            <p className={`mt-2 text-2xl font-semibold ${card.color}`}>{card.value}</p>
+            <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
+          </div>
+        ))}
       </div>
-
-      {/* New Bookings section removed per user request */}
 
       {/* FILTER BAR */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
-
-        {/* SEARCH */}
         <input
           type="text"
-          placeholder="Search guest or room..."
+          placeholder="Search guest, room, booking ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+          className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition"
         />
 
-        {/* STATUS FILTER */}
         <div className="flex gap-2">
-          {["ALL", "PAID", "NOTPAID"].map((s) => (
+          {(["ALL", "PAID", "NOTPAID"] as Status[]).map((s) => (
             <button
               key={s}
-              onClick={() => setFilter(s as Status)}
+              onClick={() => setPayFilter(s)}
               className={`px-3 py-1.5 text-xs rounded-full transition ${
-                filter === s
+                payFilter === s
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              {s}
+              {s === "NOTPAID" ? "Unpaid" : s === "ALL" ? "All Payment" : s}
             </button>
           ))}
         </div>
 
+        <div className="flex gap-2">
+          {(["ALL", "CONFIRMED", "PENDING", "CANCELLED"] as BookingStatus[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 text-xs rounded-full transition ${
+                statusFilter === s
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {s === "ALL" ? "All Status" : s.charAt(0) + s.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ALL BOOKINGS */}
+      {/* BOOKINGS TABLE */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
 
+        {/* Card header — same pattern as Overview */}
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">All Bookings</h2>
             <p className="text-xs text-slate-500">Every booking currently in the system</p>
           </div>
-          <span className="text-xs text-slate-500">{visibleBookings.length} shown</span>
+          <span className="text-xs text-slate-500">{filtered.length} shown</span>
         </div>
 
-        <table className="w-full text-sm">
-
-    <thead className="bg-slate-50 text-slate-500 text-xs">
-      <tr>
-        <th className="text-left px-4 py-3 font-medium">Name</th>
-        <th className="text-center px-4 py-3 font-medium">Room No</th>
-        <th className="text-center px-4 py-3 font-medium">Status</th>
-        <th className="text-left px-4 py-3 font-medium">Check-in</th>
-        <th className="text-left px-4 py-3 font-medium">Check-out</th>
-      </tr>
-    </thead>
-
-          <tbody className="divide-y divide-slate-100">
-
-            {visibleBookings.map((b, i) => (
-              <motion.tr
-                key={b.id || i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
-                className={`hover:bg-slate-50 transition cursor-pointer`}
-              >
-
-                <td className="px-4 py-3 font-medium text-slate-800 align-middle">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{b.guest}</span>
-                      <span className="text-[11px] text-slate-400">{b.email || "-"}</span>
-                    </div>
-                    {newBookingIds.includes(b.id) && (
-                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
-                        New
-                      </span>
-                    )}
-                  </div>
-                </td>
-
-                <td className="px-4 py-3 text-center align-middle">
-                  <span className="text-blue-600 font-medium">
-                    {b.room}
-                  </span>
-                </td>
-
-                <td className="px-4 py-3 text-center align-middle">
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full border ${statusMap[b.status]}`}
-                  >
-                    {b.status}
-                  </span>
-                </td>
-
-                <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-                  {b.checkIn}
-                </td>
-
-                <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-                  {b.checkOut}
-                </td>
-
-              </motion.tr>
-            ))}
-
-            {visibleBookings.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" style={{ tableLayout: "fixed", minWidth: "900px" }}>
+            <thead className="bg-slate-50 text-slate-500 text-xs">
               <tr>
-                <td className="px-4 py-10 text-center text-slate-500" colSpan={5}>
-                  No bookings available.
-                </td>
+                <th className="text-left px-4 py-3 font-medium" style={{ width: "130px" }}>Booking ID</th>
+                <th className="text-left px-4 py-3 font-medium" style={{ width: "180px" }}>Guest</th>
+                <th className="text-center px-4 py-3 font-medium" style={{ width: "80px" }}>Room</th>
+                <th className="text-center px-4 py-3 font-medium" style={{ width: "90px" }}>Payment</th>
+                <th className="text-center px-4 py-3 font-medium" style={{ width: "100px" }}>Status</th>
+                <th className="text-left px-4 py-3 font-medium" style={{ width: "90px" }}>Check-in</th>
+                <th className="text-left px-4 py-3 font-medium" style={{ width: "90px" }}>Check-out</th>
+                <th className="text-right px-4 py-3 font-medium" style={{ width: "100px" }}>Amount</th>
+                <th className="text-left px-4 py-3 font-medium" style={{ width: "80px" }}>Method</th>
               </tr>
-            )}
+            </thead>
 
-          </tbody>
-        </table>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-10 text-center text-slate-400" colSpan={9}>
+                    Loading bookings...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-10 text-center text-slate-400" colSpan={9}>
+                    No bookings available.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((b, i) => (
+                  <motion.tr
+                    key={b.id || i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    onClick={() => setSelectedBookingId(b.id)}
+                    className="hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    <td className="px-4 py-3 align-middle font-mono text-xs text-slate-400 truncate">
+                      {b.id}
+                    </td>
+
+                    <td className="px-4 py-3 align-middle">
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-slate-800 truncate">{b.guest}</span>
+                          <span className="text-[11px] text-slate-400 truncate">{b.email || "-"}</span>
+                        </div>
+                        {newBookingIds.includes(b.id) && (
+                          <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+                            New
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-center align-middle">
+                      <span className="text-blue-600 font-medium">{b.room}</span>
+                    </td>
+
+                    <td className="px-4 py-3 text-center align-middle">
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${paymentStatusMap[b.status]}`}>
+                        {b.status === "PAID" ? "Paid" : "Unpaid"}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3 text-center align-middle">
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${bookingStatusMap[b.bookingStatus]}`}>
+                        {b.bookingStatus.charAt(0) + b.bookingStatus.slice(1).toLowerCase()}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkIn}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkOut}</td>
+
+                    <td className="px-4 py-3 text-right align-middle text-blue-600 font-medium text-xs">
+                      {b.amount}
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">
+                      {b.paymentMethod || "-"}
+                    </td>
+                  </motion.tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* BOOKING DETAILS MODAL */}
+      <AnimatePresence>
+        {selectedBookingId && (
+          <BookingDetails
+            bookingId={selectedBookingId}
+            onClose={() => setSelectedBookingId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
