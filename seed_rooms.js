@@ -10,9 +10,8 @@ if (!url) {
   process.exit(1);
 }
 
-// ─── Pre-assigned room _ids (matched in test_mongo.js) ───────────────────────
 const rooms = [
-  // ── CMT Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c01 ──────────────────────
+
   {
     _id: new ObjectId("682c000000000000000000a1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c01"),
@@ -85,8 +84,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Heritage Palace Hotel · hotelId: 682a1f2b3c4d5e6f7a8b9c02 ────────────
   {
     _id: new ObjectId("682c000000000000000000b1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c02"),
@@ -159,8 +156,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Safari Jungle Camp · hotelId: 682a1f2b3c4d5e6f7a8b9c03 ──────────────
   {
     _id: new ObjectId("682c000000000000000000c1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c03"),
@@ -233,8 +228,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Mountain View Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c04 ────────────
   {
     _id: new ObjectId("682c000000000000000000d1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c04"),
@@ -307,8 +300,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Lakeside Retreat · hotelId: 682a1f2b3c4d5e6f7a8b9c05 ─────────────────
   {
     _id: new ObjectId("682c000000000000000000e1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c05"),
@@ -381,8 +372,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Green HAmlet Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c06 ─────────────
   {
     _id: new ObjectId("682c000000000000000000f1"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c06"),
@@ -455,8 +444,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Hotel Pauwa Bharatpur · hotelId: 682a1f2b3c4d5e6f7a8b9c07 ────────────
   {
     _id: new ObjectId("682c00000000000000000071"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c07"),
@@ -529,8 +516,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Chitwan Garden Resort · hotelId: 682a1f2b3c4d5e6f7a8b9c11 ────────────
   {
     _id: new ObjectId("682c000000000000000000ab"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c11"),
@@ -603,8 +588,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Kurintar Retreat · hotelId: 682a1f2b3c4d5e6f7a8b9c12 ─────────────────
   {
     _id: new ObjectId("682c000000000000000000ad"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c12"),
@@ -676,8 +659,6 @@ const rooms = [
     createdAt: new Date(),
     updatedAt: new Date()
   },
-
-  // ── Ashish Aama Homestay · hotelId: 682a1f2b3c4d5e6f7a8b9c13 ────────────
   {
     _id: new ObjectId("682c000000000000000000af"),
     hotelId: new ObjectId("682a1f2b3c4d5e6f7a8b9c13"),
