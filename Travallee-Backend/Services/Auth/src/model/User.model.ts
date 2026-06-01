@@ -1,5 +1,5 @@
 
-import  zod  from "zod";
+import  zod, { string }  from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -22,6 +22,7 @@ export const UserZodSchema = zod.object({
     otp: zod.number().optional(),
     otpExpiry: zod.date().optional(),
     refreshToken: zod.string().optional(),
+    superAdminKey: zod.string().optional(),
   
 })  
 
@@ -51,6 +52,7 @@ const UserSchema = new mongoose.Schema<UserType, UserModel, UserMethods>({
   otp: { type: Number },
   otpExpiry: { type: Date },
   refreshToken: { type: String },
+  superAdminKey: { type: String },
 }, { timestamps: true });
 
 UserSchema.pre("save", async function (next) {
@@ -69,6 +71,16 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
+UserSchema.pre("save",  async function (next) {
+  if (!this.isModified("superAdminKey") || !this.superAdminKey) return;
+  try{
+    const salt = await bcrypt.genSalt(10);
+    this.superAdminKey = await bcrypt.hash(this.superAdminKey, salt);
+  } catch (err) {
+    console.error("Error hashing super admin key:", err);
+  }
+});
+
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string,
 ) {
@@ -81,7 +93,7 @@ UserSchema.methods.comparePassword = async function (
 
 UserSchema.methods.generateJWT = function () {
   // If hotelId is present then we will add it to the payload otherwise we will not add it to the payload
-  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null, Name: this.Name };
+  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null, Name: this.Name, SuperAdminKey: this.superAdminKey || null };
   const secret: string = process.env.JWT_SECRET as string;
   const data = process.env.JWT_EXPIRES_IN as string;
 
