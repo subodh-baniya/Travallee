@@ -268,7 +268,7 @@ const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
 const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
   let validated: any;
   const userId = req.user.id;
-  const { email, Name } = req.user;
+  const { email, Name } = req.body;
 
   try {
     validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
@@ -367,7 +367,7 @@ const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
       bookingPayment: "PAID",
       status: "CONFIRMED",
       guests: validated.guests,
-      email: req.user.email,
+      email: email,
     });
   } catch (error: any) {
     console.error("Failed to sync booking history with Hotel service:", error?.message || error);
