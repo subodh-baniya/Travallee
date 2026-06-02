@@ -381,7 +381,7 @@ const deleteAccount = asyncHandler(async (req: any, res: any) => {
 
 
 
-// not completed baniya ko kaam 1
+// not completed baniya ko kaam 
 
 const googleAuth = asyncHandler(async (req: any, res: any) => {
   const userProfile = req.user;
