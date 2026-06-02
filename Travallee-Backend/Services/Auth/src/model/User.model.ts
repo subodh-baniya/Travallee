@@ -30,6 +30,7 @@ export type UserType = zod.infer<typeof UserZodSchema>;
 
 interface UserMethods {
   comparePassword(candidatePassword: string): Promise<boolean>;
+  compareSuperAdminKey(candidateKey: string): Promise<boolean>;
   generateJWT(): string;
 }
 
@@ -80,6 +81,16 @@ UserSchema.pre("save",  async function (next) {
     console.error("Error hashing super admin key:", err);
   }
 });
+
+UserSchema.methods.compareSuperAdminKey = async function (
+  candidateKey: string,
+): Promise<boolean> {
+  if (!this.superAdminKey) {
+    return false;
+  }
+
+  return bcrypt.compare(candidateKey, this.superAdminKey);
+};
 
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string,

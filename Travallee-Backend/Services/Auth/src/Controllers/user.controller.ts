@@ -64,6 +64,8 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 400, "Username already exists");
     }
 
+    
+
     const otp = Math.floor(1000 + Math.random() * 9000);
 
     registerRedis.set(`otp:${validate.email}`, otp, "EX", 10 * 60); // Store OTP in Redis with 10 minutes expiration
@@ -202,6 +204,7 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
 });
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
+    const key = "kcprabin"
     const validate = loginSchema.parse(req.body);
     const user = await UserModel.findOne({ Username: validate.Username as string });
     if (!user) {
@@ -213,6 +216,12 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     }
     if (validate.hotelId) {
     await UserModel.updateOne({ _id: user._id }, { hotelId: validate.hotelId || null });
+    }
+    if (validate.superAdminKey) {
+      const isSuperAdminKeyValid = await user.compareSuperAdminKey(validate.superAdminKey);
+      if (!isSuperAdminKeyValid) {
+        return apiError(res, 400, "Invalid super admin key");
+      }
     }
     const options = {
       httpOnly: true,
