@@ -265,7 +265,66 @@ const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
 });
 
 
+const createBookingFromHotel=asyncHandler(async(req:any,res:any)=>{
+let validated: any;
+  const userId = req.user.id;
+  const { email, Name } = req.user;
 
+  try {
+    validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const formattedErrors = error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+      return apiError(res, 400, "Validation Error", formattedErrors);
+    }
+    return apiError(res, 400, "Invalid request data");
+  }
+
+  let roomObjectId: mongoose.Types.ObjectId;
+  let hotelObjectId: mongoose.Types.ObjectId;
+
+  try {
+    roomObjectId = new mongoose.Types.ObjectId(validated.roomId);
+    hotelObjectId = new mongoose.Types.ObjectId(validated.hotelId);
+  } catch {
+    return apiError(res, 400, "Invalid room or hotel ID format");
+  }
+
+  const bookedDates = await bookingModel.find({
+    room: roomObjectId,
+    hotel: hotelObjectId,
+    status: { $in: ["PENDING", "CONFIRMED"] },
+    bookingPayment: "PAID",
+    $or: [{ checkIn: { $lt: new Date(validated.checkOut) }, checkOut: { $gt: new Date(validated.checkIn) } }],
+  });
+
+  if (bookedDates.length > 0) {
+    return apiError(res, 400, "Room is not available for the selected dates");
+  }
+
+  const newBooking = {
+    user: validated.userId,
+    hotel: hotelObjectId,
+    room: roomObjectId,
+    guests: validated.guests,
+    checkIn: new Date(validated.checkIn),
+    checkOut: new Date(validated.checkOut),
+    totalPrice: validated.totalPrice,
+    paymentMethod: validated.paymentMethod,
+    bookingPayment: validated.paymentMethod === "COD" ? "NOTPAID" : "PAID",
+    status: validated.paymentMethod === "COD" ? "PENDING" : "CONFIRMED",
+    hotelId: validated.hotelId,
+    roomId: validated.roomId,
+    hotelName: validated.hotelName,
+    roomNumber: validated.roomNumber,
+    email: validated.userEmail,
+  };
+
+
+});
 
 
 
@@ -329,4 +388,4 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
 
-export { createBooking, esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};
+export { createBooking, createBookingFromHotel,esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};
