@@ -8,7 +8,7 @@ const bookingSchema = new mongoose.Schema({
     },
     Name:{
         type:String,
-        required:true
+        required:false
     },
     hotel: {
         type: mongoose.Schema.Types.ObjectId,
@@ -75,7 +75,7 @@ const bookingSchema = new mongoose.Schema({
     },
     totalNights:{
         type:Number,
-        required:true
+        required:false
     },
 
 }, { timestamps: true })

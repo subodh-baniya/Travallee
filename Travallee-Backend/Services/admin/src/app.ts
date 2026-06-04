@@ -23,6 +23,7 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
     const queryHotelId = socket.handshake.query.HotelId as string | undefined;
+    const superAdminId = socket.handshake.query.SuperAdminId as string | undefined;
     let resolvedHotelId = queryHotelId;
 
     if (!resolvedHotelId) {
@@ -52,7 +53,7 @@ io.on("connection", (socket) => {
             return;
         }
     }
-
+    socket.join(`superadmin_${superAdminId}`);
     socket.join(`hotel_${resolvedHotelId}`);
     socket.on("disconnect", () => {
         console.log("Admin client disconnected:", socket.id);
