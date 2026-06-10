@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Authcontext } from "./Authcontext";
 import { getProfileApi, loginApi, logoutApi } from "../Services/auth.api";
 import { AUTH_STORAGE_KEY, ROLE_SUPERADMIN } from "../Types/auth.types";
 import { io } from "socket.io-client";
-
 
 const getStoredSession = () => {
   try {
@@ -18,12 +17,12 @@ export const Authprovider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [socketId, setSocketId] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
-
   const socketRef = useRef(null);
 
-  const isAuthenticated = Boolean(
-    user?.token && user?.role === ROLE_SUPERADMIN
-  );
+  // ✅ Track which user ID the socket was opened for
+  const socketUserIdRef = useRef(null);
+
+  const isAuthenticated = Boolean(user?.token && user?.role === ROLE_SUPERADMIN);
 
   const persistUser = (nextUser) => {
     if (nextUser) {
@@ -33,80 +32,74 @@ export const Authprovider = ({ children }) => {
     }
   };
 
-  const connectSocket = (token, superAdminId) => {
+  const connectSocket = useCallback((token, superAdminId) => {
+    // ✅ Key guard: don't reconnect if already connected for the same user
+    if (
+      socketRef.current?.connected &&
+      socketUserIdRef.current === superAdminId
+    ) {
+      return;
+    }
 
+    // Disconnect any existing socket first
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
+      socketUserIdRef.current = null;
     }
 
-    socketRef.current = io("http://localhost:4001", {
-      auth: {
-        token,
-      },
-      query: {
-        SuperAdminId: String(superAdminId),
-      },
+    const socket = io("http://localhost:4001", {
+      auth: { token },
+      query: { SuperAdminId: String(superAdminId) },
       path: "/api/v1/admin/socket.io",
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
     });
 
-    socketRef.current.on("connect", () => {
-      console.log("Socket connected:", socketRef.current.id);
-      setSocketId(socketRef.current.id);
+    socketRef.current = socket;
+    socketUserIdRef.current = superAdminId; // ✅ Mark who this socket belongs to
+
+    socket.on("connect", () => {
+      setSocketId(socket.id);
       setSocketConnected(true);
     });
 
-    socketRef.current.on("connect_error", (err) => {
-      console.error("Socket connection error:", err);
+    socket.on("connect_error", () => {
       setSocketConnected(false);
     });
 
-    socketRef.current.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
+    socket.on("disconnect", () => {
       setSocketConnected(false);
+      setSocketId(null);
     });
-  };
+  }, []); // ✅ stable — no dependencies
 
-  const disconnectSocket = () => {
+  const disconnectSocket = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
+      socketUserIdRef.current = null;
     }
     setSocketConnected(false);
     setSocketId(null);
-  };
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
       const cached = getStoredSession();
-
-      if (cached?.token && cached?.role === ROLE_SUPERADMIN) {
-        setUser(cached);
-
-
-        connectSocket(cached.token, cached.id);
-      }
-
       try {
         const response = await getProfileApi();
         const profile = response?.data;
-        
 
         if (profile?.role === ROLE_SUPERADMIN) {
           const merged = {
             ...cached,
             ...profile,
             role: ROLE_SUPERADMIN,
-            id : profile?._id || cached?.id || "",
+            id: profile?._id || cached?.id || "",
             token: cached?.token || profile?.token || "",
           };
-          console.log("Profile loaded, merged user data:", merged);
-
           setUser(merged);
           persistUser(merged);
-
-          connectSocket(merged.token, merged.id);
         } else {
           setUser(null);
           persistUser(null);
@@ -120,41 +113,36 @@ export const Authprovider = ({ children }) => {
     };
 
     initAuth();
-
-
-    return () => {
-      disconnectSocket();
-    };
+    return () => disconnectSocket();
   }, []);
 
+  // ✅ Use stable primitive values as dependencies, not the whole `user` object
+  const userId = user?.id;
+  const userToken = user?.token;
+
+  useEffect(() => {
+    if (authChecked && userToken && userId) {
+      connectSocket(userToken, userId);
+    }
+  }, [authChecked, userId, userToken, connectSocket]); // ✅ primitives = stable refs
 
   const login = async (form) => {
     const response = await loginApi(form);
+    if (!response?.success) throw new Error(response?.message);
 
-    if (!response?.success) {
-      throw new Error(response?.message || "Login failed");
-    }
-
-    const payload = response?.data || {};
-
-    if (payload?.role !== ROLE_SUPERADMIN) {
-      throw new Error("Access denied. Superadmin account required.");
-    }
+    const payload = response?.data;
+    if (payload?.role !== ROLE_SUPERADMIN) throw new Error("Access denied");
 
     const nextUser = {
       name: payload?.name || "Super Admin",
       email: payload?.email || "",
       role: payload?.role,
       token: payload?.token || "",
-      id: payload?._id,
+      id: payload?.id,
     };
 
     setUser(nextUser);
     persistUser(nextUser);
-
- 
-    connectSocket(nextUser.token, nextUser.id);
-
     return nextUser;
   };
 
@@ -164,11 +152,9 @@ export const Authprovider = ({ children }) => {
     } finally {
       setUser(null);
       persistUser(null);
-
       disconnectSocket();
     }
   };
-
 
   const value = useMemo(
     () => ({
@@ -185,8 +171,6 @@ export const Authprovider = ({ children }) => {
   );
 
   return (
-    <Authcontext.Provider value={value}>
-      {children}
-    </Authcontext.Provider>
+    <Authcontext.Provider value={value}>{children}</Authcontext.Provider>
   );
 };
