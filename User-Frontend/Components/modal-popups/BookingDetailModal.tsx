@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { useBookings } from "../../Hooks/useBooking";
+import { getBookingHistory } from "../../Services/hotel.api";
 
 type StoredBookingEvent = {
   bookingId?: string;
@@ -133,11 +134,7 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
       setLoading(true);
 
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001"}/api/v1/admin/booking-history/${hotelId}`,
-          { withCredentials: true }
-        );
-
+        const response = await getBookingHistory(hotelId);
         const history =
           response.data?.data?.bookingHistory ||
           response.data?.bookingHistory ||
