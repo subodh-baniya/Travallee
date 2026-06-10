@@ -1,13 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../Hooks/useAuth";
 
-const AUTH_LOGIN_ENDPOINT = import.meta.env.VITE_AUTH_LOGIN_URL || "http://localhost:3000/api/v1/users/login";
-
-export default function Login({ onLoginSuccess }) {
-  const [form, setForm] = useState({
-    Username: "",
-    password: "",
-    superAdminKey: "",
-  });
+export default function Login() {
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const [form, setForm] = useState({ Username: "", password: "", superAdminKey: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,6 +17,11 @@ export default function Login({ onLoginSuccess }) {
     event.preventDefault();
     setError("");
 
+    if (!auth) {
+      setError("Authentication is not initialized.");
+      return;
+    }
+
     if (!form.Username.trim() || !form.password.trim()) {
       setError("Username and password are required.");
       return;
@@ -27,38 +30,14 @@ export default function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch(AUTH_LOGIN_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          Username: form.Username.trim(),
-          password: form.password,
-          superAdminKey: form.superAdminKey.trim() || undefined,
-        }),
+      await auth.login({
+        Username: form.Username.trim(),
+        password: form.password,
+        superAdminKey: form.superAdminKey.trim() || undefined,
       });
-
-      const payload = await response.json();
-
-      if (!response.ok || !payload?.success) {
-        throw new Error(payload?.message || "Login failed. Please check your credentials.");
-      }
-
-      const role = payload?.data?.role;
-      const token = payload?.data?.token;
-
-      if (role !== "superadmin") {
-        throw new Error("Access denied. Superadmin account required.");
-      }
-
-      onLoginSuccess({
-        role,
-        token,
-        name: payload?.data?.name || "Super Admin",
-        email: payload?.data?.email || "",
-      });
+      navigate("/dashboard/app/banners", { replace: true });
     } catch (err) {
-      setError(err.message || "Unable to sign in right now.");
+      setError(err?.response?.data?.message || err?.message || "Unable to sign in right now.");
     } finally {
       setLoading(false);
     }
@@ -69,34 +48,37 @@ export default function Login({ onLoginSuccess }) {
       <style>{`
         .login-bg {
           min-height: 100vh;
-          background: #f4f4f8;
+          background: radial-gradient(circle at 8% 10%, #e0f2fe 0, #eaf6ff 30%, #f0f6ff 62%, #f8fbff 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: 'DM Sans', sans-serif;
+          padding: 24px;
         }
         .login-card {
-          background: #ffffff;
-          border: 0.5px solid rgba(0,0,0,0.1);
-          border-radius: 16px;
-          padding: 48px 40px 40px;
+          background: linear-gradient(180deg, #ffffff 0%, #fbfeff 100%);
+          border: 1px solid rgba(56,189,248,0.22);
+          border-radius: 20px;
+          box-shadow: 0 24px 80px rgba(14, 116, 144, 0.16);
+          padding: 42px 36px 34px;
           width: 100%;
-          max-width: 380px;
+          max-width: 430px;
         }
         .login-logo {
-          width: 52px;
-          height: 52px;
-          border-radius: 14px;
-          background: #1a1560;
+          width: 58px;
+          height: 58px;
+          border-radius: 16px;
+          background: linear-gradient(160deg, #0ea5e9, #0369a1);
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 20px;
+          margin: 0 auto 16px;
+          box-shadow: 0 10px 24px rgba(2,132,199,0.25);
         }
         .login-logo span {
           font-size: 22px;
           font-family: 'Space Mono', monospace;
-          color: #e8ff47;
+          color: #ecfeff;
           font-weight: 700;
         }
         .login-title {
@@ -108,9 +90,9 @@ export default function Login({ onLoginSuccess }) {
         }
         .login-sub {
           font-size: 13px;
-          color: #888;
+          color: #64748b;
           text-align: center;
-          margin: 0 0 32px;
+          margin: 0 0 24px;
           line-height: 1.6;
         }
         .google-btn {
@@ -121,19 +103,19 @@ export default function Login({ onLoginSuccess }) {
           gap: 10px;
           padding: 12px 18px;
           border-radius: 10px;
-          border: 1px solid #e0e0e0;
+          border: 1px solid rgba(14,116,144,0.18);
           background: #fff;
           cursor: pointer;
           font-size: 14px;
           font-weight: 500;
-          color: #1a1a2e;
+          color: #0f172a;
           font-family: 'DM Sans', sans-serif;
           transition: all 0.15s;
           margin-bottom: 20px;
         }
         .google-btn:hover {
-          border-color: #1a1560;
-          background: #f8f8ff;
+          border-color: #0284c7;
+          background: #f0f9ff;
         }
         .divider {
           display: flex;
@@ -144,11 +126,11 @@ export default function Login({ onLoginSuccess }) {
         .divider-line {
           flex: 1;
           height: 0.5px;
-          background: #e8e8e8;
+          background: #dbeafe;
         }
         .divider-text {
           font-size: 12px;
-          color: #aaa;
+          color: #94a3b8;
         }
         .form-group {
           margin-bottom: 12px;
@@ -157,7 +139,7 @@ export default function Login({ onLoginSuccess }) {
           display: block;
           font-size: 11px;
           font-weight: 500;
-          color: #888;
+          color: #64748b;
           text-transform: uppercase;
           letter-spacing: 0.06em;
           margin-bottom: 6px;
@@ -166,17 +148,17 @@ export default function Login({ onLoginSuccess }) {
           width: 100%;
           padding: 11px 14px;
           border-radius: 9px;
-          border: 1px solid #e0e0e0;
+          border: 1px solid rgba(14,116,144,0.2);
           font-size: 13px;
           font-family: 'DM Sans', sans-serif;
           color: #0f0e1a;
-          background: #fafafa;
+          background: #f8fbff;
           outline: none;
           transition: border 0.15s;
           box-sizing: border-box;
         }
         .form-input:focus {
-          border-color: #1a1560;
+          border-color: #0284c7;
           background: #fff;
         }
         .signin-btn {
@@ -184,17 +166,22 @@ export default function Login({ onLoginSuccess }) {
           padding: 12px;
           border-radius: 10px;
           border: none;
-          background: #1a1560;
-          color: #e8ff47;
+          background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+          color: #ecfeff;
           font-size: 14px;
           font-weight: 600;
           font-family: 'DM Sans', sans-serif;
           cursor: pointer;
           transition: background 0.15s;
-          margin-top: 4px;
+          margin-top: 8px;
+          box-shadow: 0 10px 24px rgba(3,105,161,0.25);
         }
         .signin-btn:hover {
-          background: #231c80;
+          filter: brightness(1.04);
+        }
+        .signin-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
         }
         .login-footer {
           display: flex;
@@ -203,21 +190,32 @@ export default function Login({ onLoginSuccess }) {
           gap: 6px;
           margin-top: 24px;
           font-size: 12px;
-          color: #bbb;
+          color: #94a3b8;
         }
         .lock-icon {
           font-size: 12px;
         }
         .access-note {
           margin-top: 20px;
-          background: #f5f3ff;
-          border: 1px solid #e2deff;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
           border-radius: 10px;
           padding: 12px 14px;
           font-size: 12px;
-          color: #5a4a8a;
+          color: #0369a1;
           line-height: 1.6;
           text-align: center;
+        }
+        .brand-strip {
+          margin-bottom: 18px;
+          border: 1px solid rgba(2,132,199,0.18);
+          background: rgba(224,242,254,0.55);
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-size: 12px;
+          color: #0369a1;
+          text-align: center;
+          letter-spacing: 0.03em;
         }
       `}</style>
 
@@ -228,6 +226,8 @@ export default function Login({ onLoginSuccess }) {
           <div className="login-logo">
             <span>LOL</span>
           </div>
+
+          <div className="brand-strip">Travalee Superadmin Gateway</div>
 
           {/* Heading */}
           <h1 className="login-title">Welcome back</h1>
