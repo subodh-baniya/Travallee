@@ -4,7 +4,7 @@ import { useState } from "react";
 import { globalCSS } from "./theme";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
-import { useAuth } from "../Hooks/useAuth";
+import { useAuth } from "./Hooks/useAuth";
 
 export default function App() {
   const [mini, setMini] = useState(false);

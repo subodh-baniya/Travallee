@@ -1,18 +1,18 @@
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route } from "react-router-dom";
 
-import App from "../src/app";
+import App from "../app";
 import ProtectedRoute from "./ProtectedRoute";
 import Publicroute from "./Publicroute";
 
-import Login from "../src/pages/Login";
-import RegisterHotels from "../src/pages/Hotels/RegisterHotels";
-import Bookings from "../src/pages/Hotels/Bookings";
-import HotelStatus from "../src/pages/Hotels/HotelStatus";
-import Banners from "../src/pages/App/Banners";
-import RedeemCode from "../src/pages/App/RedeemCode";
-import AppUsers from "../src/pages/App/AppUsers";
-import BlockUsers from "../src/pages/App/BlockUsers";
-import Analysis from "../src/pages/Analysis";
+import Login from "../pages/Login";
+import RegisterHotels from "../pages/Hotels/RegisterHotels";
+import Bookings from "../pages/Hotels/Bookings";
+import HotelStatus from "../pages/Hotels/HotelStatus";
+import Banners from "../pages/App/Banners";
+import RedeemCode from "../pages/App/RedeemCode";
+import AppUsers from "../pages/App/AppUsers";
+import BlockUsers from "../pages/App/BlockUsers";
+import Analysis from "../pages/Analysis";
 
 const router = createBrowserRouter(
   createRoutesFromElements(

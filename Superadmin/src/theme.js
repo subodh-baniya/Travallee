@@ -81,9 +81,12 @@ export const globalCSS = `
   .s-logo-icon {
     width: 32px; height: 32px; border-radius: 8px;
     background: #e0f2fe; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0;
+    justify-content: center; flex-shrink: 0; overflow: hidden;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.14);
+    animation: logoFloat 3.2s ease-in-out infinite;
   }
   .s-logo-icon i { font-size: 17px; color: #0284c7; }
+  .s-logo-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .s-logo-name { font-size: 14px; font-weight: 600; color: #0f172a; }
   .s-logo-sub  { font-size: 10px; color: #64748b; margin-top: 1px; }
 
@@ -216,6 +219,11 @@ export const globalCSS = `
     border: 0.5px solid #fca5a5;
   }
   .btn.danger:hover { background: #fee2e2; }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-2px) scale(1.02); }
+  }
 
   /* ── Forms ── */
   .form-row { margin-bottom: 16px; }

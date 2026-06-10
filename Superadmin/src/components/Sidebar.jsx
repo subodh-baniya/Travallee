@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import logoImage from "../assets/images/Logo.jpg";
 
 const NAV = [
   { section: "Main" },
@@ -92,7 +93,7 @@ export default function Sidebar({ mini, setMini }) {
       {/* Logo */}
       <div className="s-logo">
         <div className="s-logo-icon">
-          <i className="ti ti-shield-lock" aria-hidden="true" />
+          <img src={logoImage} alt="Superadmin logo" />
         </div>
         <div>
           <div className="s-logo-name">Control Center</div>
