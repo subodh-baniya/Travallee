@@ -41,3 +41,7 @@ export const getRooms = (hotelId: string, page = 1, limit = 12) => {
 export const getHotelDashboard = () => {
   return hotelClient.get("/dashboard").then(res => res.data);
 };
+
+export const getBookingHistory = (hotelId: string) => {
+    return hotelClient.get(`/booking-history/${hotelId}`)
+}

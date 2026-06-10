@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { getBookingHistory } from "../Services/booking.api";
+import { getBookingHistory } from "../Services/hotel.api";
 
 
 type Status = "ALL" | "PAID" | "NOTPAID";
@@ -178,6 +178,7 @@ const loadFromStorage = (): StoredNotificationShape[] => {
 export type UseBookingsReturn = {
   bookings: Booking[];
   newBookingIds: string[];
+  hotelName:string;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -188,6 +189,7 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
   const [newBookingIds, setNewBookingIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hotelName,setName]=useState<string|null>(null);
 
 
   const fetchBookings = useCallback(async () => {
@@ -215,6 +217,7 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
       setBookings(
         deduplicateById(history.map(mapHistoryBooking)).slice(0, MAX_BOOKINGS)
       );
+      setName(response.data?.data?.hotelName)
     } catch {
       setError("Failed to fetch bookings.");
 
@@ -280,5 +283,5 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
     };
   }, [hotelId]);
 
-  return { bookings, newBookingIds, loading, error, refetch: fetchBookings };
+  return { bookings,hotelName,newBookingIds, loading, error, refetch: fetchBookings };
 };
