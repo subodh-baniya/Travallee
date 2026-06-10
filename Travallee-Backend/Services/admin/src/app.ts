@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     path: "/api/v1/admin/socket.io",
     cors: {
-        origin: 'http://localhost:5173',
+        origin: 'http://localhost:5174',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization']
     }
@@ -22,11 +22,8 @@ const io = new Server(server, {
 
 
 io.on("connection", (socket) => {
-    const queryHotelId = socket.handshake.query.HotelId as string | undefined;
     const superAdminId = socket.handshake.query.SuperAdminId as string | undefined;
-    let resolvedHotelId = queryHotelId;
-
-    if (!resolvedHotelId) {
+    if (!superAdminId) {
         try {
             // doesnt work must send query param for now, will fix later
             const authHeader = socket.handshake.headers.authorization;
@@ -42,11 +39,6 @@ io.on("connection", (socket) => {
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) 
 
-            if (!resolvedHotelId) {
-                console.log("Admin client token missing hotelId:", socket.id);
-                socket.disconnect();
-                return;
-            }
         } catch (err) {
             console.log("Error during socket connection:", err);
             socket.disconnect();
@@ -54,14 +46,14 @@ io.on("connection", (socket) => {
         }
     }
     socket.join(`superadmin_${superAdminId}`);
-    socket.join(`hotel_${resolvedHotelId}`);
+    console.log("Admin client connected:", socket.id, "SuperAdminId:", superAdminId);
     socket.on("disconnect", () => {
         console.log("Admin client disconnected:", socket.id);
     });
 });
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'http://localhost:5174',
     credentials: true
 }));
 app.use(express.json());

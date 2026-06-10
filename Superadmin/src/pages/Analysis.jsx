@@ -30,167 +30,45 @@ const recentActivity = [
 export default function Analysis() {
   return (
     <>
-      <style>{`
-        .analysis-stat-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
-          margin-bottom: 20px;
-        }
-        .analysis-stat {
-          background: #fff;
-          border: 0.5px solid rgba(99,120,210,0.12);
-          border-radius: 12px;
-          padding: 18px 20px;
-          border-top: 3px solid #38bdf8;
-        }
-        .chart-bar-wrap {
-          display: flex;
-          align-items: flex-end;
-          gap: 6px;
-          height: 100px;
-          padding: 0 4px;
-        }
-        .chart-col {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-        }
-        .chart-bar {
-          width: 100%;
-          background: linear-gradient(180deg, #38bdf8, #0284c7);
-          border-radius: 4px 4px 0 0;
-          transition: opacity 0.15s;
-          min-height: 4px;
-        }
-        .chart-bar:hover { opacity: 0.75; }
-        .chart-label {
-          font-size: 9px;
-          color: #94a3b8;
-          font-family: monospace;
-        }
-        .chart-x-labels {
-          display: flex;
-          gap: 6px;
-          padding: 0 4px;
-          margin-top: 4px;
-        }
-        .hotel-bar-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-        .hotel-bar-name {
-          width: 140px;
-          flex-shrink: 0;
-          font-size: 12px;
-          color: #0f172a;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .hotel-bar-track {
-          flex: 1;
-          height: 7px;
-          background: #f0f6ff;
-          border-radius: 6px;
-          overflow: hidden;
-          border: 0.5px solid rgba(99,120,210,0.1);
-        }
-        .hotel-bar-fill {
-          height: 100%;
-          border-radius: 6px;
-          background: linear-gradient(90deg, #38bdf8, #0284c7);
-        }
-        .hotel-bar-val {
-          font-size: 11px;
-          color: #64748b;
-          font-family: monospace;
-          width: 40px;
-          text-align: right;
-          flex-shrink: 0;
-        }
-        .two-col-analysis {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-          margin-bottom: 14px;
-        }
-        .analysis-panel {
-          background: #fff;
-          border: 0.5px solid rgba(99,120,210,0.12);
-          border-radius: 12px;
-          padding: 18px 20px;
-        }
-        .ap-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: #0f172a;
-          margin-bottom: 4px;
-        }
-        .ap-sub {
-          font-size: 11px;
-          color: #64748b;
-          margin-bottom: 16px;
-        }
-        .activity-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          margin-top: 4px;
-        }
-        .activity-row {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          padding: 9px 0;
-          border-bottom: 0.5px solid rgba(99,120,210,0.08);
-        }
-        .activity-row:last-child { border-bottom: none; }
-        .act-text { font-size: 12px; color: #0f172a; line-height: 1.5; }
-        .act-time { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-      `}</style>
-
-      <div className="section-title">Analysis</div>
-      <div className="section-sub">Platform-wide performance metrics and insights</div>
+      <div className="text-base font-semibold text-slate-900 mb-1">Analysis</div>
+      <div className="text-[13px] text-slate-500 mb-4.5">Platform-wide performance metrics and insights</div>
 
       {/* Stats grid */}
-      <div className="analysis-stat-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 mb-5">
         {stats.map((s) => (
-          <div className="analysis-stat" key={s.label} style={{ borderTopColor: s.topColor }}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-val">{s.val}</div>
-            <div className="stat-sub">{s.sub}</div>
+          <div 
+            className="bg-white border border-brand-border rounded-xl p-[18px_20px] border-t-[3px]" 
+            key={s.label} 
+            style={{ borderTopColor: s.topColor }}
+          >
+            <div className="text-[11px] text-slate-500 mb-2 font-medium uppercase tracking-[0.07em]">{s.label}</div>
+            <div className="text-[28px] font-semibold text-slate-900 font-mono">{s.val}</div>
+            <div className="text-xs text-slate-400 mt-1.25">{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Bookings chart + Top hotels */}
-      <div className="two-col-analysis">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-3.5">
 
         {/* Bar chart */}
-        <div className="analysis-panel">
-          <div className="ap-title">Monthly Bookings</div>
-          <div className="ap-sub">Jan – Dec 2025</div>
-          <div className="chart-bar-wrap">
+        <div className="bg-white border border-brand-border rounded-xl p-[18px_20px]">
+          <div className="text-sm font-semibold text-slate-900 mb-1">Monthly Bookings</div>
+          <div className="text-[11px] text-slate-500 mb-4">Jan – Dec 2025</div>
+          <div className="flex items-end gap-1.5 h-[100px] px-1">
             {bookingData.map((val, i) => (
-              <div className="chart-col" key={i}>
+              <div className="flex-1 flex flex-col items-center gap-1" key={i}>
                 <div
-                  className="chart-bar"
+                  className="w-full bg-[linear-gradient(180deg,#38bdf8,#0284c7)] rounded-t min-h-1 transition-opacity duration-150 hover:opacity-75"
                   style={{ height: `${(val / maxVal) * 100}%` }}
                   title={`${months[i]}: ${val} bookings`}
                 />
               </div>
             ))}
           </div>
-          <div className="chart-x-labels">
+          <div className="flex gap-1.5 px-1 mt-1">
             {months.map((m) => (
-              <div key={m} style={{ flex:1, textAlign:"center", fontSize:9, color:"#94a3b8", fontFamily:"monospace" }}>
+              <div key={m} className="flex-1 text-center text-[9px] text-slate-400 font-mono">
                 {m}
               </div>
             ))}
@@ -198,52 +76,56 @@ export default function Analysis() {
         </div>
 
         {/* Top hotels */}
-        <div className="analysis-panel">
-          <div className="ap-title">Top Hotels by Bookings</div>
-          <div className="ap-sub">All time</div>
-          {topHotels.map((h) => (
-            <div className="hotel-bar-row" key={h.name}>
-              <div className="hotel-bar-name">{h.emoji} {h.name}</div>
-              <div className="hotel-bar-track">
-                <div className="hotel-bar-fill" style={{ width:`${h.pct}%` }} />
+        <div className="bg-white border border-brand-border rounded-xl p-[18px_20px]">
+          <div className="text-sm font-semibold text-slate-900 mb-1">Top Hotels by Bookings</div>
+          <div className="text-[11px] text-slate-500 mb-4">All time</div>
+          <div className="flex flex-col gap-3">
+            {topHotels.map((h) => (
+              <div className="flex items-center gap-3" key={h.name}>
+                <div className="w-[140px] shrink-0 text-xs text-slate-900 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {h.emoji} {h.name}
+                </div>
+                <div className="flex-1 h-[7px] bg-[#f0f6ff] rounded-md overflow-hidden border border-brand-border/80">
+                  <div className="h-full rounded-md bg-[linear-gradient(90deg,#38bdf8,#0284c7)]" style={{ width:`${h.pct}%` }} />
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono w-10 text-right shrink-0">{h.bookings}</div>
               </div>
-              <div className="hotel-bar-val">{h.bookings}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
       </div>
 
       {/* Revenue table + Recent activity */}
-      <div className="two-col-analysis">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-3.5">
 
         {/* Revenue table */}
-        <div className="analysis-panel">
-          <div className="ap-title">Revenue by Hotel</div>
-          <div className="ap-sub">Top performers</div>
-          <div className="table-wrap" style={{ borderRadius:8 }}>
-            <table className="data-table">
+        <div className="bg-white border border-brand-border rounded-xl p-[18px_20px]">
+          <div className="text-sm font-semibold text-slate-900 mb-1">Revenue by Hotel</div>
+          <div className="text-[11px] text-slate-500 mb-4">Top performers</div>
+          <div className="border border-brand-border overflow-hidden bg-white rounded-lg">
+            <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr>
-                  <th>Hotel</th>
-                  <th>Bookings</th>
-                  <th>Revenue</th>
+                <tr className="bg-[#f8faff] border-b border-brand-border">
+                  <th className="text-[11px] uppercase tracking-[0.06em] text-slate-500 p-[12px_16px] font-semibold text-left">Hotel</th>
+                  <th className="text-[11px] uppercase tracking-[0.06em] text-slate-500 p-[12px_16px] font-semibold text-left">Bookings</th>
+                  <th className="text-[11px] uppercase tracking-[0.06em] text-slate-500 p-[12px_16px] font-semibold text-left">Revenue</th>
                 </tr>
               </thead>
               <tbody>
                 {topHotels.map((h) => (
-                  <tr key={h.name}>
-                    <td>
-                      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                        <span>{h.emoji}</span>
+                  <tr key={h.name} className="border-b border-brand-border/60 last:border-b-0 hover:bg-[#f8faff]">
+                    <td className="p-[13px_16px] text-slate-900 align-middle">
+                      <div className="flex items-center gap-[7px]">
+                        <span className="text-base">{h.emoji}</span>
                         <div>
-                          <div style={{ fontSize:12, fontWeight:500 }}>{h.name}</div>
-                          <div style={{ fontSize:11, color:"#64748b" }}>{h.location}</div>
+                          <div className="text-xs font-semibold text-slate-900">{h.name}</div>
+                          <div className="text-[11px] text-slate-500">{h.location}</div>
                         </div>
                       </div>
                     </td>
-                    <td style={{ fontFamily:"monospace", fontSize:12, color:"#0284c7" }}>{h.bookings}</td>
-                    <td style={{ fontSize:12, fontWeight:500, color:"#166534" }}>{h.revenue}</td>
+                    <td className="p-[13px_16px] text-slate-900 align-middle font-mono text-xs text-brand-accent">{h.bookings}</td>
+                    <td className="p-[13px_16px] align-middle text-xs font-semibold text-emerald-800">{h.revenue}</td>
                   </tr>
                 ))}
               </tbody>
@@ -252,18 +134,20 @@ export default function Analysis() {
         </div>
 
         {/* Recent activity */}
-        <div className="analysis-panel">
-          <div className="ap-title">Recent Activity</div>
-          <div className="ap-sub">Live platform events</div>
-          {recentActivity.map((a, i) => (
-            <div className="activity-row" key={i}>
-              <div className="activity-dot" style={{ background: a.color }} />
-              <div>
-                <div className="act-text">{a.text}</div>
-                <div className="act-time">{a.time}</div>
+        <div className="bg-white border border-brand-border rounded-xl p-[18px_20px]">
+          <div className="text-sm font-semibold text-slate-900 mb-1">Recent Activity</div>
+          <div className="text-[11px] text-slate-500 mb-4">Live platform events</div>
+          <div className="flex flex-col">
+            {recentActivity.map((a, i) => (
+              <div className="flex items-start gap-2.5 py-2.25 border-b border-brand-border/60 last:border-none" key={i}>
+                <div className="w-[7px] h-[7px] rounded-full shrink-0 mt-1" style={{ background: a.color }} />
+                <div>
+                  <div className="text-xs text-slate-900 leading-normal">{a.text}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">{a.time}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
       </div>

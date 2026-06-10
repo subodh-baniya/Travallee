@@ -204,7 +204,6 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
 });
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
-    const key = "kcprabin"
     const validate = loginSchema.parse(req.body);
     const user = await UserModel.findOne({ Username: validate.Username as string });
     if (!user) {
@@ -220,7 +219,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     if (validate.superAdminKey) {
       const isSuperAdminKeyValid = await user.compareSuperAdminKey(validate.superAdminKey);
       if (!isSuperAdminKeyValid) {
-        return apiError(res, 400, "Invalid super admin key");
+        return apiError(res, 400, "Invalid super admin key Please provide correct super admin key or Contact support");
       }
     }
     const options = {
@@ -242,7 +241,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
       200,
       true,
       "User logged in successfully",
-      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email },
+      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email , superAdminKey: user.superAdminKey , id: user._id  },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {
