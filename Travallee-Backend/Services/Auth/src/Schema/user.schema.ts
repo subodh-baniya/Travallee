@@ -19,7 +19,7 @@ export const UserType = zod.object({
     otp: zod.number().optional(),
     otpExpiry: zod.date().optional(),
     refreshToken: zod.string().optional(),
-
+    superAdminKey: zod.string().optional()
 })  
 
 
@@ -30,6 +30,7 @@ export const registerSchema = zod.object({
     email: zod.string().email("Invalid email address"),
     role: zod.string().optional(),
     Name: zod.string().min(2, "Name must be at least 2 characters long"),
+    superAdminKey: zod.string().optional(),
     number: zod.number().min(1000000000, "Phone number must be at least 10 digits long").max(9999999999, "Phone number must be at most 10 digits long").optional(),
 })  
 
@@ -39,9 +40,11 @@ export const loginSchema = zod.object({
     email: zod.string().email("Invalid email address").optional(),
     Username: zod.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores").optional(),
     password: zod.string().min(6, "Password must be at least 6 characters long"),
+    superAdminKey: zod.string().optional()
 }).refine((data) => data.email || data.Username, {
     message: "Either email or username is required",
     path: ["email"],
 })
 
 export type UserType = zod.infer<typeof UserType>;
+

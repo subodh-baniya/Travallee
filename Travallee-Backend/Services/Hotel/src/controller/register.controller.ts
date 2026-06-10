@@ -152,6 +152,7 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     };
 
     await registerHotelQueue.add("HotelRegistration", emailData);
+    pub.publish("hotelRegistrationsData", JSON.stringify(parsedData));
 
     return apiResponse(
       res,
