@@ -1,36 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../Contexts/Authcontext";
 import { useBookings } from "../Hooks/useBooking";
+import { useRooms } from "../Hooks/useRooms";
+import { getHotelById } from "../Services/hotel.api"; // ← adjust path if needed
 import BookingDetails from "../Components/modal-popups/BookingDetailModal";
+import CreateBookingModal from "../Components/modal-popups/AddBookingModal";
 
 type Status = "ALL" | "PAID" | "NOTPAID";
 type BookingStatus = "ALL" | "CONFIRMED" | "PENDING" | "CANCELLED";
 
 const paymentStatusMap: Record<string, string> = {
-  PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  PAID:    "bg-emerald-50 text-emerald-700 border-emerald-200",
   NOTPAID: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 const bookingStatusMap: Record<string, string> = {
   CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
-  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+  PENDING:   "bg-amber-50 text-amber-700 border-amber-200",
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
 
 const Bookings = () => {
-  const auth = useAuth();
+  const auth    = useAuth();
   const hotelId = auth?.hotelId || null;
 
   const { bookings, newBookingIds, loading, error, refetch } = useBookings(hotelId);
+  const { rooms } = useRooms(); // ← no argument needed
 
-  const [payFilter, setPayFilter] = useState<Status>("ALL");
+  // ── Hotel name ─────────────────────────────────────────────────────────────
+  const [hotelName, setHotelName] = useState("");
+
+  useEffect(() => {
+    if (!hotelId) return;
+    const fetchHotel = async () => {
+      try {
+        const res = await getHotelById(hotelId);
+        const hotel = res?.data ?? res;
+        // adjust the key below to whatever your hotel object uses
+        setHotelName(hotel?.hotelName ?? hotel?.name ?? "");
+      } catch {
+        // non-critical — modal header just shows empty string
+      }
+    };
+    fetchHotel();
+  }, [hotelId]);
+
+  // ── Modal state ────────────────────────────────────────────────────────────
+  const [showCreateModal, setShowCreateModal]         = useState(false);
+  const [selectedBookingId, setSelectedBookingId]     = useState<string | null>(null);
+
+  // ── Filters ────────────────────────────────────────────────────────────────
+  const [payFilter, setPayFilter]       = useState<Status>("ALL");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
-  const [search, setSearch] = useState("");
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [search, setSearch]             = useState("");
 
   // ── Derived state ──────────────────────────────────────────────────────────
-
   const filtered = bookings.filter(
     (b) =>
       (payFilter === "ALL" || b.status === payFilter) &&
@@ -48,14 +73,22 @@ const Bookings = () => {
   const cancelledCount = bookings.filter((b) => b.bookingStatus === "CANCELLED").length;
 
   const summaryCards = [
-    { label: "Confirmed",  value: confirmedCount, sub: "Active reservations",   color: "text-blue-600"  },
-    { label: "Pending",    value: pendingCount,   sub: "Awaiting confirmation",  color: "text-amber-600" },
-    { label: "Unpaid",     value: unpaidCount,    sub: "Payment not received",   color: "text-red-500"   },
-    { label: "Cancelled",  value: cancelledCount, sub: "Cancelled bookings",     color: "text-slate-400" },
+    { label: "Confirmed", value: confirmedCount, sub: "Active reservations",  color: "text-blue-600"  },
+    { label: "Pending",   value: pendingCount,   sub: "Awaiting confirmation", color: "text-amber-600" },
+    { label: "Unpaid",    value: unpaidCount,    sub: "Payment not received",  color: "text-red-500"   },
+    { label: "Cancelled", value: cancelledCount, sub: "Cancelled bookings",    color: "text-slate-400" },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // Map useRooms shape → CreateBookingModal's Room type
+  // (roomType → type; everything else already matches)
+  const modalRooms = rooms.map((r) => ({
+    _id:          r._id,
+    roomNumber:   r.roomNumber,
+    pricePerNight: r.pricePerNight,
+    type:         r.roomType, // ← renamed field
+  }));
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
@@ -65,7 +98,10 @@ const Bookings = () => {
           <h1 className="text-lg font-semibold text-slate-900">Bookings</h1>
           <p className="text-xs text-slate-500">Manage all reservations</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
+        >
           + New Booking
         </button>
       </div>
@@ -103,7 +139,6 @@ const Bookings = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition"
         />
-
         <div className="flex gap-2">
           {(["ALL", "PAID", "NOTPAID"] as Status[]).map((s) => (
             <button
@@ -119,7 +154,6 @@ const Bookings = () => {
             </button>
           ))}
         </div>
-
         <div className="flex gap-2">
           {(["ALL", "CONFIRMED", "PENDING", "CANCELLED"] as BookingStatus[]).map((s) => (
             <button
@@ -139,8 +173,6 @@ const Bookings = () => {
 
       {/* BOOKINGS TABLE */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-
-        {/* Card header — same pattern as Overview */}
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">All Bookings</h2>
@@ -164,7 +196,6 @@ const Bookings = () => {
                 <th className="text-left px-4 py-3 font-medium" style={{ width: "80px" }}>Method</th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
@@ -187,10 +218,7 @@ const Bookings = () => {
                     onClick={() => setSelectedBookingId(b.id)}
                     className="hover:bg-slate-50 transition cursor-pointer"
                   >
-                    <td className="px-4 py-3 align-middle font-mono text-xs text-slate-400 truncate">
-                      {b.id}
-                    </td>
-
+                    <td className="px-4 py-3 align-middle font-mono text-xs text-slate-400 truncate">{b.id}</td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
                         <div className="flex flex-col min-w-0">
@@ -204,33 +232,23 @@ const Bookings = () => {
                         )}
                       </div>
                     </td>
-
                     <td className="px-4 py-3 text-center align-middle">
                       <span className="text-blue-600 font-medium">{b.room}</span>
                     </td>
-
                     <td className="px-4 py-3 text-center align-middle">
                       <span className={`text-xs px-2.5 py-1 rounded-full border ${paymentStatusMap[b.status]}`}>
                         {b.status === "PAID" ? "Paid" : "Unpaid"}
                       </span>
                     </td>
-
                     <td className="px-4 py-3 text-center align-middle">
                       <span className={`text-xs px-2.5 py-1 rounded-full border ${bookingStatusMap[b.bookingStatus]}`}>
                         {b.bookingStatus.charAt(0) + b.bookingStatus.slice(1).toLowerCase()}
                       </span>
                     </td>
-
                     <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkIn}</td>
                     <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.checkOut}</td>
-
-                    <td className="px-4 py-3 text-right align-middle text-blue-600 font-medium text-xs">
-                      {b.amount}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">
-                      {b.paymentMethod || "-"}
-                    </td>
+                    <td className="px-4 py-3 text-right align-middle text-blue-600 font-medium text-xs">{b.amount}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs align-middle">{b.paymentMethod || "-"}</td>
                   </motion.tr>
                 ))
               )}
@@ -238,6 +256,19 @@ const Bookings = () => {
           </table>
         </div>
       </div>
+
+      {/* CREATE BOOKING MODAL */}
+      <CreateBookingModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        hotelId={hotelId ?? ""}
+        hotelName={hotelName}
+        rooms={modalRooms}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          refetch();
+        }}
+      />
 
       {/* BOOKING DETAILS MODAL */}
       <AnimatePresence>

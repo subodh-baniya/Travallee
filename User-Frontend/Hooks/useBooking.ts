@@ -203,6 +203,8 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
         response.data?.bookingHistory ||
         [];
 
+        console.log(response)
+
       if (!Array.isArray(history)) {
         setBookings([]);
         return;
