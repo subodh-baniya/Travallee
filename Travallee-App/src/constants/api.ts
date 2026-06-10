@@ -1,15 +1,10 @@
+import { API_URL } from "./env";
 
-import Constants from 'expo-constants';
-
-const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiBaseUrl ||
-  'http://localhost';
 interface ApiEndpoints {
   [key: string]: string;
 }
-
 // for auth service
-const API_AUTH = `${API_BASE_URL}:3000/api/v1/users`;
+const API_AUTH = `${API_URL}:3000/api/v1/users`;
 const API_ENDPOINTS_AUTH: ApiEndpoints = {
   LOGIN: `${API_AUTH}/login`,
   LOGOUT: `${API_AUTH}/logout`,
@@ -27,7 +22,7 @@ const API_ENDPOINTS_AUTH: ApiEndpoints = {
 
 
 // for hotel service
-const API_HOTEL = `${API_BASE_URL}:3001/api/v1/hotels`;
+const API_HOTEL = `${API_URL}:3001/api/v1/hotels`;
 
 const API_ENDPOINTS_HOTEL: ApiEndpoints = {
   GET_HOTELS: `${API_HOTEL}`,
@@ -45,7 +40,7 @@ const API_ENDPOINTS_HOTEL: ApiEndpoints = {
 
 
 // for booking service
-const API_BOOKING = `${API_BASE_URL}:5002/api/v1/booking`;
+const API_BOOKING = `${API_URL}:5002/api/v1/booking`;
 
 const API_ENDPOINTS_BOOKING: ApiEndpoints = {
   GET_BOOKINGS: `${API_BOOKING}`,
@@ -58,7 +53,7 @@ const API_ENDPOINTS_BOOKING: ApiEndpoints = {
 
 
 // for payment service
-const API_PAYMENT = `${API_BASE_URL}/api/payment`;
+const API_PAYMENT = `${API_URL}/api/payment`;
 
 const API_ENDPOINTS_PAYMENT: ApiEndpoints = {
   PROCESS_PAYMENT: `${API_PAYMENT}/process`,
@@ -66,7 +61,7 @@ const API_ENDPOINTS_PAYMENT: ApiEndpoints = {
   REFUND: `${API_PAYMENT}/refund/:id`,
 };
 
-const API_NOTIFICATIONS = `${API_BASE_URL}/api/notifications`;
+const API_NOTIFICATIONS = `${API_URL}/api/notifications`;
 
 const API_ENDPOINTS_NOTIFICATIONS: ApiEndpoints = {
   GET_NOTIFICATIONS: `${API_NOTIFICATIONS}`,
@@ -74,7 +69,7 @@ const API_ENDPOINTS_NOTIFICATIONS: ApiEndpoints = {
   DELETE_NOTIFICATION: `${API_NOTIFICATIONS}/delete/:id`,
 };
 
-const API_CONTENT = `${API_BASE_URL}:3000/api/v1/content`;
+const API_CONTENT = `${API_URL}:3000/api/v1/content`;
 
 const API_ENDPOINTS_CONTENT: ApiEndpoints = {
   ONBOARDING: `${API_CONTENT}/onboarding`,
