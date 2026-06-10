@@ -1,27 +1,21 @@
 import { useState } from "react";
-import { theme } from "../theme";
 
 export default function Toggle({ defaultOn = true }) {
   const [on, setOn] = useState(defaultOn);
   return (
     <button
       onClick={() => setOn(!on)}
-      style={{
-        width: 40, height: 22, borderRadius: 11,
-        border: on ? "none" : `1px solid ${theme.border2}`,
-        background: on ? theme.accent : "#e0e4f0",
-        cursor: "pointer", position: "relative",
-        flexShrink: 0, transition: "background 0.2s",
-        boxShadow: on ? `0 2px 8px rgba(42,82,212,0.3)` : "none",
-      }}
+      className={`w-10 h-[22px] rounded-[11px] cursor-pointer relative shrink-0 transition-all duration-200 focus:outline-none ${
+        on 
+          ? "bg-brand-accent shadow-[0_2px_8px_rgba(2,132,199,0.3)] border-none" 
+          : "bg-[#e0e4f0] border border-brand-border2"
+      }`}
     >
-      <span style={{
-        position: "absolute", width: 16, height: 16,
-        borderRadius: "50%", background: "#fff",
-        top: 3, left: on ? 21 : 3,
-        transition: "left 0.2s",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-      }} />
+      <span 
+        className={`absolute w-4 h-4 rounded-full bg-white top-[2px] transition-all duration-200 shadow-[0_1px_3px_rgba(0,0,0,0.2)] ${
+          on ? "left-[21px]" : "left-[3px]"
+        }`}
+      />
     </button>
   );
 }

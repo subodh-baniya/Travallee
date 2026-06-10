@@ -25,155 +25,78 @@ export default function Dashboard() {
   };
 
   return (
-    <>
-      <style>{`
-        .dash-home { display: grid; gap: 18px; }
-        .dash-hero {
-          background: linear-gradient(135deg, #0f172a 0%, #103b63 52%, #0369a1 100%);
-          color: #fff;
-          border-radius: 18px;
-          padding: 24px;
-          box-shadow: 0 18px 50px rgba(2, 132, 199, 0.18);
-          position: relative;
-          overflow: hidden;
-        }
-        .dash-hero::after {
-          content: "";
-          position: absolute;
-          inset: auto -60px -60px auto;
-          width: 180px;
-          height: 180px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.08);
-        }
-        .dash-hero-title { font-size: 28px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.03em; }
-        .dash-hero-sub { margin: 0; color: rgba(255,255,255,0.84); max-width: 620px; line-height: 1.6; }
-        .dash-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-        .dash-action,
-        .dash-logout { border: none; border-radius: 12px; padding: 11px 14px; font-weight: 600; cursor: pointer; }
-        .dash-action { background: #fff; color: #0f172a; }
-        .dash-logout { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
-        .dash-card-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-        .dash-card {
-          background: #fff;
-          border-radius: 16px;
-          padding: 18px;
-          border: 1px solid rgba(148,163,184,0.14);
-          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.05);
-        }
-        .dash-card-label { font-size: 12px; color: #64748b; margin-bottom: 8px; }
-        .dash-card-value { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.03em; }
-        .dash-card-sub { margin-top: 4px; font-size: 12px; color: #94a3b8; }
-        .dash-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-        .dash-link {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          background: #fff;
-          border: 1px solid rgba(148,163,184,0.14);
-          border-radius: 16px;
-          padding: 16px 18px;
-          cursor: pointer;
-          text-align: left;
-        }
-        .dash-link-title { font-size: 15px; font-weight: 700; color: #0f172a; }
-        .dash-link-note { font-size: 12px; color: #64748b; margin-top: 4px; }
-        .dash-link-arrow { color: #0284c7; font-size: 22px; flex-shrink: 0; }
-        .dash-summary {
-          display: grid;
-          grid-template-columns: 1.3fr 0.7fr;
-          gap: 12px;
-        }
-        .dash-panel {
-          background: #fff;
-          border-radius: 16px;
-          padding: 18px;
-          border: 1px solid rgba(148,163,184,0.14);
-          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.05);
-        }
-        .dash-panel-title { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
-        .dash-panel-sub { font-size: 12px; color: #64748b; margin-bottom: 14px; }
-        .activity-row {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          padding: 10px 0;
-          border-bottom: 1px solid rgba(148,163,184,0.12);
-        }
-        .activity-row:last-child { border-bottom: none; }
-        .activity-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          margin-top: 6px;
-          flex-shrink: 0;
-        }
-        .activity-text { font-size: 13px; color: #0f172a; line-height: 1.5; }
-        .activity-time { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-        @media (max-width: 860px) { .dash-card-row, .dash-links, .dash-summary { grid-template-columns: 1fr; } }
-      `}</style>
+    <div className="grid gap-[18px]">
+      <section className="bg-[linear-gradient(135deg,#0f172a_0%,#103b63_52%,#0369a1_100%)] text-white rounded-[18px] p-6 shadow-[0_18px_50px_rgba(2,132,199,0.18)] relative overflow-hidden">
+        {/* Hero Background Shape */}
+        <div className="absolute -right-[60px] -bottom-[60px] w-[180px] h-[180px] rounded-full bg-white/8 pointer-events-none" />
 
-      <div className="dash-home">
-        <section className="dash-hero">
-          <h1 className="dash-hero-title">Dashboard</h1>
-          <p className="dash-hero-sub">
+        <div className="relative z-10">
+          <h1 className="text-[28px] font-bold mb-2 tracking-tight">Dashboard</h1>
+          <p className="text-white/84 max-w-[620px] leading-relaxed text-sm">
             Welcome back. Use this control center to move between hotels, bookings, analytics, and the main platform overview.
           </p>
-          <div className="dash-actions">
-            <button className="dash-action" onClick={() => navigate("/dashboard/hotels/register")}>Manage Hotels</button>
-            <button className="dash-action" onClick={() => navigate("/dashboard/analysis")}>Open Analysis</button>
-            <button className="dash-logout" onClick={handleLogout}>Logout</button>
+          <div className="flex flex-wrap gap-2.5 mt-4.5">
+            <button className="border-none rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white text-slate-900 hover:bg-slate-50 transition-colors" onClick={() => navigate("/dashboard/hotels/register")}>
+              Manage Hotels
+            </button>
+            <button className="border-none rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white text-slate-900 hover:bg-slate-50 transition-colors" onClick={() => navigate("/dashboard/analysis")}>
+              Open Analysis
+            </button>
+            <button className="rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white/12 text-white border border-white/18 hover:bg-white/20 transition-colors" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="dash-card-row">
-          {cards.map((card) => (
-            <div className="dash-card" key={card.title}>
-              <div className="dash-card-label">{card.title}</div>
-              <div className="dash-card-value">{card.value}</div>
-              <div className="dash-card-sub">{card.sub}</div>
-            </div>
-          ))}
-        </section>
-
-        <section className="dash-summary">
-          <div className="dash-panel">
-            <div className="dash-panel-title">Quick Actions</div>
-            <div className="dash-panel-sub">Jump to the most useful sections for superadmin work.</div>
-            <div className="dash-links">
-              {quickLinks.map((link) => (
-                <button className="dash-link" key={link.path} onClick={() => navigate(link.path)}>
-                  <div>
-                    <div className="dash-link-title">{link.label}</div>
-                    <div className="dash-link-note">{link.note}</div>
-                  </div>
-                  <div className="dash-link-arrow">→</div>
-                </button>
-              ))}
-            </div>
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        {cards.map((card) => (
+          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]" key={card.title}>
+            <div className="text-xs text-slate-500 mb-2">{card.title}</div>
+            <div className="text-[28px] font-bold text-slate-900 tracking-tight font-mono">{card.value}</div>
+            <div className="mt-1 text-xs text-slate-400">{card.sub}</div>
           </div>
+        ))}
+      </section>
 
-          <div className="dash-panel">
-            <div className="dash-panel-title">Recent Activity</div>
-            <div className="dash-panel-sub">Latest platform events for the superadmin.</div>
+      <section className="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr] gap-3">
+        <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+          <div className="text-base font-bold text-slate-900 mb-1.5">Quick Actions</div>
+          <div className="text-xs text-slate-500 mb-3.5">Jump to the most useful sections for superadmin work.</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {quickLinks.map((link) => (
+              <button className="flex justify-between items-center gap-3 bg-white border border-slate-400/14 rounded-2xl p-[16px_18px] cursor-pointer text-left hover:border-brand-accent2 transition-colors duration-150" key={link.path} onClick={() => navigate(link.path)}>
+                <div>
+                  <div className="text-[15px] font-bold text-slate-900">{link.label}</div>
+                  <div className="text-xs text-slate-500 mt-1">{link.note}</div>
+                </div>
+                <div className="text-brand-accent text-[22px] shrink-0 font-bold">→</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+          <div className="text-base font-bold text-slate-900 mb-1.5">Recent Activity</div>
+          <div className="text-xs text-slate-500 mb-3.5">Latest platform events for the superadmin.</div>
+          <div className="divide-y divide-slate-100">
             {[
               { dot: "#38bdf8", text: "New hotel registration received", time: "2 min ago" },
               { dot: "#4ade80", text: "Booking confirmed for Grand Vista Hotel", time: "8 min ago" },
               { dot: "#818cf8", text: "New app user joined the platform", time: "15 min ago" },
               { dot: "#fbbf24", text: "Revenue report refreshed", time: "1 hr ago" },
             ].map((item) => (
-              <div className="activity-row" key={item.text}>
-                <div className="activity-dot" style={{ background: item.dot }} />
+              <div className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0" key={item.text}>
+                <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: item.dot }} />
                 <div>
-                  <div className="activity-text">{item.text}</div>
-                  <div className="activity-time">{item.time}</div>
+                  <div className="text-[13px] text-slate-900 leading-normal">{item.text}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">{item.time}</div>
                 </div>
               </div>
             ))}
           </div>
-        </section>
-      </div>
-    </>
+        </div>
+      </section>
+    </div>
   );
 }

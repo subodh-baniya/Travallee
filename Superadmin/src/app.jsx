@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
 
-import { globalCSS } from "./theme";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import { useAuth } from "./Hooks/useAuth";
@@ -25,9 +24,9 @@ export default function App() {
   };
 
   return (
-    <div className="dash-wrap">
+    <div className="flex h-screen bg-brand-bg font-sans overflow-hidden relative">
       <Sidebar mini={mini} setMini={setMini} />
-      <div className="main">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Topbar
           mini={mini}
           setMini={setMini}
@@ -35,7 +34,7 @@ export default function App() {
           savedMsg={savedMsg}
           onLogout={handleLogout}
         />
-        <div className="content">
+        <div className="flex-1 overflow-y-auto p-[22px] md:px-6">
           <Outlet />
         </div>
       </div>
