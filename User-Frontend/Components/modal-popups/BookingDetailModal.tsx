@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useAuth } from "../../Contexts/Authcontext";
 import { motion } from "framer-motion";
+import { useBookings } from "../../Hooks/useBooking";
+import { getBookingHistory } from "../../Services/hotel.api";
 
 type StoredBookingEvent = {
   bookingId?: string;
@@ -121,6 +122,8 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
 
+    const {hotelName} = useBookings(hotelId);
+
   const [booking, setBooking] = useState<StoredBookingEvent | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -130,11 +133,7 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
       setLoading(true);
 
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001"}/api/v1/admin/booking-history/${hotelId}`,
-          { withCredentials: true }
-        );
-
+        const response = await getBookingHistory(hotelId);
         const history =
           response.data?.data?.bookingHistory ||
           response.data?.bookingHistory ||
@@ -157,7 +156,7 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
                   guestName: item.guestName,
                   email: item.email,
                   hotelId: item.hotelId,
-                  hotelName: item.hotelName,
+                  hotelName: hotelName,
                   roomNumber: item.roomNumber,
                   checkInDate: item.checkinDate,
                   checkOutDate: item.checkoutDate,
@@ -190,10 +189,10 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
     };
 
     void loadBooking();
-  }, [bookingId, hotelId]);
+  }, [bookingId, hotelId,hotelName]);
 
   const displayName =
-    booking?.guestName || booking?.userName || booking?.name || booking?.email || "Guest";
+    booking?.guestName || booking?.userName || booking?.name || "Guest";
 
   const nights      = booking?.stayDurationNights || 1;
   const checkIn     = booking?.checkinDate  || booking?.checkInDate;
@@ -297,7 +296,7 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
                 <Field icon="ti-door"        label="Room"           value={booking.roomNumber   || booking.roomId || "-"} />
                 <Field icon="ti-mail"        label="Email"          value={booking.email        || "-"} />
                 <Field icon="ti-credit-card" label="Payment method" value={booking.paymentMethod || "-"} />
-                <Field icon="ti-building"    label="Hotel"          value={booking.hotelName    || booking.hotelId || "-"} />
+                <Field icon="ti-building"    label="Hotel"          value={hotelName} />
                 <Field icon="ti-clock"       label="Received at"    value={formatDateTime(booking.createdAt)} />
               </div>
             </div>

@@ -265,8 +265,116 @@ const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
 });
 
 
+const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
+  let validated: any;
+  const userId = req.user.id;
+  const { email, Name } = req.body;
 
+  try {
+    validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const formattedErrors = error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+      return apiError(res, 400, "Validation Error", formattedErrors);
+    }
+    return apiError(res, 400, "Invalid request data");
+  }
 
+  let roomObjectId: mongoose.Types.ObjectId;
+  let hotelObjectId: mongoose.Types.ObjectId;
+
+  try {
+    roomObjectId = new mongoose.Types.ObjectId(validated.roomId);
+    hotelObjectId = new mongoose.Types.ObjectId(validated.hotelId);
+  } catch {
+    return apiError(res, 400, "Invalid room or hotel ID format");
+  }
+
+  const bookedDates = await bookingModel.find({
+    room: roomObjectId,
+    hotel: hotelObjectId,
+    status: { $in: ["PENDING", "CONFIRMED"] },
+    bookingPayment: "PAID",
+    $or: [{ checkIn: { $lt: new Date(validated.checkOut) }, checkOut: { $gt: new Date(validated.checkIn) } }],
+  });
+
+  if (bookedDates.length > 0) {
+    return apiError(res, 400, "Room is not available for the selected dates");
+  }
+
+  const checkInDate = new Date(validated.checkIn);
+  const checkOutDate = new Date(validated.checkOut);
+  const totalNights = Math.ceil(
+    (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const newBooking = new bookingModel({
+    user: validated.userId,
+    Name: validated.userName,  
+    hotel: hotelObjectId,
+    room: roomObjectId,
+    guests: validated.guests,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    totalPrice: validated.totalPrice,
+    totalNights,             
+    paymentMethod: validated.paymentMethod,
+    bookingPayment: "PAID",
+    status: "CONFIRMED",
+    hotelName: validated.hotelName,
+    roomNumber: validated.roomNumber,
+    email: validated.userEmail,
+  });
+
+  await newBooking.save();
+
+  await pub.publish(
+    "bookingConfirmed",
+    JSON.stringify({
+      userId,
+      hotelId: validated.hotelId,
+      roomId: validated.roomId,
+      name: Name,
+      email: validated.userEmail,
+      userName: validated.userName,
+      bookingId: newBooking._id,
+      checkInDate: validated.checkIn,
+      checkOutDate: validated.checkOut,
+      amount: validated.totalPrice,
+      paymentMethod: validated.paymentMethod,
+      bookingPayment: "PAID",
+      roomNumber: validated.roomNumber,
+      status: "CONFIRMED",
+    }),
+  );
+
+  try {
+    await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
+      bookingId: String(newBooking._id),
+      hotelId: validated.hotelId,
+      userId,
+      hotel:validated.hotelName,
+      roomId: validated.roomId,
+      guestName: validated.userName,
+      roomNumber: validated.roomNumber,
+      checkinDate: validated.checkIn,
+      checkoutDate: validated.checkOut,
+      totalPrice: validated.totalPrice,
+      paymentMethod: validated.paymentMethod,
+      bookingPayment: "PAID",
+      status: "CONFIRMED",
+      guests: validated.guests,
+      email: email,
+    });
+  } catch (error: any) {
+    console.error("Failed to sync booking history with Hotel service:", error?.message || error);
+  }
+
+  return apiResponse(res, 201, true, "Booking confirmed successfully", newBooking);
+});
 
 
 
@@ -329,4 +437,4 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
 
-export { createBooking, esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};
+export { createBooking, createBookingFromHotel,esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};

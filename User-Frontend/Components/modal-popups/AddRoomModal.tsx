@@ -125,7 +125,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof AddRoomFormData, string>>>({});
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [featureInput, setFeatureInput] = useState(""); // ✅ controlled input for special features
+  const [featureInput, setFeatureInput] = useState(""); 
   const { toast, showToast, clearToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -143,7 +143,6 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
     }));
   };
 
-  // ✅ controlled add for special features
   const addSpecialFeature = () => {
     const val = featureInput.trim();
     if (val && !form.specialFeatures.includes(val)) {

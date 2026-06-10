@@ -53,6 +53,7 @@ export const useRooms = () => {
       setError("");
 
       const data = await getRooms(hotelId, page);
+      console.log(data)
       setRooms(data.data.rooms??[]);
       setPagination(data.data?.pagination ?? null);
     } catch (err: unknown) {
