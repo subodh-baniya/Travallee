@@ -219,7 +219,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     if (validate.superAdminKey) {
       const isSuperAdminKeyValid = await user.compareSuperAdminKey(validate.superAdminKey);
       if (!isSuperAdminKeyValid) {
-        return apiError(res, 400, "Invalid super admin key");
+        return apiError(res, 400, "Invalid super admin key Please provide correct super admin key or Contact support");
       }
     }
     const options = {

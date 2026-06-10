@@ -1,30 +1,30 @@
 
-import  zod, { string }  from "zod";
+import zod, { string } from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
 
 export const UserZodSchema = zod.object({
-    id: zod.string().optional(),
-    Name: zod.string().min(2, "Name must be at least 2 characters long"),
-    email: zod.string().email(),
-    number: zod.number().min(1000000000, "Phone number must be at least 10 digits long").max(9999999999, "Phone number must be at most 10 digits long").optional(),
-    Username: zod.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-    password: zod.string().min(6, "Password must be at least 6 characters long"),
-    createdAt: zod.date(),
-    updatedAt: zod.date(),
-    profileimage: zod.string().optional(),
-    role: zod.string().optional(),
-    hotelId: zod.string().optional(),
-    googleId: zod.string().optional(),
-    isVerified: zod.boolean().optional(),
-    otp: zod.number().optional(),
-    otpExpiry: zod.date().optional(),
-    refreshToken: zod.string().optional(),
-    superAdminKey: zod.string().optional(),
-  
-})  
+  id: zod.string().optional(),
+  Name: zod.string().min(2, "Name must be at least 2 characters long"),
+  email: zod.string().email(),
+  number: zod.number().min(1000000000, "Phone number must be at least 10 digits long").max(9999999999, "Phone number must be at most 10 digits long").optional(),
+  Username: zod.string().min(3, "Username must be at least 3 characters long").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+  password: zod.string().min(6, "Password must be at least 6 characters long"),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+  profileimage: zod.string().optional(),
+  role: zod.string().optional(),
+  hotelId: zod.string().optional(),
+  googleId: zod.string().optional(),
+  isVerified: zod.boolean().optional(),
+  otp: zod.number().optional(),
+  otpExpiry: zod.date().optional(),
+  refreshToken: zod.string().optional(),
+  superAdminKey: zod.string().optional(),
+
+})
 
 export type UserType = zod.infer<typeof UserZodSchema>;
 
@@ -34,7 +34,7 @@ interface UserMethods {
   generateJWT(): string;
 }
 
-interface UserModel extends mongoose.Model<UserType, {}, UserMethods> {}
+interface UserModel extends mongoose.Model<UserType, {}, UserMethods> { }
 
 const UserSchema = new mongoose.Schema<UserType, UserModel, UserMethods>({
   Name: { type: String, required: true, minlength: 2 },
@@ -43,10 +43,11 @@ const UserSchema = new mongoose.Schema<UserType, UserModel, UserMethods>({
   Username: { type: String, required: true, minlength: 3 },
   password: { type: String, required: true, minlength: 6 },
   profileimage: { type: String },
-  role: { type: String ,
+  role: {
+    type: String,
     default: "user",
-     enum: ["user", "superadmin", "hotelAdmin"]
-   },
+    enum: ["user", "superadmin", "hotelAdmin"]
+  },
   hotelId: { type: mongoose.Schema.Types.ObjectId, ref: "hotels" },
   googleId: { type: String },
   isVerified: { type: Boolean },
@@ -72,16 +73,6 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
-UserSchema.pre("save",  async function (next) {
-  if (!this.isModified("superAdminKey") || !this.superAdminKey) return;
-  try{
-    const salt = await bcrypt.genSalt(10);
-    this.superAdminKey = await bcrypt.hash(this.superAdminKey, salt);
-  } catch (err) {
-    console.error("Error hashing super admin key:", err);
-  }
-});
-
 UserSchema.methods.compareSuperAdminKey = async function (
   candidateKey: string,
 ): Promise<boolean> {
@@ -91,6 +82,15 @@ UserSchema.methods.compareSuperAdminKey = async function (
 
   return bcrypt.compare(candidateKey, this.superAdminKey);
 };
+
+UserSchema.methods.compareSuperAdminKey = async function (
+  candidateKey: string,
+): Promise<boolean> {
+  if (!this.superAdminKey) {
+    return false;
+  }
+  return bcrypt.compare(candidateKey, this.superAdminKey);
+}
 
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string,
@@ -104,7 +104,7 @@ UserSchema.methods.comparePassword = async function (
 
 UserSchema.methods.generateJWT = function () {
   // If hotelId is present then we will add it to the payload otherwise we will not add it to the payload
-  const payload = { id: this._id, email: this.email, role: this.role , hotelId: this.hotelId || null, Name: this.Name, SuperAdminKey: this.superAdminKey || null };
+  const payload = { id: this._id, email: this.email, role: this.role, hotelId: this.hotelId || null, Name: this.Name, SuperAdminKey: this.superAdminKey || null };
   const secret: string = process.env.JWT_SECRET as string;
   const data = process.env.JWT_EXPIRES_IN as string;
 
