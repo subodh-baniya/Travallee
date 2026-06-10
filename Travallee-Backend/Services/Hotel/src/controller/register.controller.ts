@@ -211,7 +211,8 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
 
     await registerHotelQueue.add("HotelRegistration", emailData);
     console.log("Published hotel registration data to queue for userID:", userID, "with data:", emailData);
-    pub.publish("hotelRegistrationsData", JSON.stringify(parsedData));
+    console.log( "lolde", parsedData.data);
+    pub.publish("hotelRegistrationsData", JSON.stringify(parsedData.data));
     console.log("Published hotel registration data to Redis channel for userID:", userID);
 
     return apiResponse(

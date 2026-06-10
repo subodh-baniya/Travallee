@@ -19,23 +19,23 @@ const sub = createClient({
 
 Promise.all([pub.connect(), sub.connect()]).then(() => {
     console.log("Connected to Redis");
+
+    sub.subscribe("hotelRegistrationsData", async (message: string) => {
+        try {
+            const data = JSON.parse(message);
+            console.log("Received hotel registration data:", data);
+            io.to(`superadmin`).emit("hotelRegistrationsData", data);
+            console.log("Received message on hotelRegistrationsData channel:", message);
+        }
+        catch (err: any) {
+            console.error("Error parsing hotel registration data message:", err);
+        }
+    })
 })
-.catch((err: any) => {
+    .catch((err: any) => {
         console.error("Error connecting to Redis:", err);
     });
 
-
-sub.subscribe("hotelRegistrationsData", (message: any) => {
-    try {
-        const data = JSON.parse(message);
-        console.log("Received hotel registration data:", data);
-        io.to(`superadmin`).emit("hotelRegistrationsData", data);
-        console.log("Received message on hotelRegistrationsData channel:", message);
-    }
-    catch (err: any) {
-        console.error("Error parsing hotel registration data message:", err);
-    }
-});
 
 const getNewRegistration = asyncHandler(async (req: any, res: any) => {
 
