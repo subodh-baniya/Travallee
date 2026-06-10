@@ -163,17 +163,6 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     );
 
 
-
-
-
-
-
-
-
-
-
-
-
   } catch (error: any) {
     if (error.name === "ValidationError") {
       return apiError(res, 400, "Hotel validation failed", error.errors);

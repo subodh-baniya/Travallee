@@ -1,7 +1,6 @@
 import  {asyncHandler} from "../../config/asynchandler.js";
-import redis from "ioredis"
 import { createClient } from "redis";
-import { io } from "../../app.js";
+
 
 const connection = {
     host: process.env.REDIS_HOST,
@@ -26,9 +25,7 @@ Promise.all([pub.connect(), sub.connect()]).then(() => {
 
 
 sub.subscribe("hotelRegistrationsData", (message: any) => {
-    console.log("Received message on hotelRegistrationsData channel:", message);
-    
-   
+    console.log("Received message on hotelRegistrationsData channel:", message);   
 });
 
 const getNewRegistration = asyncHandler(async (req: any, res: any) => {
