@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Hooks/useAuth";
 import logoImage from "../assets/images/Logo.jpg";
-import bannerImage from "../assets/images/Banner.jpg";
 
 export default function Login() {
   const navigate = useNavigate();
   const auth = useAuth();
   const [form, setForm] = useState({ Username: "", password: "", superAdminKey: "" });
   const [loading, setLoading] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const [error, setError] = useState("");
 
   const onChange = (field) => (event) => {
@@ -30,6 +30,7 @@ export default function Login() {
     }
 
     setLoading(true);
+    setAnimating(true);
 
     try {
       await auth.login({
@@ -37,11 +38,13 @@ export default function Login() {
         password: form.password,
         superAdminKey: form.superAdminKey.trim() || undefined,
       });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       navigate("/dashboard/app/banners", { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Unable to sign in right now.");
     } finally {
       setLoading(false);
+      setAnimating(false);
     }
   };
 
@@ -50,244 +53,244 @@ export default function Login() {
       <style>{`
         .login-bg {
           min-height: 100vh;
-          background: linear-gradient(135deg, #eef7ff 0%, #f7fbff 52%, #eaf4ff 100%);
+          background:
+            radial-gradient(circle at top, rgba(56,189,248,0.12), transparent 30%),
+            linear-gradient(160deg, #f8fbff 0%, #eef7ff 48%, #e7f1fb 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: 'DM Sans', sans-serif;
           padding: 24px;
+          position: relative;
+          overflow: hidden;
+        }
+        .login-bg::before,
+        .login-bg::after {
+          content: "";
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(10px);
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        .login-bg::before {
+          width: 260px;
+          height: 260px;
+          left: -90px;
+          bottom: -110px;
+          background: rgba(186,230,253,0.55);
+        }
+        .login-bg::after {
+          width: 220px;
+          height: 220px;
+          right: -80px;
+          top: -90px;
+          background: rgba(191,219,254,0.45);
         }
         .login-shell {
-          width: min(100%, 980px);
-          display: grid;
-          grid-template-columns: 1.1fr 0.9fr;
-          gap: 18px;
-          align-items: stretch;
+          width: min(100%, 460px);
+          position: relative;
+          z-index: 1;
         }
         .login-card {
-          background: #ffffff;
-          border: 1px solid rgba(56,189,248,0.2);
-          border-radius: 16px;
-          box-shadow: 0 10px 34px rgba(2, 132, 199, 0.14);
-          padding: 36px 32px;
+          background: rgba(255,255,255,0.86);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          border-radius: 28px;
+          box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+          padding: 34px 30px 26px;
           width: 100%;
+          backdrop-filter: blur(18px);
+          position: relative;
+          overflow: hidden;
+        }
+        .login-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 40%);
+          pointer-events: none;
         }
         .login-logo {
-          width: 64px;
-          height: 64px;
-          border-radius: 18px;
+          width: 92px;
+          height: 92px;
+          border-radius: 28px;
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 16px;
-          box-shadow: 0 12px 28px rgba(2, 132, 199, 0.18);
-          animation: floaty 3.4s ease-in-out infinite;
+          margin: 2px auto 18px;
+          background: linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
+          box-shadow: 0 18px 38px rgba(2, 132, 199, 0.16);
+          animation: floaty 3.6s ease-in-out infinite;
+          border: 1px solid rgba(186,230,253,0.85);
         }
         .login-logo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block;
+        }
+        .login-logo.animating {
+          animation: launch 2s ease-in-out 1;
         }
         .login-title {
-          font-size: 28px;
-          font-weight: 600;
+          font-size: 30px;
+          font-weight: 700;
           color: #0f172a;
           text-align: center;
-          margin: 0 0 8px;
+          margin: 0 0 10px;
+          letter-spacing: -0.03em;
         }
         .login-sub {
-          font-size: 15px;
+          font-size: 14px;
           color: #64748b;
           text-align: center;
-          margin: 0 0 24px;
+          margin: 0 0 26px;
         }
         .form-group {
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
         .form-label {
           display: block;
-          font-size: 12px;
-          font-weight: 500;
-          color: #64748b;
+          font-size: 11px;
+          font-weight: 600;
+          color: #475569;
           text-transform: uppercase;
-          letter-spacing: 0.06em;
-          margin-bottom: 7px;
+          letter-spacing: 0.09em;
+          margin-bottom: 8px;
         }
         .form-input {
           width: 100%;
-          padding: 12px 14px;
-          border-radius: 10px;
-          border: 1px solid rgba(14,116,144,0.2);
+          padding: 13px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(148,163,184,0.22);
           font-size: 14px;
           font-family: 'DM Sans', sans-serif;
-          color: #0f0e1a;
-          background: #ffffff;
+          color: #0f172a;
+          background: rgba(255,255,255,0.92);
           outline: none;
-          transition: border 0.15s, box-shadow 0.15s;
+          transition: border 0.18s, box-shadow 0.18s, transform 0.18s;
           box-sizing: border-box;
         }
         .form-input:focus {
           border-color: #0284c7;
-          box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+          box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+          transform: translateY(-1px);
         }
         .signin-btn {
           width: 100%;
-          padding: 13px;
-          border-radius: 10px;
+          padding: 14px;
+          border-radius: 14px;
           border: none;
-          background: #0284c7;
+          background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
           color: #ffffff;
           font-size: 15px;
-          font-weight: 600;
+          font-weight: 700;
           font-family: 'DM Sans', sans-serif;
           cursor: pointer;
-          transition: background 0.15s;
-          margin-top: 12px;
+          transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+          margin-top: 14px;
+          box-shadow: 0 14px 30px rgba(2,132,199,0.22);
         }
         .signin-btn:hover {
-          background: #0369a1;
+          transform: translateY(-1px);
+          box-shadow: 0 18px 36px rgba(2,132,199,0.26);
         }
         .signin-btn:disabled {
           opacity: 0.7;
           cursor: not-allowed;
+          transform: none;
         }
         .error-box {
-          margin-top: 8px;
+          margin-top: 10px;
           border: 1px solid #fecaca;
           background: #fef2f2;
-          border-radius: 10px;
+          border-radius: 14px;
           padding: 10px 12px;
           font-size: 13px;
           color: #991b1b;
         }
         .hint {
-          margin-top: 16px;
-          font-size: 13px;
+          margin-top: 18px;
+          font-size: 12px;
           color: #64748b;
           text-align: center;
+          letter-spacing: 0.04em;
         }
-        .brand-panel {
+        .login-meta {
+          margin-top: 16px;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .login-chip {
+          padding: 7px 11px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.7);
+          border: 1px solid rgba(148,163,184,0.18);
+          font-size: 11px;
+          color: #475569;
+        }
+        .login-overlay {
           position: relative;
-          border-radius: 22px;
-          overflow: hidden;
-          min-height: 100%;
-          border: 1px solid rgba(56,189,248,0.18);
-          box-shadow: 0 20px 50px rgba(2, 132, 199, 0.12);
+          inset: 0;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: rgba(248,251,255,0.72);
+          backdrop-filter: blur(8px);
+          z-index: 3;
+          margin-top: 16px;
+          border-radius: 24px;
+          min-height: 170px;
         }
-        .brand-panel img {
+        .login-overlay.show {
+          display: flex;
+        }
+        .login-overlay-inner {
+          text-align: center;
+        }
+        .login-overlay-logo {
+          width: 88px;
+          height: 88px;
+          border-radius: 28px;
+          overflow: hidden;
+          margin: 0 auto 14px;
+          box-shadow: 0 18px 40px rgba(2,132,199,0.18);
+          animation: launch 2s ease-in-out 1;
+          border: 1px solid rgba(186,230,253,0.9);
+        }
+        .login-overlay-logo img {
           width: 100%;
           height: 100%;
-          min-height: 100%;
           object-fit: cover;
           display: block;
-          transform: scale(1.02);
-          animation: bannerDrift 9s ease-in-out infinite;
         }
-        .brand-panel::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(circle at 20% 18%, rgba(255,255,255,0.14), transparent 28%),
-            linear-gradient(180deg, rgba(15,23,42,0.08) 0%, rgba(2,132,199,0.18) 100%);
-        }
-        .brand-panel-text {
-          position: absolute;
-          left: 18px;
-          right: 18px;
-          bottom: 18px;
-          z-index: 1;
-          color: #ffffff;
-        }
-        .brand-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 10px;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.16);
-          backdrop-filter: blur(10px);
-          font-size: 12px;
-          font-weight: 600;
-          margin-bottom: 12px;
-        }
-        .brand-panel-title {
-          font-size: 28px;
-          font-weight: 700;
-          line-height: 1.05;
-          margin-bottom: 8px;
-          text-shadow: 0 8px 24px rgba(15,23,42,0.25);
-        }
-        .brand-panel-sub {
+        .login-overlay-text {
           font-size: 14px;
-          line-height: 1.5;
-          opacity: 0.95;
-          max-width: 22rem;
+          font-weight: 600;
+          color: #0f172a;
         }
-        .brand-metrics {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
-          margin-top: 16px;
-        }
-        .metric-card {
-          padding: 10px 12px;
-          border-radius: 14px;
-          background: rgba(255,255,255,0.18);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255,255,255,0.18);
-        }
-        .metric-label {
-          font-size: 11px;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          opacity: 0.85;
-          margin-bottom: 4px;
-        }
-        .metric-value {
-          font-size: 18px;
-          font-weight: 700;
-        }
-        .brand-floating {
-          position: absolute;
-          top: 18px;
-          right: 18px;
-          z-index: 2;
-          padding: 12px 14px;
-          border-radius: 16px;
-          background: rgba(255,255,255,0.16);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255,255,255,0.18);
-          box-shadow: 0 12px 30px rgba(15,23,42,0.12);
-          animation: floaty 3.8s ease-in-out infinite;
-        }
-        .brand-floating .floating-title {
+        .login-overlay-sub {
           font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          opacity: 0.85;
-          margin-bottom: 4px;
-        }
-        .brand-floating .floating-value {
-          font-size: 17px;
-          font-weight: 700;
+          color: #64748b;
+          margin-top: 4px;
         }
         @keyframes floaty {
           0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-4px) scale(1.02); }
+          50% { transform: translateY(-4px) scale(1.03); }
         }
-        @keyframes bannerDrift {
-          0%, 100% { transform: scale(1.02) translate3d(0, 0, 0); }
-          50% { transform: scale(1.06) translate3d(-6px, -4px, 0); }
+        @keyframes launch {
+          0% { transform: translateY(0) scale(1) rotate(0deg); }
+          20% { transform: translateY(-10px) scale(1.05) rotate(-1deg); }
+          45% { transform: translateY(-20px) scale(1.08) rotate(1deg); }
+          70% { transform: translateY(-8px) scale(1.03) rotate(0deg); }
+          100% { transform: translateY(0) scale(1) rotate(0deg); }
         }
         @media (max-width: 860px) {
           .login-shell {
-            grid-template-columns: 1fr;
-          }
-          .brand-panel {
-            min-height: 220px;
-            order: -1;
+            width: min(100%, 420px);
           }
         }
       `}</style>
@@ -295,11 +298,11 @@ export default function Login() {
       <div className="login-bg">
         <div className="login-shell">
           <div className="login-card">
-            <div className="login-logo">
+            <div className={`login-logo${animating ? " animating" : ""}`}>
               <img src={logoImage} alt="Superadmin logo" />
             </div>
-            <h1 className="login-title">Welcome back</h1>
-            <p className="login-sub">Enter your credentials to continue</p>
+            <h1 className="login-title">Superadmin Login</h1>
+            <p className="login-sub">Sign in to continue to the control center</p>
 
             <form onSubmit={handleLogin}>
               <div className="form-group">
@@ -346,29 +349,21 @@ export default function Login() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
-            <div className="hint">Superadmin access only</div>
-          </div>
-          <div className="brand-panel">
-            <img src={bannerImage} alt="Travalee superadmin banner" />
-            <div className="brand-floating">
-              <div className="floating-title">Live status</div>
-              <div className="floating-value">Superadmin ready</div>
-            </div>
-            <div className="brand-panel-text">
-              <div className="brand-tag">Control Center</div>
-              <div className="brand-panel-title">Travalee Superadmin</div>
-              <div className="brand-panel-sub">Manage app content, hotels, and system controls from one clean dashboard.</div>
-              <div className="brand-metrics">
-                <div className="metric-card">
-                  <div className="metric-label">Modules</div>
-                  <div className="metric-value">05</div>
+            <div className={`login-overlay${animating ? " show" : ""}`} aria-hidden={!animating}>
+              <div className="login-overlay-inner">
+                <div className="login-overlay-logo">
+                  <img src={logoImage} alt="Superadmin logo animation" />
                 </div>
-                <div className="metric-card">
-                  <div className="metric-label">Access</div>
-                  <div className="metric-value">Secure</div>
-                </div>
+                <div className="login-overlay-text">Opening Travalee</div>
+                <div className="login-overlay-sub">Please wait a moment</div>
               </div>
             </div>
+            <div className="login-meta">
+              <span className="login-chip">Secure access</span>
+              <span className="login-chip">Minimal UI</span>
+              <span className="login-chip">Fast dashboard entry</span>
+            </div>
+            <div className="hint">Superadmin access only</div>
           </div>
         </div>
       </div>
