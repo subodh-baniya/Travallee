@@ -29,7 +29,7 @@ sub.subscribe("bookingConfirmed", (message) => {
         const data = JSON.parse(message);
         const hotelId = data.hotelId;
         io.to(`hotel_${hotelId}`).emit("bookingConfirmed", data);
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error parsing booking confirmation message:", err);
     }
 });

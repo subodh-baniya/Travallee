@@ -1,5 +1,6 @@
-import  {asyncHandler} from "../../config/asynchandler.js";
+import { asyncHandler } from "../../config/asynchandler.js";
 import { createClient } from "redis";
+import { io } from "../../app.js";
 
 
 const connection = {
@@ -9,27 +10,35 @@ const connection = {
 
 
 const pub = createClient({
-    url: `redis://${connection.host}:${connection.port}`
+    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 
 const sub = createClient({
-    url: `redis://${connection.host}:${connection.port}`
+    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 
 Promise.all([pub.connect(), sub.connect()]).then(() => {
     console.log("Connected to Redis");
 })
 .catch((err: any) => {
-    console.error("Error connecting to Redis:", err);
-});
+        console.error("Error connecting to Redis:", err);
+    });
 
 
 sub.subscribe("hotelRegistrationsData", (message: any) => {
-    console.log("Received message on hotelRegistrationsData channel:", message);   
+    try {
+        const data = JSON.parse(message);
+        console.log("Received hotel registration data:", data);
+        io.to(`superadmin`).emit("hotelRegistrationsData", data);
+        console.log("Received message on hotelRegistrationsData channel:", message);
+    }
+    catch (err: any) {
+        console.error("Error parsing hotel registration data message:", err);
+    }
 });
 
 const getNewRegistration = asyncHandler(async (req: any, res: any) => {
-   
+
 })
 
 export default {

@@ -70,7 +70,9 @@ sub.subscribe("bookingHistory", async (message: string) => {
 // register and edit controller always at top please
 
 const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user.id || req.user._id;
+  console.log(req.user);
+  const userID =  req.user._id || req.user.id;
+  console.log("Hotel registration request received for userID:", userID);
   const email = req.user.email;
   const files = req.files || [];
 
@@ -135,11 +137,67 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    const parsedData = createHotelSchema.safeParse(req.body);
+    const parsedData = createHotelSchema.safeParse({...req.body, userID });
+    console.log("Parsed hotel registration data:", parsedData);
     if (!parsedData.success) {
       return apiError(res, 400, "Validation failed", parsedData.error.issues);
     }
     const hotelData: HotelInput = parsedData.data;
+      if (files.length > 0) {
+    try {
+      const hotelImageUrls: string[] = [];
+      const verificationDocUrls: string[] = [];
+
+      for (const file of files) {
+        // Get file path - multer stores it in 'path'
+        const filePath = file.path || file.tempFilePath;
+
+        if (!filePath) {
+          console.error("File path not found", file);
+          continue;
+        }
+
+        // Separate files based on field name
+        if (
+          file.fieldname === "VerificationDocuments" ||
+          file.fieldname === "verificationDocuments"
+        ) {
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "verification_documents",
+          );
+          if (uploadResult) verificationDocUrls.push(uploadResult);
+        } else {
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "hotel_images",
+          );
+          if (uploadResult) hotelImageUrls.push(uploadResult);
+        }
+      }
+
+      if (hotelImageUrls.length > 0) {
+        req.body.hotelImages = hotelImageUrls;
+      } else {
+        req.body.hotelImages = [];
+      }
+
+      if (verificationDocUrls.length > 0) {
+        req.body.VerificationDocuments = verificationDocUrls;
+      } else {
+        req.body.VerificationDocuments = [];
+      }
+    } catch (error: any) {
+      console.error("Error uploading files:", error);
+      return apiError(res, 500, "Failed to upload files", {
+        error: error.message,
+      });
+    }
+  } else {
+    // Empty arrays if no files
+    req.body.hotelImages = [];
+    req.body.VerificationDocuments = [];
+  }
     registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 1);// Cache for 1 day
 
     const emailData = {
@@ -152,7 +210,9 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     };
 
     await registerHotelQueue.add("HotelRegistration", emailData);
+    console.log("Published hotel registration data to queue for userID:", userID, "with data:", emailData);
     pub.publish("hotelRegistrationsData", JSON.stringify(parsedData));
+    console.log("Published hotel registration data to Redis channel for userID:", userID);
 
     return apiResponse(
       res,

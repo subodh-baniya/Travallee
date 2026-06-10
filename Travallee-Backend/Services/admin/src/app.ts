@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
             return;
         }
     }
-    socket.join(`superadmin_${superAdminId}`);
+    socket.join(`superadmin`);
     console.log("Admin client connected:", socket.id, "SuperAdminId:", superAdminId);
     socket.on("disconnect", () => {
         console.log("Admin client disconnected:", socket.id);
