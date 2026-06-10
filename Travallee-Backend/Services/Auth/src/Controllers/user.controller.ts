@@ -241,7 +241,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
       200,
       true,
       "User logged in successfully",
-      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email , superAdminKey: user.superAdminKey ? true : false },
+      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email , superAdminKey: user.superAdminKey },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {

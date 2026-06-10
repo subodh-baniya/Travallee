@@ -1,5 +1,3 @@
-import logoImage from "../assets/images/Logo.jpg";
-
 export default function Loader() {
   return (
     <div style={{
@@ -15,20 +13,15 @@ export default function Loader() {
         <div style={{
           width: 42,
           height: 42,
-          borderRadius: 12,
-          overflow: "hidden",
-          boxShadow: "0 10px 24px rgba(2,132,199,0.16)",
-          animation: "floaty 2.8s ease-in-out infinite",
-        }}>
-          <img
-            src={logoImage}
-            alt="Superadmin logo"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        </div>
+          borderRadius: "50%",
+          border: "4px solid rgba(2,132,199,0.16)",
+          borderTopColor: "#0284c7",
+          animation: "spin 0.9s linear infinite",
+          boxSizing: "border-box",
+        }} />
         <span>Loading superadmin workspace...</span>
       </div>
-      <style>{"@keyframes floaty { 0%, 100% { transform: translateY(0px) scale(1); } 50% { transform: translateY(-3px) scale(1.03); } }"}</style>
+      <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
     </div>
   );
 }

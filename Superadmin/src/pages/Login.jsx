@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Hooks/useAuth";
-import logoImage from "../assets/images/Logo.jpg";
 
 export default function Login() {
   const navigate = useNavigate();
   const auth = useAuth();
   const [form, setForm] = useState({ Username: "", password: "", superAdminKey: "" });
   const [loading, setLoading] = useState(false);
-  const [animating, setAnimating] = useState(false);
   const [error, setError] = useState("");
 
   const onChange = (field) => (event) => {
@@ -30,21 +28,17 @@ export default function Login() {
     }
 
     setLoading(true);
-    setAnimating(true);
-
     try {
       await auth.login({
         Username: form.Username.trim(),
         password: form.password,
         superAdminKey: form.superAdminKey.trim() || undefined,
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      navigate("/dashboard/app/banners", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Unable to sign in right now.");
     } finally {
       setLoading(false);
-      setAnimating(false);
     }
   };
 
@@ -109,29 +103,6 @@ export default function Login() {
           inset: 0;
           background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 40%);
           pointer-events: none;
-        }
-        .login-logo {
-          width: 92px;
-          height: 92px;
-          border-radius: 28px;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 2px auto 18px;
-          background: linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
-          box-shadow: 0 18px 38px rgba(2, 132, 199, 0.16);
-          animation: floaty 3.6s ease-in-out infinite;
-          border: 1px solid rgba(186,230,253,0.85);
-        }
-        .login-logo img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .login-logo.animating {
-          animation: launch 2s ease-in-out 1;
         }
         .login-title {
           font-size: 30px;
@@ -232,61 +203,15 @@ export default function Login() {
           font-size: 11px;
           color: #475569;
         }
-        .login-overlay {
-          position: relative;
-          inset: 0;
-          display: none;
-          align-items: center;
-          justify-content: center;
-          background: rgba(248,251,255,0.72);
-          backdrop-filter: blur(8px);
-          z-index: 3;
-          margin-top: 16px;
-          border-radius: 24px;
-          min-height: 170px;
-        }
-        .login-overlay.show {
-          display: flex;
-        }
-        .login-overlay-inner {
-          text-align: center;
-        }
-        .login-overlay-logo {
-          width: 88px;
-          height: 88px;
-          border-radius: 28px;
-          overflow: hidden;
-          margin: 0 auto 14px;
-          box-shadow: 0 18px 40px rgba(2,132,199,0.18);
-          animation: launch 2s ease-in-out 1;
-          border: 1px solid rgba(186,230,253,0.9);
-        }
-        .login-overlay-logo img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .login-overlay-text {
+        .login-loading-text {
           font-size: 14px;
           font-weight: 600;
           color: #0f172a;
         }
-        .login-overlay-sub {
+        .login-loading-sub {
           font-size: 12px;
           color: #64748b;
           margin-top: 4px;
-        }
-        @keyframes floaty {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-4px) scale(1.03); }
-        }
-        @keyframes launch {
-          0% { transform: translateY(0) scale(1) rotate(0deg); }
-          20% { transform: translateY(-10px) scale(1.05) rotate(-1deg); }
-          45% { transform: translateY(-20px) scale(1.08) rotate(1deg); }
-          70% { transform: translateY(-8px) scale(1.03) rotate(0deg); }
-          100% { transform: translateY(0) scale(1) rotate(0deg); }
         }
         @media (max-width: 860px) {
           .login-shell {
@@ -298,9 +223,6 @@ export default function Login() {
       <div className="login-bg">
         <div className="login-shell">
           <div className="login-card">
-            <div className={`login-logo${animating ? " animating" : ""}`}>
-              <img src={logoImage} alt="Superadmin logo" />
-            </div>
             <h1 className="login-title">Superadmin Login</h1>
             <p className="login-sub">Sign in to continue to the control center</p>
 
@@ -328,13 +250,14 @@ export default function Login() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Super Admin Key (optional)</label>
+                <label className="form-label">Super Admin Key</label>
                 <input
                   className="form-input"
                   type="password"
-                  placeholder="Enter superadmin key (if assigned)"
+                  placeholder="1234 5678 9012 3456"
                   value={form.superAdminKey}
                   onChange={onChange("superAdminKey")}
+                  style={{ letterSpacing: "0.18em" }}
                   autoComplete="off"
                 />
               </div>
@@ -349,15 +272,8 @@ export default function Login() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
-            <div className={`login-overlay${animating ? " show" : ""}`} aria-hidden={!animating}>
-              <div className="login-overlay-inner">
-                <div className="login-overlay-logo">
-                  <img src={logoImage} alt="Superadmin logo animation" />
-                </div>
-                <div className="login-overlay-text">Opening Travalee</div>
-                <div className="login-overlay-sub">Please wait a moment</div>
-              </div>
-            </div>
+            <div className="login-loading-text">Opening Travalee</div>
+            <div className="login-loading-sub">Please wait a moment</div>
             <div className="login-meta">
               <span className="login-chip">Secure access</span>
               <span className="login-chip">Minimal UI</span>

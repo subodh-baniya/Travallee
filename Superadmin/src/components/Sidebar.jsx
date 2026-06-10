@@ -1,18 +1,9 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import logoImage from "../assets/images/Logo.jpg";
 
 const NAV = [
   { section: "Main" },
-  {
-    id: "app", icon: "ti-device-mobile", label: "App",
-    children: [
-      { id: "banners", label: "Banners" },
-      { id: "redeem",  label: "Redeem Code" },
-      { id: "users",   label: "Users" },
-      { id: "block",   label: "Block" },
-    ],
-  },
+  { id: "dashboard", icon: "ti-layout-dashboard", label: "Dashboard" },
   {
     id: "hotels", icon: "ti-building", label: "Hotels",
     children: [
@@ -24,14 +15,10 @@ const NAV = [
   { id: "analysis", icon: "ti-chart-bar", label: "Analysis" },
 ];
 
-const appPages   = ["banners","redeem","users","block"];
 const hotelPages = ["register","bookings","status"];
 
 const pathMap = {
-  banners: "/dashboard/app/banners",
-  redeem: "/dashboard/app/redeem",
-  users: "/dashboard/app/users",
-  block: "/dashboard/app/block",
+  dashboard: "/dashboard",
   register: "/dashboard/hotels/register",
   bookings: "/dashboard/hotels/bookings",
   status: "/dashboard/hotels/status",
@@ -45,10 +32,9 @@ export default function Sidebar({ mini, setMini }) {
   const page = useMemo(() => {
     const currentPath = location.pathname;
     const matchedKey = Object.keys(pathMap).find((key) => pathMap[key] === currentPath);
-    return matchedKey || "banners";
+    return matchedKey || "dashboard";
   }, [location.pathname]);
 
-  const [appOpen, setAppOpen] = useState(appPages.includes(page));
   const [hotelsOpen, setHotelsOpen] = useState(hotelPages.includes(page));
 
   const handleSubClick = (id) => {
@@ -58,13 +44,7 @@ export default function Sidebar({ mini, setMini }) {
 
   const handleTopClick = (item) => {
     if (item.children) {
-      if (item.id === "app") {
-        setAppOpen((o) => !o);
-        setHotelsOpen(false);
-      } else {
-        setHotelsOpen((o) => !o);
-        setAppOpen(false);
-      }
+      setHotelsOpen((o) => !o);
     } else {
       navigate(pathMap[item.id]);
       setMini(true);
@@ -90,23 +70,12 @@ export default function Sidebar({ mini, setMini }) {
         </button>
       )}
 
-      {/* Logo */}
-      <div className="s-logo">
-        <div className="s-logo-icon">
-          <img src={logoImage} alt="Superadmin logo" />
-        </div>
-        <div>
-          <div className="s-logo-name">Control Center</div>
-          <div className="s-logo-sub">Superadmin</div>
-        </div>
-      </div>
-
       {/* Nav */}
       <nav className="s-nav">
         {NAV.map((item, i) => {
           if (item.section) return <div className="s-section" key={i}>{item.section}</div>;
 
-          const open = item.id === "app" ? appOpen : item.id === "hotels" ? hotelsOpen : false;
+          const open = item.id === "hotels" ? hotelsOpen : false;
 
           return (
             <div key={item.id}>

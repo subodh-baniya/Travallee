@@ -57,7 +57,7 @@ const UserSchema = new mongoose.Schema<UserType, UserModel, UserMethods>({
   superAdminKey: { type: String },
 }, { timestamps: true });
 
-UserSchema.pre("save", async function (next) {
+UserSchema.pre("save", async function (this: mongoose.HydratedDocument<UserType, UserMethods>, next) {
   if (!this.isModified("password")) return;
 
   // Skip hashing for OAuth users
@@ -73,7 +73,19 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
+UserSchema.pre("save", async function (this: mongoose.HydratedDocument<UserType, UserMethods>, next) {
+  if (!this.isModified("superAdminKey") || !this.superAdminKey) return;
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.superAdminKey = await bcrypt.hash(this.superAdminKey, salt);
+  } catch (err) {
+    console.error("Error hashing super admin key:", err);
+  }
+});
+
 UserSchema.methods.compareSuperAdminKey = async function (
+  this: mongoose.HydratedDocument<UserType, UserMethods>,
   candidateKey: string,
 ): Promise<boolean> {
   if (!this.superAdminKey) {
@@ -83,18 +95,10 @@ UserSchema.methods.compareSuperAdminKey = async function (
   return bcrypt.compare(candidateKey, this.superAdminKey);
 };
 
-UserSchema.methods.compareSuperAdminKey = async function (
-  candidateKey: string,
-): Promise<boolean> {
-  if (!this.superAdminKey) {
-    return false;
-  }
-  return bcrypt.compare(candidateKey, this.superAdminKey);
-}
-
 UserSchema.methods.comparePassword = async function (
+  this: mongoose.HydratedDocument<UserType, UserMethods>,
   candidatePassword: string,
-) {
+): Promise<boolean> {
   // OAuth users cannot login with password
   if (this.password === "oauth_google_user") {
     return false;

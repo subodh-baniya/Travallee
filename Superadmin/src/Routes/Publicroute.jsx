@@ -15,7 +15,7 @@ const Publicroute = () => {
     return <Loader />;
   }
 
-  return isAuthenticated ? <Navigate to="/dashboard/app/banners" replace /> : <Outlet />;
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
 };
 
 export default Publicroute;

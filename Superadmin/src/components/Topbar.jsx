@@ -1,10 +1,7 @@
 import { useLocation } from "react-router-dom";
 
 const PAGE_META = {
-  "/dashboard/app/banners": { title: "Banners", path: "/app/banners" },
-  "/dashboard/app/redeem": { title: "Redeem Code", path: "/app/redeem" },
-  "/dashboard/app/users": { title: "App Users", path: "/app/users" },
-  "/dashboard/app/block": { title: "Block / Unblock", path: "/app/block" },
+  "/dashboard": { title: "Dashboard", path: "/dashboard" },
   "/dashboard/hotels/register": { title: "Register Hotels", path: "/hotels/register" },
   "/dashboard/hotels/bookings": { title: "Bookings", path: "/hotels/bookings" },
   "/dashboard/hotels/status": { title: "Hotel Status", path: "/hotels/status" },
