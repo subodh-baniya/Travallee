@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useAuth } from "../../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { useBookings } from "../../Hooks/useBooking";

@@ -10,6 +10,8 @@ import {
   Building2,
   Check,
 } from "lucide-react";
+import { Toast } from "../modal-popups/Toast"; 
+import { useToast } from "../../Hooks/useToast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,17 +151,17 @@ export default function CreateBookingModal({
   rooms,
   onSuccess,
 }: CreateBookingModalProps) {
-  const [guestName, setGuestName]           = useState("");
-  const [guestEmail, setGuestEmail]         = useState("");
-  const [roomId, setRoomId]                 = useState("");
-  const [checkIn, setCheckIn]               = useState("");
-  const [checkOut, setCheckOut]             = useState("");
-  const [guests, setGuests]                 = useState(1);
-  const [paymentMethod, setPaymentMethod]   = useState<"COD" | "KHALTI" | "ESEWA">("COD");
+  const [guestName, setGuestName]         = useState("");
+  const [guestEmail, setGuestEmail]       = useState("");
+  const [roomId, setRoomId]               = useState("");
+  const [checkIn, setCheckIn]             = useState("");
+  const [checkOut, setCheckOut]           = useState("");
+  const [guests, setGuests]               = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<"COD" | "KHALTI" | "ESEWA">("COD");
+  const [errors, setErrors]               = useState<Record<string, string>>({});
+  const [submitting, setSubmitting]       = useState(false);
 
-  const [errors, setErrors]           = useState<Record<string, string>>({});
-  const [submitting, setSubmitting]   = useState(false);
-  const [serverError, setServerError] = useState("");
+  const { toast, showToast, clearToast } = useToast();
 
   const selectedRoom = rooms.find((r) => r._id === roomId);
   const nights       = calcNights(checkIn, checkOut);
@@ -169,7 +171,7 @@ export default function CreateBookingModal({
     if (isOpen) {
       setGuestName(""); setGuestEmail(""); setRoomId("");
       setCheckIn(""); setCheckOut(""); setGuests(1);
-      setPaymentMethod("COD"); setErrors({}); setServerError("");
+      setPaymentMethod("COD"); setErrors({}); clearToast();
     }
   }, [isOpen]);
 
@@ -192,7 +194,7 @@ export default function CreateBookingModal({
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
-    setServerError("");
+    clearToast();
     setSubmitting(true);
 
     try {
@@ -201,19 +203,21 @@ export default function CreateBookingModal({
         roomId,
         hotelId,
         hotelName,
-        roomNumber:    selectedRoom!.roomNumber,
-        checkIn:       new Date(checkIn).toISOString(),
-        checkOut:      new Date(checkOut).toISOString(),
+        roomNumber:   selectedRoom!.roomNumber,
+        checkIn:      new Date(checkIn).toISOString(),
+        checkOut:     new Date(checkOut).toISOString(),
         guests,
         totalPrice,
         paymentMethod,
-        Name:          guestName,
-        email:         guestEmail,
+        Name:         guestName,
+        email:        guestEmail,
       });
+      showToast("success", "Booking confirmed successfully!");
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setServerError(
+      showToast(
+        "error",
         err?.response?.data?.message || err?.message || "Booking failed. Please try again."
       );
     } finally {
@@ -248,6 +252,9 @@ export default function CreateBookingModal({
               onClick={(e) => e.stopPropagation()}
               className="pointer-events-auto w-full max-w-[460px] max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 flex flex-col"
             >
+              {/* ── Toast — sits at top of panel, same pattern as AddRoomModal ── */}
+              <Toast toast={toast} />
+
               {/* ── Header ── */}
               <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-slate-100">
                 <div>
@@ -278,7 +285,7 @@ export default function CreateBookingModal({
                     <FieldLabel htmlFor="guestName">Full name</FieldLabel>
                     <Input
                       id="guestName"
-                      placeholder="Subodh Sharma"
+                      placeholder="E.g.Ram"
                       value={guestName}
                       error={!!errors.guestName}
                       onChange={(e) => setGuestName(e.target.value)}
@@ -358,7 +365,7 @@ export default function CreateBookingModal({
                   </div>
                 </div>
 
-                {/* Price summary — contextually placed under dates */}
+                {/* Price summary */}
                 <AnimatePresence>
                   {selectedRoom && nights > 0 && (
                     <motion.div
@@ -373,11 +380,11 @@ export default function CreateBookingModal({
                             {nights} {nights === 1 ? "night" : "nights"}
                           </span>
                           <span className="text-[11px] text-slate-500">
-                            ${selectedRoom.pricePerNight}/night × {nights}
+                            Rs.{selectedRoom.pricePerNight}/night × {nights}
                           </span>
                         </div>
                         <span className="text-[17px] font-medium text-blue-600">
-                          ${totalPrice.toLocaleString()}
+                          Rs.{totalPrice.toLocaleString()}
                         </span>
                       </div>
                     </motion.div>
@@ -419,20 +426,6 @@ export default function CreateBookingModal({
                     </Select>
                   </div>
                 </div>
-
-                {/* Server error */}
-                <AnimatePresence>
-                  {serverError && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="mt-4 rounded-lg bg-red-50 border border-red-200 px-3.5 py-2.5 text-[12px] text-red-600"
-                    >
-                      {serverError}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* ── Footer ── */}
