@@ -1,91 +1,145 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import { globalCSS } from "./theme";
+import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
 
-import Sidebar        from "./components/Sidebar";
-import Topbar         from "./components/Topbar";
-
-// Hotels
 import RegisterHotels from "./pages/Hotels/RegisterHotels";
-import Bookings       from "./pages/Hotels/Bookings";
-import HotelStatus    from "./pages/Hotels/HotelStatus";
+import Bookings from "./pages/Hotels/Bookings";
+import HotelStatus from "./pages/Hotels/HotelStatus";
+import Banners from "./pages/App/Banners";
+import RedeemCode from "./pages/App/RedeemCode";
+import AppUsers from "./pages/App/AppUsers";
+import BlockUsers from "./pages/App/BlockUsers";
+import Analysis from "./pages/Analysis";
+import Login from "./pages/Login";
 
-// App
-import Banners        from "./pages/App/Banners";
-import RedeemCode     from "./pages/App/RedeemCode";
-import AppUsers       from "./pages/App/AppUsers";
-import BlockUsers     from "./pages/App/BlockUsers";
+const SUPERADMIN_KEY = "superadmin_auth";
 
-// Other
-import Analysis       from "./pages/Analysis";
+function getSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SUPERADMIN_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
 
-export default function App() {
-  const [page,     setPage]     = useState("banners");
-  const [mini,     setMini]     = useState(false);
+function saveSession(session) {
+  localStorage.setItem(SUPERADMIN_KEY, JSON.stringify(session));
+}
+
+function clearSession() {
+  localStorage.removeItem(SUPERADMIN_KEY);
+}
+
+function RequireAuth({ isAuthenticated }) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+}
+
+function DashboardLayout({ onLogout }) {
+  const [mini, setMini] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
-
-  const appPages    = ["banners","redeem","users","block"];
-  const hotelPages  = ["register","bookings","status"];
-
-  window.__appOpen   = appPages.includes(page);
-  window.__hotelsOpen = hotelPages.includes(page);
-
-  const handleSetPage = (p) => {
-    if (p === "app-toggle") {
-      window.__appOpen = !window.__appOpen;
-      setPage((prev) => prev + " "); // force re-render trick
-    } else if (p === "hotels-toggle") {
-      window.__hotelsOpen = !window.__hotelsOpen;
-      setPage((prev) => prev + " ");
-    } else {
-      setPage(p.trim());
-    }
-  };
 
   const handleSave = () => {
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 1500);
   };
 
-  const renderPage = () => {
-    switch (page.trim()) {
-      // App
-      case "banners":   return <Banners />;
-      case "redeem":    return <RedeemCode />;
-      case "users":     return <AppUsers />;
-      case "block":     return <BlockUsers />;
-      // Hotels
-      case "register":  return <RegisterHotels />;
-      case "bookings":  return <Bookings />;
-      case "status":    return <HotelStatus />;
-      // Other
-      case "analysis":  return <Analysis />;
-      default:          return <Banners />;
-    }
+  return (
+    <div className="dash-wrap">
+      <Sidebar mini={mini} setMini={setMini} />
+      <div className="main">
+        <Topbar
+          mini={mini}
+          setMini={setMini}
+          onSave={handleSave}
+          savedMsg={savedMsg}
+          onLogout={onLogout}
+        />
+        <div className="content">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppRoutes() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [session, setSession] = useState(getSession);
+
+  const isAuthenticated = useMemo(() => {
+    return Boolean(session?.token && session?.role === "superadmin");
+  }, [session]);
+
+  const handleLoginSuccess = (nextSession) => {
+    saveSession(nextSession);
+    setSession(nextSession);
+
+    const fromPath = location.state?.from?.pathname;
+    navigate(fromPath || "/dashboard/app/banners", { replace: true });
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setSession(null);
+    navigate("/login", { replace: true });
   };
 
   return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          isAuthenticated
+            ? <Navigate to="/dashboard/app/banners" replace />
+            : <Login onLoginSuccess={handleLoginSuccess} />
+        }
+      />
+
+      <Route element={<RequireAuth isAuthenticated={isAuthenticated} />}>
+        <Route path="/dashboard" element={<DashboardLayout onLogout={handleLogout} />}>
+          <Route index element={<Navigate to="app/banners" replace />} />
+          <Route path="app/banners" element={<Banners />} />
+          <Route path="app/redeem" element={<RedeemCode />} />
+          <Route path="app/users" element={<AppUsers />} />
+          <Route path="app/block" element={<BlockUsers />} />
+          <Route path="hotels/register" element={<RegisterHotels />} />
+          <Route path="hotels/bookings" element={<Bookings />} />
+          <Route path="hotels/status" element={<HotelStatus />} />
+          <Route path="analysis" element={<Analysis />} />
+        </Route>
+      </Route>
+
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? "/dashboard/app/banners" : "/login"} replace />}
+      />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
     <>
       <style>{globalCSS}</style>
-      <div className="dash-wrap">
-        <Sidebar
-          page={page.trim()}
-          setPage={handleSetPage}
-          mini={mini}
-          setMini={setMini}
-        />
-        <div className="main">
-          <Topbar
-            page={page.trim()}
-            mini={mini}
-            setMini={setMini}
-            onSave={handleSave}
-            savedMsg={savedMsg}
-          />
-          <div className="content">
-            {renderPage()}
-          </div>
-        </div>
-      </div>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </>
   );
 }

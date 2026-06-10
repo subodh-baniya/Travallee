@@ -204,7 +204,6 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
 });
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
-    const key = "kcprabin"
     const validate = loginSchema.parse(req.body);
     const user = await UserModel.findOne({ Username: validate.Username as string });
     if (!user) {
@@ -242,7 +241,7 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
       200,
       true,
       "User logged in successfully",
-      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email },
+      {  role: user.role, token , Hotelid:user.hotelId, name: user.Name, email: user.email , superAdminKey: user.superAdminKey ? true : false },
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {

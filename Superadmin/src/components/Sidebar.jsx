@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const NAV = [
   { section: "Main" },
@@ -25,13 +26,33 @@ const NAV = [
 const appPages   = ["banners","redeem","users","block"];
 const hotelPages = ["register","bookings","status"];
 
-export default function Sidebar({ page, setPage, mini, setMini }) {
-  const [appOpen,    setAppOpen]    = useState(appPages.includes(page));
+const pathMap = {
+  banners: "/dashboard/app/banners",
+  redeem: "/dashboard/app/redeem",
+  users: "/dashboard/app/users",
+  block: "/dashboard/app/block",
+  register: "/dashboard/hotels/register",
+  bookings: "/dashboard/hotels/bookings",
+  status: "/dashboard/hotels/status",
+  analysis: "/dashboard/analysis",
+};
+
+export default function Sidebar({ mini, setMini }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const page = useMemo(() => {
+    const currentPath = location.pathname;
+    const matchedKey = Object.keys(pathMap).find((key) => pathMap[key] === currentPath);
+    return matchedKey || "banners";
+  }, [location.pathname]);
+
+  const [appOpen, setAppOpen] = useState(appPages.includes(page));
   const [hotelsOpen, setHotelsOpen] = useState(hotelPages.includes(page));
 
   const handleSubClick = (id) => {
-    setPage(id);
-    setMini(true); // collapse on item click
+    navigate(pathMap[id]);
+    setMini(true);
   };
 
   const handleTopClick = (item) => {
@@ -44,8 +65,8 @@ export default function Sidebar({ page, setPage, mini, setMini }) {
         setAppOpen(false);
       }
     } else {
-      setPage(item.id);
-      setMini(true); // collapse on item click
+      navigate(pathMap[item.id]);
+      setMini(true);
     }
   };
 

@@ -1,5 +1,69 @@
+import { useState } from "react";
 
-export default function Login({ onLogin }) {
+const AUTH_LOGIN_ENDPOINT = import.meta.env.VITE_AUTH_LOGIN_URL || "http://localhost:3000/api/v1/users/login";
+
+export default function Login({ onLoginSuccess }) {
+  const [form, setForm] = useState({
+    Username: "",
+    password: "",
+    superAdminKey: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const onChange = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (!form.Username.trim() || !form.password.trim()) {
+      setError("Username and password are required.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(AUTH_LOGIN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          Username: form.Username.trim(),
+          password: form.password,
+          superAdminKey: form.superAdminKey.trim() || undefined,
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || "Login failed. Please check your credentials.");
+      }
+
+      const role = payload?.data?.role;
+      const token = payload?.data?.token;
+
+      if (role !== "superadmin") {
+        throw new Error("Access denied. Superadmin account required.");
+      }
+
+      onLoginSuccess({
+        role,
+        token,
+        name: payload?.data?.name || "Super Admin",
+        email: payload?.data?.email || "",
+      });
+    } catch (err) {
+      setError(err.message || "Unable to sign in right now.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -170,7 +234,7 @@ export default function Login({ onLogin }) {
           <p className="login-sub">Sign in to access the superadmin<br />control center</p>
 
           {/* Google OAuth button */}
-          <button className="google-btn" onClick={() => alert("Connect Supabase to enable Google login")}>
+          <button className="google-btn" type="button" onClick={() => alert("Google login is not enabled yet") }>
             <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -188,19 +252,51 @@ export default function Login({ onLogin }) {
           </div>
 
           {/* Email + Password */}
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input className="form-input" type="email" placeholder="admin@yourproject.com" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="••••••••••" />
-          </div>
+          <form onSubmit={handleLogin}>
+            <div className="form-group">
+              <label className="form-label">Username</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="superadmin_username"
+                value={form.Username}
+                onChange={onChange("Username")}
+                autoComplete="username"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="Enter password"
+                value={form.password}
+                onChange={onChange("password")}
+                autoComplete="current-password"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Super Admin Key (optional)</label>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="Enter super admin key"
+                value={form.superAdminKey}
+                onChange={onChange("superAdminKey")}
+                autoComplete="off"
+              />
+            </div>
 
-          {/* Sign in button */}
-          <button className="signin-btn" onClick={onLogin}>
-            Sign in
-          </button>
+            {error && (
+              <div className="access-note" style={{ marginTop: 8, borderColor: "#fecaca", background: "#fef2f2", color: "#991b1b" }}>
+                {error}
+              </div>
+            )}
+
+            <button className="signin-btn" type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
 
           {/* Access note */}
           <div className="access-note">
