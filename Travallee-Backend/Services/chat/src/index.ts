@@ -13,7 +13,7 @@ const startServer = async () => {
   try {
     await connectDB(process.env.MONGO_URI as string, process.env.MONGO_DB_NAME as string);
     httpServer.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`chat service is running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to connect to the database', error);
