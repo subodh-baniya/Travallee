@@ -35,6 +35,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
   try {
     validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+    console.log("Validated booking data:", validated);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       const formattedErrors = error.issues.map((issue) => ({
@@ -109,6 +110,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
   const { otp } = req.body;
+  const Name = req.user.Name;
 
   const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
   if (!storedOtp) {
@@ -139,6 +141,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 
   const newBooking = new bookingModel({
     user: userId,
+    Name: Name,
     hotel: bookingData.hotelId,
     room: bookingData.roomId,
     checkIn: bookingData.checkIn,
