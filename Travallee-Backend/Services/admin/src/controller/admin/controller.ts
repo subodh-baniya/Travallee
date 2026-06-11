@@ -113,11 +113,17 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
     }
 });
 
+const calculateIncome = asyncHandler(async (req: any, res: any) => {
+    const { hotelId } = req.params;
+    if (!hotelId) {
+        return apiError(res, 400, "Hotel ID is required");
+    }
+   
 
-const displayGuest = asyncHandler(async (req: any, res: any) => {
-});
+})
 
 export {
     getBookingHistoryByHotelId,
-    getGuestStatus
+    getGuestStatus,
+    calculateIncome
 }

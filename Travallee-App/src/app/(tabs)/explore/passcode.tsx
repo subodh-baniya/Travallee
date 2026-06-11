@@ -16,6 +16,7 @@ import { API_ENDPOINTS_BOOKING } from '@/src/constants/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
 import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
+import { registerComponentStyleBuilder } from 'react-native-reanimated/lib/typescript/css/native';
 
 const numberRows = [
   ['1', '2', '3'],
