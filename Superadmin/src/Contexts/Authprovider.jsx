@@ -60,6 +60,7 @@ export const Authprovider = ({ children }) => {
 
     socket.on("connect", () => {
       setSocketId(socket.id);
+      console.log("Socket connected with ID:", socket.id);
       setSocketConnected(true);
     });
 
@@ -124,7 +125,7 @@ export const Authprovider = ({ children }) => {
     if (authChecked && userToken && userId) {
       connectSocket(userToken, userId);
     }
-  }, [authChecked, userId, userToken, connectSocket]); // ✅ primitives = stable refs
+  }, [authChecked, userId, userToken, connectSocket]); 
 
   const login = async (form) => {
     const response = await loginApi(form);
