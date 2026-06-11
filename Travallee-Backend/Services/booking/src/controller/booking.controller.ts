@@ -70,6 +70,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
   const newBooking = {
     user: validated.userId,
+    Name: validated.Name,
     hotel: hotelObjectId,
     room: roomObjectId,
     guests: validated.guests,
@@ -107,7 +108,6 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
 const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
-  const name = req.user.Name;
   const { otp } = req.body;
 
   const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
@@ -165,7 +165,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
       hotelId: bookingData.hotelId,
       roomId: bookingData.roomId,
       hotelName: bookingData.hotelName,
-      name,
+      name: bookingData.Name,
       email: bookingData.userEmail,
       userName: bookingData.userName,
       bookingId: newBooking._id,

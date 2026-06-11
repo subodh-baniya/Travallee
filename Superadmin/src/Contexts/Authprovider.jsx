@@ -117,7 +117,6 @@ export const Authprovider = ({ children }) => {
     return () => disconnectSocket();
   }, []);
 
-  // ✅ Use stable primitive values as dependencies, not the whole `user` object
   const userId = user?.id;
   const userToken = user?.token;
 
