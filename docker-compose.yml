@@ -93,3 +93,17 @@ services:
       - redis
     restart: unless-stopped
 
+
+  payments:
+    build:
+      context: .
+      dockerfile: ./Travallee-Backend/Services/payments/Dockerfile
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./Travallee-Backend/Services/payments/.env
+    volumes:
+      - ./Travallee-Backend/Services/payments/src:/app/src
+    depends_on:
+      - redis
+    restart: unless-stopped
