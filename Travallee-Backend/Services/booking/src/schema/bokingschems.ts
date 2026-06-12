@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // Schema for creating a new booking
 export const createBookingSchema = z.object({
+  Name: z.string().min(1, "Name is required").optional(),
   userEmail: z.string().email("Invalid email format").optional(),
   userName: z.string().min(1, "User name is required").optional(),
   hotelName: z.string().min(1, "Hotel name is required"),
@@ -15,7 +16,6 @@ export const createBookingSchema = z.object({
   totalPrice: z.number().positive("Total price must be greater than 0"),
   status: z.enum(["CANCELLED", "PENDING", "CONFIRMED"]).optional(),
   paymentMethod: z.enum(["KHALTI", "ESEWA", "COD"]).describe("Payment method must be KHALTI, ESEWA, or COD"),
-
 });
 
 // Schema for updating booking status

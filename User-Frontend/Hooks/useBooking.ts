@@ -241,10 +241,11 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
 
   useEffect(() => {
     if (!hotelId) return;
+    console.log("Connecting to socket for hotelId:", hotelId);
 
     const socket: Socket = io(SOCKET_BASE_URL, {
       path: "/api/v1/admin/socket.io",
-      query: { HotelId: hotelId },
+      query: { hotelId: hotelId },
       withCredentials: true,
       transports: ["websocket"],
     });

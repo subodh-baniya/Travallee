@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Hooks/useAuth";
+import { useState, useEffect } from "react";
+import { Socket } from "socket.io-client";
+
 
 const cards = [
   { title: "Total Hotels", value: "124", sub: "Live on the platform" },
@@ -18,6 +21,25 @@ const quickLinks = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const auth = useAuth();
+  const { socketConnected, setsocketConnected } = auth;
+  const { socket } = auth;
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleData = (data) => {
+      console.log("Received hotel registration data:", data);
+    };
+
+    socket.on("hotelRegistrationsData", handleData);
+
+    return () => {
+      socket.off("hotelRegistrationsData", handleData);
+    };
+  }, [socket]);
+
+
+
 
   const handleLogout = async () => {
     if (!auth) return;

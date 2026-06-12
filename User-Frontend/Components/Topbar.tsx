@@ -82,7 +82,7 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
     const socket: Socket = io(import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001", {
       path: "/api/v1/admin/socket.io",
-      query: { HotelId: hotelId },
+      query: { hotelId: hotelId },
       withCredentials: true,
       transports: ["websocket"],
     });

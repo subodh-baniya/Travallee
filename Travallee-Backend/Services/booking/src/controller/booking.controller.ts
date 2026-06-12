@@ -20,13 +20,15 @@ const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingC
   connection,
 });
 
+const PaymentdataQueue = new Queue("paymentDataQueue", {
+  connection,
+});
+
 const pub = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 });
 
 pub.connect();
-
-
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
   let validated: any;
@@ -35,6 +37,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
   try {
     validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+    console.log("Validated booking data:", validated);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       const formattedErrors = error.issues.map((issue) => ({
@@ -70,6 +73,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
   const newBooking = {
     user: validated.userId,
+    Name: validated.Name,
     hotel: hotelObjectId,
     room: roomObjectId,
     guests: validated.guests,
@@ -89,7 +93,7 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
   const otp = Math.floor(1000 + Math.random() * 9000);
   await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
 
-   bookingConfirmationQueue.add("bookingConfirmationOtp", {
+  bookingConfirmationQueue.add("bookingConfirmationOtp", {
     email: validated.userEmail,
     userName: validated.userName,
     bookingId: "",
@@ -104,11 +108,10 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
 
   return apiResponse(res, 201, true, "Otp sent successfully", { otpSent: true, expiresIn: 15 * 60 });
 });
-
 const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
-  const name = req.user.Name;
   const { otp } = req.body;
+  const Name = req.user.Name;
 
   const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
   if (!storedOtp) {
@@ -139,6 +142,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 
   const newBooking = new bookingModel({
     user: userId,
+    Name: Name,
     hotel: bookingData.hotelId,
     room: bookingData.roomId,
     checkIn: bookingData.checkIn,
@@ -156,6 +160,12 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   await newBooking.save();
 
   await bookingRedis.del(`booking_otp:${userId}`);
+  await PaymentdataQueue.add("paymentData", {
+    hotelId: bookingData.hotelId,
+    price: bookingData.totalPrice,
+    status,
+  });
+
   await bookingRedis.del(`booking:${userId}`);
 
   await pub.publish(
@@ -165,7 +175,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
       hotelId: bookingData.hotelId,
       roomId: bookingData.roomId,
       hotelName: bookingData.hotelName,
-      name,
+      name: bookingData.Name,
       email: bookingData.userEmail,
       userName: bookingData.userName,
       bookingId: newBooking._id,
@@ -210,7 +220,7 @@ const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
   const userId = req.params.userId;
   try {
     const bookings = await bookingModel.find({ user: userId })
-    const response ={
+    const response = {
       bookings: bookings.map((booking) => ({
         bookingId: booking._id,
         hotelName: booking.hotelName,
@@ -225,7 +235,6 @@ const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Unable to retrieve booking history");
   }
 });
-
 
 const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
   let validated: any;
@@ -275,14 +284,14 @@ const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
 
   const newBooking = new bookingModel({
     user: validated.userId,
-    Name: validated.userName,  
+    Name: validated.userName,
     hotel: hotelObjectId,
     room: roomObjectId,
     guests: validated.guests,
     checkIn: checkInDate,
     checkOut: checkOutDate,
     totalPrice: validated.totalPrice,
-    totalNights,             
+    totalNights,
     paymentMethod: validated.paymentMethod,
     bookingPayment: "PAID",
     status: "CONFIRMED",
@@ -318,7 +327,7 @@ const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
       bookingId: String(newBooking._id),
       hotelId: validated.hotelId,
       userId,
-      hotel:validated.hotelName,
+      hotel: validated.hotelName,
       roomId: validated.roomId,
       guestName: validated.userName,
       roomNumber: validated.roomNumber,
@@ -369,7 +378,7 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   if (!mongoose.Types.ObjectId.isValid(HotelId)) {
     return apiError(res, 400, "Invalid Hotel ID format");
   }
-  Booking = await bookingModel.findOne({ hotel: HotelId})
+  Booking = await bookingModel.findOne({ hotel: HotelId })
   if (!Booking) {
     return apiError(res, 404, "Booking not found");
   }
@@ -377,10 +386,10 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
     status = "UPCOMING";
 
   }
-  if(Booking.checkOut < new Date()){
+  if (Booking.checkOut < new Date()) {
     status = "Checked Out";
   }
-  if(Booking.checkIn <= new Date() && Booking.checkOut >= new Date()){
+  if (Booking.checkIn <= new Date() && Booking.checkOut >= new Date()) {
     status = "CHECKED IN";
   }
 
@@ -399,4 +408,45 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
 
-export { createBooking, createBookingFromHotel,esewaSuccess, verifyBookingOtp ,getGuestStatus, getBookingHistoryOfUser};
+const calculateIncomeHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  }
+  await bookingModel.aggregate([
+    { $match: { hotel: new mongoose.Types.ObjectId(hotelId), bookingPayment: "PAID" } },
+    {
+      $group: {
+        _id: null,
+        totalIncome: { $sum: "$totalPrice" },
+      },
+    },
+  ]).then((result) => {
+    const totalIncome = result[0]?.totalIncome || 0;  
+    return apiResponse(res, 200, true, "Total income calculated successfully", { totalIncome });
+  }).catch((error: any) => {
+    console.error("Error calculating total income:", error);
+    return apiError(res, 500, "Unable to calculate total income");
+  });
+});
+const calculatePendingIncomeHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  } 
+  await bookingModel.aggregate([
+    { $match: { hotel: new mongoose.Types.ObjectId(hotelId), bookingPayment: "NOTPAID" } },
+    { $group: {
+        _id: null,
+        totalPendingIncome: { $sum: "$totalPrice" },
+      },  
+    },
+  ]).then((result) => {
+    const totalPendingIncome = result[0]?.totalPendingIncome || 0;
+    return apiResponse(res, 200, true, "Total pending income calculated successfully", { totalPendingIncome });
+  }).catch((error: any) => {
+    console.error("Error calculating total pending income:", error);
+    return apiError(res, 500, "Unable to calculate total pending income");
+  });
+});
+export { createBooking, createBookingFromHotel, esewaSuccess, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel};

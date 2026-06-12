@@ -24,12 +24,15 @@ const connection = {
 const adminData = new redis(connection);
 
 
-sub.subscribe("bookingConfirmed", (message) => {
+sub.subscribe("bookingConfirmed", async (message) => {
     try {
         const data = JSON.parse(message);
         const hotelId = data.hotelId;
+        if (hotelId) {
+            await adminData.del(`booking_history_${hotelId}`);
+        }
         io.to(`hotel_${hotelId}`).emit("bookingConfirmed", data);
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error parsing booking confirmation message:", err);
     }
 });
@@ -110,11 +113,17 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
     }
 });
 
+const calculateIncome = asyncHandler(async (req: any, res: any) => {
+    const { hotelId } = req.params;
+    if (!hotelId) {
+        return apiError(res, 400, "Hotel ID is required");
+    }
+   
 
-const displayGuest = asyncHandler(async (req: any, res: any) => {
-});
+})
 
 export {
     getBookingHistoryByHotelId,
-    getGuestStatus
+    getGuestStatus,
+    calculateIncome
 }

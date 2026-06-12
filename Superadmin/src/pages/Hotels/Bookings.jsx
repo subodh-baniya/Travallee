@@ -1,15 +1,4 @@
-const bookings = [
-  { num: "#BK-4821", hotel: "Grand Vista Hotel", guest: "Arjun Maharjan", nights: "2 nights", dates: "May 28 – May 30", amount: "NPR 12,000", status: "active"   },
-  { num: "#BK-4820", hotel: "Sunrise Inn",        guest: "Sita Gurung",   nights: "3 nights", dates: "May 29 – Jun 1",  amount: "NPR 8,500",  status: "active"   },
-  { num: "#BK-4819", hotel: "Lake View Resort",   guest: "Ram Shrestha",  nights: "5 nights", dates: "Jun 1 – Jun 6",   amount: "NPR 42,000", status: "pending"  },
-  { num: "#BK-4818", hotel: "Mountain Breeze",    guest: "Nita Tamang",   nights: "1 night",  dates: "May 27 – May 28", amount: "NPR 3,200",  status: "declined" },
-];
 
-const badgeMap = {
-  active:   { cls: "bg-emerald-100 text-emerald-800",   label: "Confirmed" },
-  pending:  { cls: "bg-yellow-100 text-yellow-800",  label: "Pending"   },
-  declined: { cls: "bg-red-100 text-red-800", label: "Cancelled" },
-};
 
 export default function Bookings() {
   return (
