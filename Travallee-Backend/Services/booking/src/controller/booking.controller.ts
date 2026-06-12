@@ -205,44 +205,6 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
 });
 
-const esewaSuccess = asyncHandler(async (req: any, res: any) => {
-  try {
-    const { data } = req.query;
-    if (!data) {
-      return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-    }
-
-    const decoded = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-    const bookingId = decoded.transaction_uuid;
-
-    const verifyResponse = await axios.get("https://rc-epay.esewa.com.np/api/epay/transaction/status/", {
-      params: {
-        product_code: decoded.product_code,
-        total_amount: decoded.total_amount,
-        transaction_uuid: bookingId,
-      },
-    });
-
-    if (verifyResponse.data.status == "COMPLETE") {
-      await bookingModel.findByIdAndUpdate(bookingId, {
-        status: "CONFIRMED",
-        bookingPayment: "PAID",
-        paymentReferenceId: decoded.ref_id,
-      });
-
-      return res.redirect(`${process.env.FRONTEND_URL}/payment-success`);
-    }
-
-    await bookingModel.findByIdAndUpdate(bookingId, {
-      status: "CANCELLED",
-    });
-
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-  } catch (error: any) {
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
-  }
-});
-
 
 const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
   const userId = req.params.userId;
