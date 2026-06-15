@@ -26,7 +26,7 @@ const Bookings = () => {
   const hotelId = auth?.hotelId || null;
 
   const { bookings, newBookingIds, loading, error, refetch } = useBookings(hotelId);
-  const { rooms } = useRooms(); // ← no argument needed
+  const { rooms } = useRooms(); 
 
   // ── Hotel name ─────────────────────────────────────────────────────────────
   const [hotelName, setHotelName] = useState("");
@@ -37,7 +37,6 @@ const Bookings = () => {
       try {
         const res = await getHotelById(hotelId);
         const hotel = res?.data ?? res;
-        // adjust the key below to whatever your hotel object uses
         setHotelName(hotel?.hotelName ?? hotel?.name ?? "");
       } catch {
         // non-critical — modal header just shows empty string
