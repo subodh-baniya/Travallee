@@ -5,7 +5,6 @@ import { authenticate, hotelAdminMiddleware} from "../middleware/role.middleware
 const router = Router();
 
 
-router.post("/esewa/success", esewaSuccess)
 router.post("/create-booking", authenticate , createBooking)
 router.post("/verify-otp", authenticate, verifyBookingOtp)
 router.post("/create-booking-hotel",authenticate,hotelAdminMiddleware,createBookingFromHotel);

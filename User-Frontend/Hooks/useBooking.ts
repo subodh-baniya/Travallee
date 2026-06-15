@@ -178,7 +178,7 @@ const loadFromStorage = (): StoredNotificationShape[] => {
 export type UseBookingsReturn = {
   bookings: Booking[];
   newBookingIds: string[];
-  hotelName:string;
+  hotelName: string | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
