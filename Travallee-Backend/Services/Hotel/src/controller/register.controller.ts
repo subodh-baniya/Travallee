@@ -1012,6 +1012,7 @@ const getPaymentCredentials = asyncHandler(async (req: any, res: any) => {
 
 });
 
+
 export {
   registerHotelRequest,
   createroom,
