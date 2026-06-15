@@ -950,6 +950,25 @@ const getAllRatings = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const getPaymentCredentials = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  const hotel=await hotelModel.findById(hotelId).select("esewa_Merchantid khalti_SecretKey hoteName");
+
+  if (!hotel) {
+    return apiError(res, 404, "Hotel not found");
+  }
+  return apiResponse(res, 200, true, "Payment credentials retrieved successfully", {
+    "esewa_Merchantid": hotel.esewa_Merchantid,
+    "khalti_SecretKey": hotel.khalti_SecretKey,
+    "hotelName": hotel.hotelName,
+  });
+
+});
+
+
 export {
   registerHotelRequest,
   createroom,
@@ -967,6 +986,7 @@ export {
   getAllResortHotels,
   displayRooms,
   getHotelByLocation,
+  getPaymentCredentials
   getAllRatings,
 };
 

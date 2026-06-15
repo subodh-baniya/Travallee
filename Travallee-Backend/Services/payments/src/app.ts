@@ -13,4 +13,7 @@ app.use(urlencoded({extended:true}));
 app.use(express.json());
 app.use(cookieParser());
 
+import paymentRoutes from "./routes/payment.route";
+app.use("/api/v1/payment",paymentRoutes);
+
 export default app;

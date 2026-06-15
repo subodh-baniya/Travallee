@@ -14,6 +14,7 @@ import {
   RoomData,
   displayRooms,
   getHotelByLocation,
+  getPaymentCredentials
   getAllRatings,
 } from "../controller/register.controller.js";
 
@@ -54,6 +55,8 @@ router.get("/booking-history/:hotelId", getBookingHistoryByHotelId);
 router.get("/hotel/:hotelId", authenticate, getHotelInfo);
 
 router.get("/:hotelId", authenticate, HotelData);
+
+router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials);
 
 
 

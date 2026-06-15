@@ -448,6 +448,40 @@ const calculatePendingIncomeHotel = asyncHandler(async (req: any, res: any) => {
   });
 });
 
+
+const getHotelIdfromBooking = asyncHandler(async (req: any, res: any) => {
+  const { bookingId } = req.params;
+  if (!bookingId) {
+    return apiError(res, 400, "Booking ID is required in URL parameters");
+  }
+  const booking= await bookingModel.findById(bookingId).select("hotel");
+
+  if (!booking) {
+    return apiError(res, 404, "Booking not found");
+  }
+  return apiResponse(res, 200, true, "Hotel ID retrieved successfully", { hotelId: booking.hotel });
+
+})
+
+const updateBookingPaymentStatus = asyncHandler(async (req: any, res: any) => {
+  const { success,bookingId } = req.body;
+
+  if (!bookingId) {
+    return apiError(res, 400, "Booking ID is required in URL parameters");
+  }
+
+  if (typeof success !== "boolean") {
+    return apiError(res, 400, "Invalid success value. Expected a boolean.");
+  }
+
+  await bookingModel.findByIdAndUpdate(bookingId, {
+    status: success ? "CONFIRMED" : "CANCELLED",
+    bookingPayment: success ? "PAID" : "NOTPAID",
+  });
+
+  return apiResponse(res, 200, true, "Booking payment status updated successfully");
+});
+
 const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   if (!hotelId) {
@@ -474,4 +508,5 @@ const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => 
   
   return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History });
 });
-export { createBooking, createBookingFromHotel, esewaSuccess, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel, getTransactionHistoryOfHotel};
+
+export { createBooking, createBookingFromHotel, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel,getHotelIdfromBooking, updateBookingPaymentStatus,getTransactionHistoryOfHotel };
