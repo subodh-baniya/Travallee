@@ -404,7 +404,6 @@ const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
 //admin
 const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   const { HotelId } = req.params;
-  console.log("Received request for guest status with hotelId:", HotelId);
   let status: string = "UNKNOWN";
   let Booking: any = null;
   if (!HotelId) {
@@ -442,7 +441,6 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
 
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
-
 const calculateIncomeHotel = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   if (!hotelId) {
@@ -484,4 +482,31 @@ const calculatePendingIncomeHotel = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Unable to calculate total pending income");
   });
 });
-export { createBooking, createBookingFromHotel, esewaSuccess, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel};
+
+const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  } 
+  const History = await bookingModel.find({ hotel: new mongoose.Types.ObjectId(hotelId) });
+  if (!History || History.length === 0) {
+    return apiError(res, 404, "Transaction history not found");
+  }
+  if (History.length > 0) {
+    const formattedHistory = History.map((booking) => ({
+      bookingId: booking._id,
+      guestName: booking.Name,
+      roomNumber: booking.roomNumber,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      totalPrice: booking.totalPrice,
+      paymentMethod: booking.paymentMethod,
+      bookingPayment: booking.bookingPayment,
+      status: booking.status,
+    }));
+    return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History: formattedHistory });
+  }
+  
+  return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History });
+});
+export { createBooking, createBookingFromHotel, esewaSuccess, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel, getTransactionHistoryOfHotel};

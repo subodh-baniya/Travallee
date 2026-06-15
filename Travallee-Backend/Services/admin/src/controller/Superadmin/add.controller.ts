@@ -19,7 +19,6 @@ const sub = createClient({
 });
 
 Promise.all([pub.connect(), sub.connect()]).then(() => {
-    console.log("✅ Connected to Redis in add.controller");
 
     sub.subscribe("hotelRegistrationsData", async (message: string) => {
         try {
