@@ -24,5 +24,14 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "Contexts"]
+  "include": [
+    "src",
+    "Contexts",
+    "Components",
+    "Hooks",
+    "Pages",
+    "Routes",
+    "Services",
+    "Types"
+  ]
 }

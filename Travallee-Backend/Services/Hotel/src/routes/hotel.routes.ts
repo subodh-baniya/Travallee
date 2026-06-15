@@ -16,6 +16,8 @@ import {
   getHotelByLocation,
   getPaymentCredentials,
   getAllRatings,
+  approveRegistration,
+  declineRegistration,
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -58,6 +60,7 @@ router.get("/:hotelId", authenticate, HotelData);
 
 router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials);
 
-
+router.post("/approve-registration", approveRegistration);
+router.post("/decline-registration", declineRegistration);
 
 export default router;

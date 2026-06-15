@@ -11,6 +11,7 @@ import { API_ENDPOINTS_BOOKING } from '@/src/constants/api';
 
 interface UserBooking {
   bookingId: string;
+  hotelId: string;
   hotelName: string;
   roomNumber: string;
   checkIn: string;
@@ -91,23 +92,41 @@ export default function ProfileHistoryScreen() {
       ) : (
         bookings.map((booking, index) => (
           <RealixCard key={booking.bookingId || index} style={styles.card}>
-            <View style={styles.emojiWrap}>
-              <Text style={styles.emoji}>{getEmoji(index)}</Text>
+            <View style={styles.cardHeader}>
+              <View style={styles.emojiWrap}>
+                <Text style={styles.emoji}>{getEmoji(index)}</Text>
+              </View>
+              <View style={styles.body}>
+                <Text style={styles.name}>{booking.hotelName || 'Hotel stay'}</Text>
+                <Text style={styles.detail}>Room {booking.roomNumber || '-'}</Text>
+                <Text style={styles.dates}>
+                  {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
+                </Text>
+              </View>
             </View>
-            <View style={styles.body}>
-              <Text style={styles.name}>{booking.hotelName || 'Hotel stay'}</Text>
-              <Text style={styles.detail}>Room {booking.roomNumber || '-'}</Text>
-              <Text style={styles.dates}>
-                {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
-              </Text>
+            <View style={styles.actionRow}>
+              <Pressable
+                style={styles.reviewButton}
+                onPress={() => router.push('/(tabs)/profile/review')}
+              >
+                <Ionicons name="star-outline" size={15} color="#000000" />
+                <Text style={styles.reviewText}>Review</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.chatButton}
+                onPress={() => {
+                  const roomName = `chat_${booking.hotelId || booking.hotelName}_${user?.id}`;
+                  router.push({
+                    pathname: '/(tabs)/notifications/chat',
+                    params: { thread: roomName, hotelName: booking.hotelName }
+                  });
+                }}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={15} color="#ffffff" />
+                <Text style={styles.chatButtonText}>Chat</Text>
+              </Pressable>
             </View>
-            <Pressable
-              style={styles.reviewButton}
-              onPress={() => router.push('/(tabs)/profile/review')}
-            >
-              <Ionicons name="star-outline" size={15} color="#000000" />
-              <Text style={styles.reviewText}>Review</Text>
-            </Pressable>
           </RealixCard>
         ))
       )}
@@ -118,6 +137,7 @@ export default function ProfileHistoryScreen() {
 const styles = StyleSheet.create({
   content: { paddingTop: 0 },
   card: { padding: 16, gap: 12 },
+  cardHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   emojiWrap: {
     width: 52,
     height: 52,
@@ -127,21 +147,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emoji: { fontSize: 26 },
-  body: { gap: 4 },
+  body: { gap: 4, flex: 1 },
   name: { fontSize: 15, fontWeight: '700', color: RealixColors.textPrimary },
   detail: { fontSize: 12, color: RealixColors.textSecondary },
   dates: { fontSize: 11, color: RealixColors.textMuted },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   reviewButton: {
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: RealixColors.accent,
     borderRadius: 16,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
   reviewText: { fontSize: 12, fontWeight: '700', color: '#000000' },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#2c2c2c',
+    borderWidth: 1,
+    borderColor: '#444444',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chatButtonText: { fontSize: 12, fontWeight: '700', color: '#ffffff' },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -179,3 +211,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+;
