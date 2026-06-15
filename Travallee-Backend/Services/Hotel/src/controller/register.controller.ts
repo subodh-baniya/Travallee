@@ -887,78 +887,6 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-// const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
-//   try {
-//     const userId = req.user?.id || req.user?._id;
-
-//     if (!userId) {
-//       return apiError(res, 401, "Unauthorized");
-//     }
-
-//     const hotel = await hotelModel.findOne({ userID: userId });
-
-//     if (!hotel) {
-//       return apiError(res, 404, "Hotel not found");
-//     }
-
-//     const hotelId = hotel._id;
-
-//     const rooms = await roomModel.find({ hotelId });
-
-//     const totalRooms = rooms.length;
-
-//     const occupiedRooms = rooms.filter((r: any) => r.status === "OCCUPIED").length;
-
-//     const availableRooms = rooms.filter((r: any) => r.status === "AVAILABLE").length;
-
-//     const bookings = axios.get(`${process.env.BOOKING_SERVICE_URL}/bookings/hotel/${hotelId}`).then(response => response.data).catch(() => null);
-
-//     const totalRevenue = bookings.reduce(
-//       (sum: number, b: any) => sum + (b.totalPrice || 0),
-//       0
-//     );
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     const todayCheckins = bookings.filter((b: any) =>
-//       new Date(b.checkIn) >= today
-//     );
-
-//     const roomData = rooms.map((r: any) => ({
-//       roomNumber: r.roomNumber,
-//       floorNumber: r.floorNumber || 0,
-//       roomType: r.roomType,
-//       status: r.status,
-//       pricePerNight: r.pricePerNight,
-//     }));
-
-//     const checkins = todayCheckins.map((b: any) => ({
-//       guestName: b.userName || "Guest",
-//       roomNumber: b.roomNumber || "—",
-//       checkInTime: new Date(b.checkIn).toISOString(),
-//     }));
-
-//     return apiResponse(res, 200, true, "Dashboard data", {
-//       stats: {
-//         totalRevenue,
-//         totalRooms,
-//         occupiedRooms,
-//         availableRooms,
-//         todayCheckins: todayCheckins.length,
-//       },
-//       rooms: roomData,
-//       checkins,
-//       hotel: {
-//         _id: hotel._id,
-//         hotelName: hotel.hotelName,
-//         hotelLocation: hotel.hotelLocation,
-//       },
-//     });
-//   } catch (error: any) {
-//     return apiError(res, 500, "Dashboard error", error.message);
-//   }
-// });
 
 const displayRooms = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
@@ -993,6 +921,34 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const getAllRatings = asyncHandler(async (req: any, res: any) => {
+  const cached =  await hoteldataCache.get(`hotel_${req.params.hotelId}_ratings`);
+  if (cached) {
+   const data = JSON.parse(cached);
+   return apiResponse(res, 200, true, "Ratings retrieved successfully", data);
+  }
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+  try {
+    const hotel = await hotelModel.findById(hotelId).select("ratings");
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+    hoteldataCache.set(`hotel_${hotelId}_ratings`, JSON.stringify(hotel|| []), "EX", 60 * 60 * 24 * 1); // Cache for 1 day
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+    return apiResponse(res, 200, true, "Ratings retrieved successfully", hotel || []);
+  } catch (error: any) {
+    console.error("Error retrieving ratings:", error);
+    return apiError(res, 500, "Unable to retrieve ratings");
+  }
+});
 
 const getPaymentCredentials = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
@@ -1031,5 +987,6 @@ export {
   displayRooms,
   getHotelByLocation,
   getPaymentCredentials
+  getAllRatings,
 };
 

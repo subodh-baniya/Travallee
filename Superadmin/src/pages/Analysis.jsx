@@ -1,3 +1,5 @@
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
 const stats = [
   { label: "Total Bookings",  val: "3,842", sub: "All time",          topColor: "#38bdf8" },
   { label: "Total Revenue",   val: "NPR 4.2M", sub: "All time",       topColor: "#4ade80" },
@@ -28,6 +30,9 @@ const recentActivity = [
 ];
 
 export default function Analysis() {
+  const lineData = [
+    { day: 'Mon', val: 120 }, { day: 'Tue', val: 200 }, { day: 'Wed', val: 150 }, { day: 'Thu', val: 220 }, { day: 'Fri', val: 260 }, { day: 'Sat', val: 300 }, { day: 'Sun', val: 180 }
+  ];
   return (
     <>
       <div className="text-base font-semibold text-slate-900 mb-1">Analysis</div>
@@ -55,16 +60,15 @@ export default function Analysis() {
         <div className="bg-white border border-brand-border rounded-xl p-[18px_20px]">
           <div className="text-sm font-semibold text-slate-900 mb-1">Monthly Bookings</div>
           <div className="text-[11px] text-slate-500 mb-4">Jan – Dec 2025</div>
-          <div className="flex items-end gap-1.5 h-[100px] px-1">
-            {bookingData.map((val, i) => (
-              <div className="flex-1 flex flex-col items-center gap-1" key={i}>
-                <div
-                  className="w-full bg-[linear-gradient(180deg,#38bdf8,#0284c7)] rounded-t min-h-1 transition-opacity duration-150 hover:opacity-75"
-                  style={{ height: `${(val / maxVal) * 100}%` }}
-                  title={`${months[i]}: ${val} bookings`}
-                />
-              </div>
-            ))}
+          <div style={{ height: 160 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={lineData}>
+                <XAxis dataKey="day" tick={{ fill: '#64748b' }} />
+                <YAxis hide />
+                <Tooltip />
+                <Line type="monotone" dataKey="val" stroke="#0284c7" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
           <div className="flex gap-1.5 px-1 mt-1">
             {months.map((m) => (
