@@ -63,7 +63,11 @@ const HotelSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    rating:[
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    ratings: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         rating: { type: Number, required: true },

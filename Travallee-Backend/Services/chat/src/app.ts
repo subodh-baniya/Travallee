@@ -19,7 +19,7 @@ app.get("/api/v1/chat/history/:room", async (req, res) => {
         const messages = await chatModel.find({ room })
             .sort({ createdAt: 1 })
             .limit(100);
-            
+
         return res.status(200).json({
             success: true,
             data: messages
@@ -43,7 +43,7 @@ const io = new SocketIOServer(httpServer, {
 });
 
 const initsocket = async () => {
-    const pubClient = createClient({url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`});
+    const pubClient = createClient({ url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}` });
     const subClient = pubClient.duplicate();
 
     await Promise.all([pubClient.connect(), subClient.connect()]);
@@ -52,17 +52,17 @@ const initsocket = async () => {
 
     io.on("connection", (socket) => {
         console.log("a user connected: " + socket.id);
-        
+
         socket.on("join_room", (room) => {
             socket.join(room);
             console.log("user " + socket.id + " joined room: " + room);
         });
-        
+
         socket.on("leave_room", (room) => {
             socket.leave(room);
             console.log("user " + socket.id + " left room: " + room);
         });
-        
+
         socket.on("send_message", async (data) => {
             console.log("message received in room " + data.room + ": " + data.message);
             try {
@@ -87,7 +87,7 @@ const initsocket = async () => {
                 });
             }
         });
-        
+
         socket.on("disconnect", () => {
             console.log("user disconnected: " + socket.id);
         });

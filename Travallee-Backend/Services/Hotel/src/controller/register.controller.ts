@@ -881,8 +881,9 @@ const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
       "Highly reviewed hotels retrieved successfully",
       hotels,
     );
-  } catch (error) {
-    return apiError(res, 500, "Internal server error");
+  } catch (error: any) {
+    console.error("Error in highReviewedHotels:", error);
+    return apiError(res, 500, "Internal server error: " + error.message);
   }
 });
 

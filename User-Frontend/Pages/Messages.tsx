@@ -10,6 +10,7 @@ interface Message {
   from: "me" | "them";
   text: string;
   time: string;
+  senderName?: string;
 }
 
 interface Guest {
@@ -36,32 +37,94 @@ const ChatPage: React.FC = () => {
   const [msgInput, setMsgInput] = useState("");
   const socketRef = useRef<Socket | null>(null);
 
-  // Group unique guests from bookings
+  // Group unique guests from bookings & active messages history
   const guests: Guest[] = useMemo(() => {
-    const unique: Record<string, { userId: string; guest: string; email?: string }> = {};
+    const unique: Record<string, { userId: string; guest: string; email?: string; preview?: string; time?: string }> = {};
+    
+    // 1. Load from bookings
     bookings.forEach((b) => {
       if (b.userId && b.userId !== "-" && !unique[b.userId]) {
         unique[b.userId] = {
           userId: b.userId,
           guest: b.guest,
           email: b.email,
+          preview: "Tap to chat with guest",
+          time: "",
         };
       }
     });
-    return Object.values(unique).map((g) => ({
-      name: g.guest,
-      userId: g.userId,
-      initials: g.guest.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "G",
-      preview: "Tap to chat with guest",
-      time: "",
-      unread: 0,
-      online: true,
-      email: g.email
-    }));
-  }, [bookings]);
+
+    // 2. Load from messages state
+    Object.entries(messages).forEach(([guestId, msgs]) => {
+      if (msgs.length > 0) {
+        const lastMsg = msgs[msgs.length - 1];
+        if (!unique[guestId]) {
+          unique[guestId] = {
+            userId: guestId,
+            guest: lastMsg.from === "them" ? lastMsg.senderName || "Guest" : "Guest",
+            email: undefined,
+          };
+        }
+        unique[guestId].preview = lastMsg.text;
+        unique[guestId].time = lastMsg.time;
+      }
+    });
+
+    return Object.values(unique).map((g) => {
+      const name = g.guest || "Guest";
+      const initials = name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "G";
+
+      return {
+        name,
+        userId: g.userId,
+        initials,
+        preview: g.preview || "Tap to chat with guest",
+        time: g.time || "",
+        unread: 0,
+        online: true,
+        email: g.email
+      };
+    });
+  }, [bookings, messages]);
 
   const activeGuest = guests.find((g) => g.userId === activeUserId);
   const roomName = hotelId && activeUserId ? `chat_${hotelId}_${activeUserId}` : null;
+
+  // Load active chat threads on mount
+  useEffect(() => {
+    if (!hotelId) return;
+    const fetchThreads = async () => {
+      try {
+        const res = await axios.get(`${VITE_CHAT_SERVICE_URL}/api/v1/chat/threads/${hotelId}`);
+        if (res.data?.success) {
+          const threads = res.data.data;
+          setMessages(prev => {
+            const updated = { ...prev };
+            threads.forEach((t: any) => {
+              if (!updated[t.guestId] || updated[t.guestId].length === 0) {
+                updated[t.guestId] = [{
+                  id: `latest-${t.roomName}`,
+                  from: "them",
+                  text: t.latestMessage,
+                  time: new Date(t.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  senderName: t.guestName
+                }];
+              }
+            });
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load chat threads:", err);
+      }
+    };
+    fetchThreads();
+  }, [hotelId]);
 
   // Socket connection
   useEffect(() => {
@@ -73,6 +136,8 @@ const ChatPage: React.FC = () => {
 
     socketRef.current.on("connect", () => {
       console.log("Dashboard connected to chat socket");
+      // Connect to hotel admin broadcast channel on socket connection
+      socketRef.current?.emit("join_room", `hotel_${hotelId}`);
     });
 
     socketRef.current.on("receive_message", (msg: any) => {
@@ -87,7 +152,8 @@ const ChatPage: React.FC = () => {
             id: msg._id,
             from: msg.sender === guestId ? "them" : "me",
             text: msg.message,
-            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            senderName: msg.senderName
           };
           return {
             ...prev,
@@ -119,7 +185,8 @@ const ChatPage: React.FC = () => {
           id: msg._id,
           from: msg.sender === guest.userId ? "them" : "me",
           text: msg.message,
-          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          senderName: msg.senderName
         }));
         setMessages(prev => ({
           ...prev,
