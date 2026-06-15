@@ -25,18 +25,26 @@ export default function Dashboard() {
   const { socket } = auth;
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.warn("⚠️ Socket not initialized in Dashboard");
+      return;
+    }
+
+    console.log("✅ Socket available in Dashboard. Connected:", socketConnected);
+    console.log("📡 Socket ID:", socket.id);
 
     const handleData = (data) => {
-      console.log("Received hotel registration data:", data);
+      console.log("🎉 Dashboard received hotel registration data:", data);
     };
 
     socket.on("hotelRegistrationsData", handleData);
+    console.log("📡 Registered 'hotelRegistrationsData' listener in Dashboard");
 
     return () => {
       socket.off("hotelRegistrationsData", handleData);
+      console.log("🔌 Unregistered 'hotelRegistrationsData' listener in Dashboard");
     };
-  }, [socket]);
+  }, [socket, socketConnected]);
 
 
 

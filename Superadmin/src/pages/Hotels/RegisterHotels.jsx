@@ -1,34 +1,43 @@
-import { useState, useMemo } from "react";
-import { useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useContext } from "react";
+import { motion } from "framer-motion";
 import { Authcontext } from "../../Contexts/Authcontext";
-
+import { getPendingRegistrations, approveRegistration, declineRegistration } from "../../Services/admin.api";
+import {
+  MapPin,
+  Mail,
+  Phone,
+  Calendar,
+  Building2,
+  Check,
+  X,
+  Search,
+  AlertCircle,
+  Plus,
+} from "lucide-react";
 
 const INITIAL_HOTELS = []
 
+const STATUS_CONFIG = {
+  pending: { label: "Pending Review", bg: "bg-amber-50", color: "text-amber-900", dot: "bg-amber-500", border: "border-amber-200" },
+  active: { label: "Approved", bg: "bg-emerald-50", color: "text-emerald-900", dot: "bg-emerald-500", border: "border-emerald-200" },
+  declined: { label: "Rejected", bg: "bg-red-50", color: "text-red-900", dot: "bg-red-500", border: "border-red-200" },
+};
+
 function Badge({ status }) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      fontSize: 11, fontWeight: 500, padding: "3px 9px",
-      borderRadius: 99, background: cfg.bg, color: cfg.color,
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dot, display: "inline-block" }} />
+    <span className={`inline-flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
   );
 }
 
 function Initials({ name }) {
-  const letters = name.split(" ").map(n => n[0]).join("").slice(0, 2);
+  const letters = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <div style={{
-      width: 36, height: 36, borderRadius: "50%",
-      background: "#E6F1FB", color: "#185FA5",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 13, fontWeight: 500, flexShrink: 0,
-    }}>
+    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-sm font-bold text-blue-700">
       {letters}
     </div>
   );
@@ -36,161 +45,158 @@ function Initials({ name }) {
 
 function StatCard({ label, count, color }) {
   return (
-    <div style={{
-      background: "#f8fafc", borderRadius: 10, padding: "12px 18px",
-      border: "0.5px solid #e2e8f0", minWidth: 80, textAlign: "center",
-    }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color }}>{count}</div>
-      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{label}</div>
-    </div>
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-white rounded-lg p-4 border border-slate-200 text-center hover:shadow-md transition-shadow"
+    >
+      <div className={`text-2xl font-bold ${color}`}>{count}</div>
+      <div className="text-xs text-slate-500 mt-1">{label}</div>
+    </motion.div>
   );
 }
 
-function ActionButtons({ hotel, onChangeStatus, compact = false }) {
-  const btn = (label, bg, color, border, next) => (
-    <button
-      key={label}
-      onClick={(e) => { e.stopPropagation(); onChangeStatus(hotel.id, next); }}
-      style={{
-        fontSize: compact ? 13 : 12, fontWeight: 500,
-        padding: compact ? "8px 18px" : "5px 11px",
-        borderRadius: 7, cursor: "pointer", border,
-        background: bg, color, fontFamily: "inherit",
-        flex: compact ? 1 : "none",
-        transition: "opacity .15s",
-      }}
-      onMouseEnter={e => e.currentTarget.style.opacity = ".8"}
-      onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+function ActionButtons({ hotel, onAction, compact = false, loading }) {
+  const BaseButton = ({ label, icon: Icon, variant, type }) => (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      disabled={loading}
+      onClick={(e) => { e.stopPropagation(); onAction(hotel.id, type); }}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-60 disabled:cursor-wait ${variant}`}
     >
+      <Icon size={14} />
       {label}
-    </button>
+    </motion.button>
   );
 
   if (hotel.status === "pending") return (
-    <div style={{ display: "flex", gap: 6 }}>
-      {btn("Accept", "#1D9E75", "#fff", "none", "active")}
-      {btn("Decline", "#FCEBEB", "#A32D2D", "0.5px solid #F7C1C1", "declined")}
+    <div className="flex gap-2">
+      <BaseButton label="Approve" icon={Check} variant="bg-emerald-100 text-emerald-700 hover:bg-emerald-200" type="accept" />
+      <BaseButton label="Reject" icon={X} variant="bg-red-100 text-red-700 hover:bg-red-200" type="delete" />
     </div>
   );
   if (hotel.status === "active") return (
-    <div style={{ display: "flex", gap: 6 }}>
-      {btn("Revoke", "#FCEBEB", "#A32D2D", "0.5px solid #F7C1C1", "declined")}
+    <div className="flex gap-2">
+      <BaseButton label="Revoke" icon={X} variant="bg-red-100 text-red-700 hover:bg-red-200" type="delete" />
     </div>
   );
   return (
-    <div style={{ display: "flex", gap: 6 }}>
-      {btn("Reconsider", "#FAEEDA", "#854F0B", "0.5px solid #FAC775", "pending")}
+    <div className="flex gap-2">
+      <BaseButton label="Reconsider" icon={AlertCircle} variant="bg-amber-100 text-amber-700 hover:bg-amber-200" type="reconsider" />
     </div>
   );
 }
 
-function DrawerDetail({ hotel, onClose, onChangeStatus }) {
+function DrawerDetail({ hotel, onClose, onAction, loading }) {
   return (
-    <div
-      style={{
-        position: "absolute", inset: 0, background: "rgba(0,0,0,0.28)",
-        display: "flex", justifyContent: "flex-end", zIndex: 10,
-        borderRadius: 12,
-      }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/30 flex justify-end z-10"
       onClick={onClose}
     >
-      <div
-        style={{
-          background: "#fff", width: 340, height: "100%",
-          display: "flex", flexDirection: "column",
-          borderLeft: "0.5px solid #e2e8f0",
-          borderRadius: "0 12px 12px 0", overflowY: "auto",
-        }}
+      <motion.div
+        initial={{ x: 400 }}
+        animate={{ x: 0 }}
+        exit={{ x: 400 }}
+        transition={{ duration: 0.3 }}
+        className="w-80 h-full bg-white flex flex-col border-l border-slate-200 overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 18px", borderBottom: "0.5px solid #f1f5f9",
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>Hotel details</span>
+        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+          <h2 className="text-sm font-semibold text-slate-900">Hotel Details</h2>
           <button
             onClick={onClose}
-            style={{
-              background: "none", border: "0.5px solid #e2e8f0", borderRadius: 7,
-              cursor: "pointer", padding: "4px 8px", fontSize: 14, color: "#64748b",
-            }}
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 
-        {/* Hotel identity */}
-        <div style={{ padding: "16px 18px", borderBottom: "0.5px solid #f1f5f9" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 13, fontSize: 26,
-              background: "#f8fafc", border: "0.5px solid #e2e8f0",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {hotel.emoji}
+        {/* Hotel Identity */}
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Building2 size={24} className="text-blue-600" />
             </div>
-            <div>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "#0f172a", margin: 0 }}>{hotel.name}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 5 }}>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-slate-900 truncate">{hotel.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
                 <Badge status={hotel.status} />
-                <span style={{ fontSize: 11, color: "#94a3b8" }}>{hotel.stars}</span>
               </div>
             </div>
           </div>
-          {[
-            ["🏠", "Rooms", hotel.rooms],
-            ["📍", "Address", hotel.address],
-            ["📅", "Submitted", hotel.date],
-          ].map(([icon, label, val]) => (
-            <div key={label} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-              padding: "6px 0", fontSize: 13,
-              borderTop: "0.5px solid #f8fafc",
-            }}>
-              <span style={{ color: "#64748b" }}>{icon} {label}</span>
-              <span style={{ fontWeight: 500, color: "#0f172a", textAlign: "right", maxWidth: 170, fontSize: 12 }}>{val}</span>
-            </div>
-          ))}
-        </div>
 
-        {/* Owner info */}
-        <div style={{ padding: "14px 18px", borderBottom: "0.5px solid #f1f5f9" }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 10 }}>Owner</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <Initials name={hotel.owner} />
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{hotel.owner}</p>
-              <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Hotel owner</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-start">
+              <span className="text-slate-600">Rooms</span>
+              <span className="font-medium text-slate-900">{hotel.rooms}</span>
+            </div>
+            <div className="flex justify-between items-start">
+              <span className="text-slate-600 flex items-center gap-1"><MapPin size={14} /> Address</span>
+              <span className="font-medium text-slate-900 text-right max-w-[140px]">{hotel.address}</span>
+            </div>
+            <div className="flex justify-between items-start">
+              <span className="text-slate-600 flex items-center gap-1"><Calendar size={14} /> Submitted</span>
+              <span className="font-medium text-slate-900">{hotel.date}</span>
             </div>
           </div>
-          {[
-            ["📞", hotel.phone],
-            ["✉️", hotel.email],
-          ].map(([icon, val]) => (
-            <div key={val} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 12 }}>
-              <span style={{ color: "#64748b" }}>{icon}</span>
-              <span style={{ color: "#185FA5", fontWeight: 500 }}>{val}</span>
+        </div>
+
+        {/* Owner Info */}
+        <div className="p-4 border-b border-slate-100">
+          <p className="text-xs font-semibold uppercase text-slate-500 tracking-widest mb-3">Owner</p>
+          <div className="flex items-center gap-3 mb-3">
+            <Initials name={hotel.owner} />
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{hotel.owner}</p>
+              <p className="text-xs text-slate-500">Hotel Owner</p>
             </div>
-          ))}
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-600 flex items-center gap-2"><Phone size={14} /> Phone</span>
+              <span className="font-medium text-blue-600">{hotel.phone}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-600 flex items-center gap-2"><Mail size={14} /> Email</span>
+              <span className="font-medium text-blue-600 truncate">{hotel.email}</span>
+            </div>
+          </div>
         </div>
 
         {/* Notes */}
-        <div style={{ padding: "14px 18px", flex: 1 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 8 }}>Admin notes</p>
-          <p style={{ fontSize: 13, color: "#334155", lineHeight: 1.65, margin: 0 }}>{hotel.notes}</p>
+        <div className="p-4 flex-1">
+          <p className="text-xs font-semibold uppercase text-slate-500 tracking-widest mb-2">Notes</p>
+          <p className="text-sm text-slate-700 leading-relaxed">{hotel.notes}</p>
         </div>
 
-        {/* Action footer */}
-        <div style={{
-          padding: "14px 18px", borderTop: "0.5px solid #f1f5f9",
-          display: "flex", gap: 8,
-        }}>
-          <ActionButtons hotel={hotel} onChangeStatus={onChangeStatus} compact />
+        {/* Action Footer */}
+        <div className="p-4 border-t border-slate-100 flex gap-2">
+          <ActionButtons hotel={hotel} onAction={onAction} compact loading={loading} />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
+}
+
+function normalizeHotelData(hotelData) {
+  return {
+    id: hotelData.userID || hotelData._id || Date.now(),
+    name: hotelData.hotelName || hotelData.hotelLocation || "Unnamed Hotel",
+    rooms: `${hotelData.rooms || hotelData.roomCount || 0} rooms`,
+    owner: hotelData.ownerName || hotelData.contactName || hotelData.hotelOwner || "Unknown Owner",
+    phone: hotelData.phone || hotelData.contactNumber || "-",
+    email: hotelData.email || hotelData.contactEmail || "-",
+    location: hotelData.location || hotelData.hotelLocation || hotelData.address || "-",
+    address: hotelData.address || hotelData.hotelAddress || hotelData.location || "-",
+    date: hotelData.createdAt ? new Date(hotelData.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+    status: hotelData.status || "pending",
+    notes: hotelData.notes || hotelData.hotelDescription || hotelData.description || "No notes provided.",
+    raw: hotelData,
+  };
 }
 
 export default function HotelRegistrations() {
@@ -198,34 +204,38 @@ export default function HotelRegistrations() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedId, setSelectedId] = useState(null);
-  const { socket, socketConnected } = useContext(Authcontext);
+  const [loadingId, setLoadingId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const { socket } = useContext(Authcontext);
 
-
+  const fetchPending = useCallback(async () => {
+    try {
+      const data = await getPendingRegistrations();
+      setHotels(data.map(normalizeHotelData));
+    } catch (error) {
+      console.error("Failed to fetch pending registrations:", error);
+      setErrorMessage("Unable to load pending registrations. Please refresh to try again.");
+    }
+  }, []);
 
   useEffect(() => {
-    if (!socket) return;
+    fetchPending();
+  }, [fetchPending]);
+
+  useEffect(() => {
+    if (!socket) {
+      console.warn("Socket not available");
+      return;
+    }
 
     const handleHotelRegistration = (hotelData) => {
-      console.log("Received hotel registration:", hotelData);
-
-      setHotels((prev) => [
-        {
-          id: hotelData._id || Date.now(),
-          emoji: "🏨",
-          name: hotelData.hotelName,
-          stars: `${hotelData.starRating || 0} star`,
-          rooms: `${hotelData.rooms || 0} rooms`,
-          owner: hotelData.ownerName,
-          phone: hotelData.phone,
-          email: hotelData.email,
-          location: hotelData.location,
-          address: hotelData.address,
-          date: new Date().toLocaleDateString(),
-          status: "pending",
-          notes: hotelData.notes || "",
-        },
-        ...prev,
-      ]);
+      console.log("Hotel registration received:", hotelData);
+      try {
+        const normalized = normalizeHotelData(hotelData);
+        setHotels((prev) => [normalized, ...prev]);
+      } catch (err) {
+        console.error("Error processing hotel registration:", err);
+      }
     };
 
     socket.on("hotelRegistrationsData", handleHotelRegistration);
@@ -235,8 +245,26 @@ export default function HotelRegistrations() {
     };
   }, [socket]);
 
-  const changeStatus = (id, newStatus) => {
-    setHotels(prev => prev.map(h => h.id === id ? { ...h, status: newStatus } : h));
+  const handleReviewAction = async (id, action) => {
+    setErrorMessage("");
+    setLoadingId(id);
+
+    try {
+      if (action === "accept") {
+        await approveRegistration(id);
+        setHotels(prev => prev.map(h => h.id === id ? { ...h, status: "active" } : h));
+      } else if (action === "delete") {
+        await declineRegistration(id);
+        setHotels(prev => prev.map(h => h.id === id ? { ...h, status: "declined" } : h));
+      } else if (action === "reconsider") {
+        setHotels(prev => prev.map(h => h.id === id ? { ...h, status: "pending" } : h));
+      }
+    } catch (error) {
+      console.error("Review action error:", error);
+      setErrorMessage("Action failed. Please try again.");
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const counts = useMemo(() => ({
@@ -256,160 +284,141 @@ export default function HotelRegistrations() {
   const selectedHotel = hotels.find(h => h.id === selectedId);
 
   return (
-    <div style={{
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      background: "#f8fafc", minHeight: "100vh", padding: "28px 24px",
-    }}>
-      <div style={{ maxWidth: 960, margin: "0 auto" }}>
-
-        {/* Page header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: 0 }}>Hotel registrations</h1>
-            <p style={{ fontSize: 13, color: "#64748b", marginTop: 4, marginBottom: 0 }}>
-              Review and manage incoming hotel submissions
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <StatCard label="Pending" count={counts.pending} color="#854F0B" />
-            <StatCard label="Active" count={counts.active} color="#3B6D11" />
-            <StatCard label="Declined" count={counts.declined} color="#A32D2D" />
-          </div>
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Hotel Registrations</h1>
+          <p className="text-slate-600 mt-2">Review and manage incoming hotel submissions</p>
         </div>
 
-        {/* Search + filter bar */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <div style={{ position: "relative", flex: 1 }}>
-            <span style={{
-              position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)",
-              fontSize: 14, color: "#94a3b8", pointerEvents: "none",
-            }}>🔍</span>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <StatCard label="Pending Review" count={counts.pending} color="text-amber-600" />
+          <StatCard label="Approved" count={counts.active} color="text-emerald-600" />
+          <StatCard label="Rejected" count={counts.declined} color="text-red-600" />
+        </div>
+
+        {/* Search & Filter Bar */}
+        <div className="flex gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search hotels, owners, locations…"
-              style={{
-                width: "100%", padding: "8px 12px 8px 32px", fontSize: 13,
-                borderRadius: 8, border: "0.5px solid #e2e8f0", background: "#fff",
-                outline: "none", fontFamily: "inherit", boxSizing: "border-box",
-                color: "#0f172a",
-              }}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            style={{
-              fontSize: 13, padding: "8px 12px", borderRadius: 8,
-              border: "0.5px solid #e2e8f0", background: "#fff",
-              color: "#0f172a", fontFamily: "inherit", cursor: "pointer",
-            }}
+            className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All statuses</option>
+            <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
-            <option value="active">Active</option>
-            <option value="declined">Declined</option>
+            <option value="active">Approved</option>
+            <option value="declined">Rejected</option>
           </select>
-          <button
-            style={{
-              fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 8,
-              border: "none", background: "#0f172a", color: "#fff",
-              cursor: "pointer", fontFamily: "inherit",
-            }}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            + Register hotel
-          </button>
+            <Plus size={16} />
+            New Registration
+          </motion.button>
         </div>
 
-        {/* Table card */}
-        <div style={{
-          position: "relative",
-          border: "0.5px solid #e2e8f0", borderRadius: 12,
-          background: "#fff", overflow: "hidden",
-        }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <colgroup>
-              <col style={{ width: "30%" }} />
-              <col style={{ width: "15%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "14%" }} />
-              <col style={{ width: "12%" }} />
-              <col style={{ width: "16%" }} />
-            </colgroup>
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "0.5px solid #e2e8f0" }}>
-                {["Hotel", "Owner", "Location", "Submitted", "Status", "Action"].map(col => (
-                  <th key={col} style={{
-                    textAlign: "left", padding: "10px 16px",
-                    fontSize: 11, fontWeight: 600, color: "#94a3b8",
-                    letterSpacing: ".05em", textTransform: "uppercase",
-                  }}>{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: 36, color: "#94a3b8", fontSize: 13 }}>
-                    No hotels match your search
-                  </td>
-                </tr>
-              ) : filtered.map(h => (
-                <tr
-                  key={h.id}
-                  onClick={() => setSelectedId(h.id)}
-                  style={{
-                    borderBottom: "0.5px solid #f1f5f9", cursor: "pointer",
-                    transition: "background .1s",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
-                  onMouseLeave={e => e.currentTarget.style.background = ""}
-                >
-                  <td style={{ padding: "12px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10, fontSize: 19,
-                        background: "#f8fafc", border: "0.5px solid #e2e8f0",
-                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                      }}>
-                        {h.emoji}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, color: "#0f172a" }}>{h.name}</div>
-                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{h.stars} · {h.rooms}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: "12px 16px", color: "#334155" }}>{h.owner}</td>
-                  <td style={{ padding: "12px 16px", color: "#64748b" }}>
-                    <span style={{ fontSize: 12 }}>📍</span> {h.location}
-                  </td>
-                  <td style={{ padding: "12px 16px", fontSize: 12, color: "#94a3b8" }}>{h.date}</td>
-                  <td style={{ padding: "12px 16px" }}><Badge status={h.status} /></td>
-                  <td style={{ padding: "12px 16px" }} onClick={e => e.stopPropagation()}>
-                    <ActionButtons hotel={h} onChangeStatus={changeStatus} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Error Message */}
+        {errorMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2"
+          >
+            <AlertCircle size={16} />
+            {errorMessage}
+          </motion.div>
+        )}
 
-          {/* Detail Drawer */}
-          {selectedHotel && (
-            <DrawerDetail
-              hotel={selectedHotel}
-              onClose={() => setSelectedId(null)}
-              onChangeStatus={(id, status) => {
-                changeStatus(id, status);
-              }}
-            />
+        {/* Table */}
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 size={40} className="mx-auto text-slate-300 mb-3" />
+              <p className="text-slate-500">No hotels match your search</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Hotel</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Owner</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Location</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Submitted</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filtered.map(h => (
+                    <motion.tr
+                      key={h.id}
+                      whileHover={{ backgroundColor: "#f9fafb" }}
+                      onClick={() => setSelectedId(h.id)}
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <Building2 size={18} className="text-blue-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 truncate">{h.name}</p>
+                            <p className="text-xs text-slate-500 mt-1">{h.rooms}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">{h.owner}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600 flex items-center gap-2">
+                        <MapPin size={14} className="text-slate-400" />
+                        {h.location}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{h.date}</td>
+                      <td className="px-6 py-4">
+                        <Badge status={h.status} />
+                      </td>
+                      <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                        <ActionButtons hotel={h} onAction={handleReviewAction} loading={loadingId === h.id} />
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
-        <p style={{ fontSize: 11, color: "#cbd5e1", textAlign: "center", marginTop: 16 }}>
-          {hotels.length} hotels total · Click any row to view full details
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-400 mt-4">
+          {hotels.length} hotel{hotels.length !== 1 ? 's' : ''} total · Click any row to view full details
         </p>
+
+        {/* Detail Drawer */}
+        {selectedHotel && (
+          <DrawerDetail
+            hotel={selectedHotel}
+            onClose={() => setSelectedId(null)}
+            onAction={handleReviewAction}
+            loading={loadingId === selectedHotel.id}
+          />
+        )}
       </div>
     </div>
   );
