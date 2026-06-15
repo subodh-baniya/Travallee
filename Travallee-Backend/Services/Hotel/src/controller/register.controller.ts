@@ -384,6 +384,12 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 500, "Failed to save room to database");
     }
 
+    try {
+      await hoteldataCache.del(`rooms_${hotelId}`);
+    } catch (cacheErr) {
+      console.error("Failed to invalidate rooms cache:", cacheErr);
+    }
+
     return apiResponse(res, 201, true, "Room created successfully", response);
   } catch (error: any) {
     console.error("Error creating room:", error);
@@ -624,10 +630,21 @@ const RoomData = asyncHandler(async (req: any, res: any) => {
 // app controllers
 const featuredHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("featured_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Featured hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({ isFeatured: true });
     if (hotels.length === 0) {
       return apiError(res, 404, "No featured hotels found");
     }
+    await hoteldataCache.set("featured_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(
       res,
       200,
@@ -835,36 +852,59 @@ const getHotelInfo = asyncHandler(async (req: any, res: any) => {
 });
 
 const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const cached = await hoteldataCache.get("high_reviewed_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Highly reviewed hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
+    const hotels = await hotelModel
+      .find({ rating: { $gte: 4.0 } })
+      .select(
+        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
+      )
+      .sort({ rating: -1, numberOfReviews: -1 });
 
-  const hotels = await hotelModel
-    .find({ rating: { $gte: 4.0 } })
-    .select(
-      "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
-    )
-    .sort({ rating: -1, numberOfReviews: -1 });
-
-  if (hotels.length === 0) {
-    return apiError(res, 404, "No highly reviewed hotels found");
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No highly reviewed hotels found");
+    }
+    await hoteldataCache.set("high_reviewed_hotels", JSON.stringify(hotels), "EX", 60 * 60);
+    return apiResponse(
+      res,
+      200,
+      true,
+      "Highly reviewed hotels retrieved successfully",
+      hotels,
+    );
+  } catch (error) {
+    return apiError(res, 500, "Internal server error");
   }
-
-  return apiResponse(
-    res,
-    200,
-    true,
-    "Highly reviewed hotels retrieved successfully",
-    hotels,
-  );
-
 });
 
 const getAllHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("all_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({}).limit(10);
     if (hotels.length === 0) {
       console.log("No active hotels found in database");
       return apiResponse(res, 200, true, "No hotels available", []);
     }
     console.log(`Retrieved ${hotels.length} hotels`);
+    await hoteldataCache.set("all_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
@@ -874,12 +914,23 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
 
 const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("all_resort_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Resort hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({ propertyType: "Resort", isactive: true }).limit(10);
     if (hotels.length === 0) {
       console.log("No active resorts found in database");
       return apiResponse(res, 200, true, "No resorts available", []);
     }
     console.log(`Retrieved ${hotels.length} resorts`);
+    await hoteldataCache.set("all_resort_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(res, 200, true, "Resort hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching resorts:", error.message);
@@ -891,10 +942,22 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
 const displayRooms = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   try {
+    const cached = await hoteldataCache.get(`rooms_${hotelId}`);
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Rooms retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const rooms = await roomModel.find({ hotelId });
     if (rooms.length === 0) {
       return apiError(res, 404, "No rooms found for this hotel");
-    } return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
+    }
+    await hoteldataCache.set(`rooms_${hotelId}`, JSON.stringify(rooms), "EX", 60 * 60);
+    return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
   } catch (error: any) {
     return apiError(res, 500, "Internal server error: Unable to retrieve rooms. Please try again later.", error.message);
   }
@@ -969,6 +1032,55 @@ const getPaymentCredentials = asyncHandler(async (req: any, res: any) => {
 });
 
 
+const approveRegistration = asyncHandler(async (req: any, res: any) => {
+  const { userID } = req.body;
+  if (!userID) {
+    return apiError(res, 400, "User ID is required");
+  }
+
+  try {
+    const cachedData = await registerHotel.get(`hotel_registration_${userID}`);
+    if (!cachedData) {
+      return apiError(res, 404, "Registration request not found or expired");
+    }
+
+    const hotelData = JSON.parse(cachedData);
+    hotelData.isactive = true;
+    hotelData.verified = true;
+
+    const newHotel = new hotelModel(hotelData);
+    await newHotel.save();
+
+    await registerHotel.del(`hotel_registration_${userID}`);
+
+    // Clear list caches
+    await hoteldataCache.del("featured_hotels");
+    await hoteldataCache.del("high_reviewed_hotels");
+    await hoteldataCache.del("all_hotels");
+    await hoteldataCache.del("all_resort_hotels");
+
+    return apiResponse(res, 200, true, "Hotel registration approved and created successfully", newHotel);
+  } catch (error: any) {
+    console.error("Error approving hotel registration:", error);
+    return apiError(res, 500, "Internal server error: Unable to approve registration");
+  }
+});
+
+const declineRegistration = asyncHandler(async (req: any, res: any) => {
+  const { userID } = req.body;
+  if (!userID) {
+    return apiError(res, 400, "User ID is required");
+  }
+
+  try {
+    await registerHotel.del(`hotel_registration_${userID}`);
+    return apiResponse(res, 200, true, "Hotel registration declined successfully");
+  } catch (error: any) {
+    console.error("Error declining hotel registration:", error);
+    return apiError(res, 500, "Internal server error: Unable to decline registration");
+  }
+});
+
 export {
   registerHotelRequest,
   createroom,
@@ -986,7 +1098,9 @@ export {
   getAllResortHotels,
   displayRooms,
   getHotelByLocation,
-  getPaymentCredentials
+  getPaymentCredentials,
   getAllRatings,
+  approveRegistration,
+  declineRegistration,
 };
 

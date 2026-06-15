@@ -219,14 +219,17 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
 const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
   const userId = req.params.userId;
   try {
-    const bookings = await bookingModel.find({ user: userId })
+    const bookings = await bookingModel.find({ user: userId });
     const response = {
-      bookings: bookings.map((booking) => ({
+      bookings: bookings.map((booking: any) => ({
         bookingId: booking._id,
+        hotelId: booking.hotel || "",
         hotelName: booking.hotelName,
         roomNumber: booking.roomNumber,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
+        status: booking.status,
+        bookingPayment: booking.bookingPayment,
       }))
     };
     return apiResponse(res, 200, true, "Booking history retrieved successfully", response);
