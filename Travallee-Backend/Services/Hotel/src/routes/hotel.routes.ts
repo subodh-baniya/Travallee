@@ -13,7 +13,8 @@ import {
   getAllResortHotels,
   RoomData,
   displayRooms,
-  getHotelByLocation
+  getHotelByLocation,
+  getPaymentCredentials
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -48,6 +49,8 @@ router.post("/booking-history", syncBookingHistory);
 router.get("/booking-history/:hotelId", getBookingHistoryByHotelId);
 
 router.get("/:hotelId", authenticate, HotelData);
+
+router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials);
 
 
 
