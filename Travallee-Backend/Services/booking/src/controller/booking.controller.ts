@@ -369,43 +369,49 @@ const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
 //admin
 const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   const { HotelId } = req.params;
-  let status: string = "UNKNOWN";
-  let Booking: any = null;
+
   if (!HotelId) {
     return apiError(res, 400, "Hotel ID is required");
   }
   if (!mongoose.Types.ObjectId.isValid(HotelId)) {
     return apiError(res, 400, "Invalid Hotel ID format");
   }
-  Booking = await bookingModel.findOne({ hotel: HotelId })
-  if (!Booking) {
-    return apiError(res, 404, "Booking not found");
-  }
-  if (Booking.checkIn > new Date()) {
-    status = "UPCOMING";
 
-  }
-  if (Booking.checkOut < new Date()) {
-    status = "Checked Out";
-  }
-  if (Booking.checkIn <= new Date() && Booking.checkOut >= new Date()) {
-    status = "CHECKED IN";
+  const bookings = await bookingModel.find({ hotel: HotelId });
+
+  if (!bookings || bookings.length === 0) {
+    return apiError(res, 404, "No bookings found for this hotel");
   }
 
-  const responseData = {
-    status,
-    bookingName: Booking.Name,
-    BookingtotalNights: Booking.totalNights,
-    BookingCheckIn: Booking.checkIn,
-    BookingCheckOut: Booking.checkOut,
-    TotalMoneySpent: Booking.totalPrice,
-    BookingPayment: Booking.bookingPayment,
-    BookingPaymentMethod: Booking.paymentMethod,
-    bookingRoomNumber: Booking.roomNumber,
-  };
+  const now = new Date();
+
+  const responseData = bookings.map((booking: any) => {
+    let status = "UNKNOWN";
+
+    if (booking.checkIn > now) {
+      status = "UPCOMING";
+    } else if (booking.checkOut < now) {
+      status = "CHECKED OUT";
+    } else if (booking.checkIn <= now && booking.checkOut >= now) {
+      status = "CHECKED IN";
+    }
+
+    return {
+      status,
+      bookingName: booking.Name,
+      bookingTotalNights: booking.totalNights,
+      bookingCheckIn: booking.checkIn,
+      bookingCheckOut: booking.checkOut,
+      totalMoneySpent: booking.totalPrice,
+      bookingPayment: booking.bookingPayment,
+      bookingPaymentMethod: booking.paymentMethod,
+      bookingRoomNumber: booking.roomNumber,
+    };
+  });
 
   return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
 });
+
 const calculateIncomeHotel = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   if (!hotelId) {

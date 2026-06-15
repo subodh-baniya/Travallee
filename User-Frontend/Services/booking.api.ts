@@ -23,3 +23,7 @@ export const createBooking = (data: CreateBookingPayload) =>{
     .post("/create-booking-hotel", data)
     .then((res) => res.data);
 }
+
+export const getGuestStatusByHotelId = (hotelId: string) => {
+  return bookingClient.get(`/guest-status/${hotelId}`);
+}
