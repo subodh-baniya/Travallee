@@ -1,6 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, LogOut, Plus, Save } from "lucide-react";
+import { Menu, LogOut, Plus, Save, Bell, Search } from "lucide-react";
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { globalSearch } from "../Services/admin.api";
 
 const PAGE_META = {
   "/dashboard": { title: "Dashboard", icon: "📊", path: "dashboard" },
@@ -16,6 +19,25 @@ export default function Topbar({ mini, setMini, onSave, savedMsg, onLogout }) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", year: "numeric",
   });
+  const [openNotif, setOpenNotif] = useState(false);
+  const [notifications] = useState([
+    { id:1, text: '3 pending approvals', unread: true },
+    { id:2, text: 'New booking confirmed', unread: false },
+  ]);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null);
+  const [openSearch, setOpenSearch] = useState(false);
+  const navigate = useNavigate();
+  const debounceRef = useRef(null);
+
+  const doSearch = async (q) => {
+    if (!q || q.length < 2) { setResults(null); return; }
+    try {
+      const res = await globalSearch(q);
+      setResults(res);
+      setOpenSearch(true);
+    } catch (e) { console.error(e); }
+  };
 
   return (
     <header className="bg-white border-b border-slate-200 py-3 px-6 flex items-center justify-between shrink-0">
@@ -37,6 +59,67 @@ export default function Topbar({ mini, setMini, onSave, savedMsg, onLogout }) {
       </div>
 
       <div className="flex items-center gap-3">
+        <div className="relative hidden md:block">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => {
+              const v = e.target.value;
+              setQuery(v);
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+              debounceRef.current = setTimeout(() => doSearch(v), 300);
+            }}
+            onFocus={() => { if (results) setOpenSearch(true); }}
+            placeholder="Search users, hotels, bookings..."
+            className="pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white text-sm w-[340px] focus:outline-none"
+          />
+          {openSearch && results && (
+            <div className="absolute left-0 top-full mt-2 w-full bg-white border border-slate-200 rounded-lg shadow-lg z-30">
+              <div className="p-2">
+                {results.users?.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-400 px-2 py-1">Users</div>
+                    {results.users.slice(0,5).map(u => (
+                      <div key={u._id||u.id} onClick={() => { navigate(`/dashboard/users`); setOpenSearch(false); }} className="px-2 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+                        <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700">{(u.name||u.username||'U').slice(0,2).toUpperCase()}</div>
+                        <div>
+                          <div className="text-sm text-slate-900">{u.name||u.username}</div>
+                          <div className="text-xs text-slate-500">{u.email}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {results.hotels?.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs text-slate-400 px-2 py-1">Hotels</div>
+                    {results.hotels.slice(0,5).map(h => (
+                      <div key={h._id||h.id} onClick={() => { navigate(`/dashboard/hotels/register`); setOpenSearch(false); }} className="px-2 py-2 hover:bg-slate-50 cursor-pointer">
+                        <div className="text-sm text-slate-900">{h.hotelName||h.name}</div>
+                        <div className="text-xs text-slate-500">{h.location}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {results.bookings?.length > 0 && (
+                  <div>
+                    <div className="text-xs text-slate-400 px-2 py-1">Bookings</div>
+                    {results.bookings.slice(0,5).map(b => (
+                      <div key={b._id||b.id} onClick={() => { navigate(`/dashboard/hotels/bookings`); setOpenSearch(false); }} className="px-2 py-2 hover:bg-slate-50 cursor-pointer">
+                        <div className="text-sm text-slate-900">{b._id||b.bookingId}</div>
+                        <div className="text-xs text-slate-500">{b.userName||b.guestName}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!results.users?.length && !results.hotels?.length && !results.bookings?.length && (
+                  <div className="p-3 text-sm text-slate-500">No results</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <span className="text-xs text-slate-500 px-3 py-1 rounded-lg bg-slate-50">
           {today}
         </span>
@@ -65,6 +148,22 @@ export default function Topbar({ mini, setMini, onSave, savedMsg, onLogout }) {
           <Save size={16} />
           <span>{savedMsg ? "Saved" : "Save"}</span>
         </motion.button>
+        <div className="relative">
+          <button onClick={() => setOpenNotif(o => !o)} className="p-2 rounded-md hover:bg-slate-50">
+            <Bell size={18} />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500" />
+          </button>
+          {openNotif && (
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-lg p-2 z-20">
+              {notifications.map(n => (
+                <div key={n.id} className="px-3 py-2 flex items-center justify-between">
+                  <div className="text-sm text-slate-700">{n.text}</div>
+                  {n.unread && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <motion.button
           whileHover={{ scale: 1.02 }}

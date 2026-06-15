@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useContext } from "react";
 import { motion } from "framer-motion";
 import { Authcontext } from "../../Contexts/Authcontext";
-import { getPendingRegistrations, approveRegistration, declineRegistration } from "../../Services/admin.api";
+import { getPendingRegistrations, approveRegistration, declineRegistration, getHotelBookings, createBooking } from "../../Services/admin.api";
 import {
   MapPin,
   Mail,
@@ -87,7 +87,19 @@ function ActionButtons({ hotel, onAction, compact = false, loading }) {
   );
 }
 
-function DrawerDetail({ hotel, onClose, onAction, loading }) {
+function DrawerDetail({ hotel, onClose, onAction, loading, bookings = [], onCreateBooking }) {
+  const [form, setForm] = useState({ guestName: '', checkIn: '', checkOut: '', rooms: 1, price: 0 });
+  const [submitting, setSubmitting] = useState(false);
+
+  const submitBooking = async () => {
+    if (!onCreateBooking) return;
+    setSubmitting(true);
+    try {
+      await onCreateBooking(form);
+      setForm({ guestName: '', checkIn: '', checkOut: '', rooms: 1, price: 0 });
+    } catch (e) { console.error(e); }
+    finally { setSubmitting(false); }
+  };
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -171,6 +183,38 @@ function DrawerDetail({ hotel, onClose, onAction, loading }) {
         <div className="p-4 flex-1">
           <p className="text-xs font-semibold uppercase text-slate-500 tracking-widest mb-2">Notes</p>
           <p className="text-sm text-slate-700 leading-relaxed">{hotel.notes}</p>
+        </div>
+
+        {/* Bookings */}
+        <div className="p-4 border-t border-slate-100">
+          <div className="text-xs font-semibold uppercase text-slate-500 tracking-widest mb-3">Bookings</div>
+          {bookings.length===0 && <div className="text-sm text-slate-500">No bookings yet for this hotel.</div>}
+          {bookings.map((b,i) => (
+            <div key={b._id||i} className="p-2 border rounded mb-2">
+              <div className="text-sm font-medium">{b.guestName || b.userName || 'Guest'}</div>
+              <div className="text-xs text-slate-500">{b.checkIn} → {b.checkOut} · {b.rooms} room(s)</div>
+            </div>
+          ))}
+
+          <div className="mt-3">
+            <div className="text-xs font-semibold text-slate-500 mb-2">Create Booking</div>
+            <div className="space-y-2">
+              <input value={form.guestName} onChange={e=>setForm(s=>({...s,guestName:e.target.value}))} placeholder="Guest name" className="w-full border p-2 rounded" />
+              <div className="flex gap-2">
+                <input value={form.checkIn} onChange={e=>setForm(s=>({...s,checkIn:e.target.value}))} type="date" className="flex-1 border p-2 rounded" />
+                <input value={form.checkOut} onChange={e=>setForm(s=>({...s,checkOut:e.target.value}))} type="date" className="flex-1 border p-2 rounded" />
+              </div>
+              <div className="flex gap-2">
+                <input value={form.rooms} onChange={e=>setForm(s=>({...s,rooms:Number(e.target.value)}))} type="number" min={1} className="w-20 border p-2 rounded" />
+                <input value={form.price} onChange={e=>setForm(s=>({...s,price:Number(e.target.value)}))} type="number" min={0} className="flex-1 border p-2 rounded" placeholder="Total price" />
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={()=>{ setForm({ guestName: '', checkIn: '', checkOut: '', rooms: 1, price: 0 })}} className="px-3 py-1 border rounded">Reset</button>
+                <button onClick={submitBooking} disabled={submitting} className="px-3 py-1 bg-blue-600 text-white rounded">{submitting?'Saving...':'Create Booking'}</button>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Action Footer */}
@@ -282,6 +326,20 @@ export default function HotelRegistrations() {
   }, [hotels, search, filter]);
 
   const selectedHotel = hotels.find(h => h.id === selectedId);
+  const [bookings, setBookings] = useState([]);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const b = await getHotelBookings(selectedId);
+        if (mounted) setBookings(b || []);
+      } catch (e) { console.error('Failed to load bookings', e); }
+    })();
+    return () => { mounted = false; };
+  }, [selectedId]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -417,6 +475,16 @@ export default function HotelRegistrations() {
             onClose={() => setSelectedId(null)}
             onAction={handleReviewAction}
             loading={loadingId === selectedHotel.id}
+            bookings={bookings}
+            onCreateBooking={async (payload) => {
+              try {
+                setCreating(true);
+                await createBooking(selectedHotel.id, payload);
+                const b = await getHotelBookings(selectedHotel.id);
+                setBookings(b || []);
+              } catch (e) { console.error(e); }
+              finally { setCreating(false); }
+            }}
           />
         )}
       </div>

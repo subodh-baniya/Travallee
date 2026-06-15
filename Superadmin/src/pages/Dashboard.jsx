@@ -1,14 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Hooks/useAuth";
 import { useState, useEffect } from "react";
-import { Socket } from "socket.io-client";
-
+import { getDashboardStats, getRevenue7Days, getRecentActivity, getPendingApprovals } from "../Services/admin.api";
+import CountUp from "../components/CountUp";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import PendingApprovals from "./components/PendingApprovals";
+import RecentActivity from "./components/RecentActivity";
 
 const cards = [
-  { title: "Total Hotels", value: "124", sub: "Live on the platform" },
-  { title: "Active Bookings", value: "3,842", sub: "All-time booking count" },
-  { title: "Today Revenue", value: "NPR 84K", sub: "Last 24 hours" },
-  { title: "App Users", value: "12,481", sub: "Registered accounts" },
+  { key: 'totalHotels', title: "Total Hotels", value: 0, sub: "Live on the platform" },
+  { key: 'activeBookings', title: "Active Bookings", value: 0, sub: "All-time booking count" },
+  { key: 'todayRevenue', title: "Today Revenue", value: 0, sub: "Last 24 hours" },
+  { key: 'appUsers', title: "App Users", value: 0, sub: "Registered accounts" },
 ];
 
 const quickLinks = [
@@ -23,6 +26,10 @@ export default function Dashboard() {
   const auth = useAuth();
   const { socketConnected, setsocketConnected } = auth;
   const { socket } = auth;
+  const [stats, setStats] = useState({});
+  const [revenueData, setRevenueData] = useState([]);
+  const [recent, setRecent] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     if (!socket) {
@@ -46,6 +53,21 @@ export default function Dashboard() {
     };
   }, [socket, socketConnected]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await getDashboardStats();
+        setStats(s || {});
+        const rv = await getRevenue7Days();
+        setRevenueData(rv || []);
+        const act = await getRecentActivity();
+        setRecent(act || []);
+        const pend = await getPendingApprovals();
+        setPendingCount((pend || []).length);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
 
 
 
@@ -56,74 +78,53 @@ export default function Dashboard() {
 
   return (
     <div className="grid gap-[18px]">
-      <section className="bg-[linear-gradient(135deg,#0f172a_0%,#103b63_52%,#0369a1_100%)] text-white rounded-[18px] p-6 shadow-[0_18px_50px_rgba(2,132,199,0.18)] relative overflow-hidden">
-        {/* Hero Background Shape */}
-        <div className="absolute -right-[60px] -bottom-[60px] w-[180px] h-[180px] rounded-full bg-white/8 pointer-events-none" />
-
-        <div className="relative z-10">
-          <h1 className="text-[28px] font-bold mb-2 tracking-tight">Dashboard</h1>
-          <p className="text-white/84 max-w-[620px] leading-relaxed text-sm">
-            Welcome back. Use this control center to move between hotels, bookings, analytics, and the main platform overview.
-          </p>
-          <div className="flex flex-wrap gap-2.5 mt-4.5">
-            <button className="border-none rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white text-slate-900 hover:bg-slate-50 transition-colors" onClick={() => navigate("/dashboard/hotels/register")}>
-              Manage Hotels
-            </button>
-            <button className="border-none rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white text-slate-900 hover:bg-slate-50 transition-colors" onClick={() => navigate("/dashboard/analysis")}>
-              Open Analysis
-            </button>
-            <button className="rounded-xl py-[11px] px-3.5 font-semibold cursor-pointer bg-white/12 text-white border border-white/18 hover:bg-white/20 transition-colors" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* Hero section removed */}
 
       <section className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {cards.map((card) => (
-          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]" key={card.title}>
-            <div className="text-xs text-slate-500 mb-2">{card.title}</div>
-            <div className="text-[28px] font-bold text-slate-900 tracking-tight font-mono">{card.value}</div>
-            <div className="mt-1 text-xs text-slate-400">{card.sub}</div>
+          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]" key={card.key}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-slate-500 mb-2">{card.title}</div>
+                <div className="text-[28px] font-bold text-slate-900 tracking-tight font-mono"><CountUp end={stats[card.key] ?? card.value} /></div>
+                <div className="mt-1 text-xs text-slate-400">{card.sub}</div>
+              </div>
+              <div className="text-sm text-slate-400">{stats[`${card.key}Trend`]>0?`↑ ${stats[`${card.key}Trend`]}%`:`${stats[`${card.key}Trend`]}%`}</div>
+            </div>
           </div>
         ))}
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr] gap-3">
         <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
-          <div className="text-base font-bold text-slate-900 mb-1.5">Quick Actions</div>
-          <div className="text-xs text-slate-500 mb-3.5">Jump to the most useful sections for superadmin work.</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {quickLinks.map((link) => (
-              <button className="flex justify-between items-center gap-3 bg-white border border-slate-400/14 rounded-2xl p-[16px_18px] cursor-pointer text-left hover:border-brand-accent2 transition-colors duration-150" key={link.path} onClick={() => navigate(link.path)}>
-                <div>
-                  <div className="text-[15px] font-bold text-slate-900">{link.label}</div>
-                  <div className="text-xs text-slate-500 mt-1">{link.note}</div>
-                </div>
-                <div className="text-brand-accent text-[22px] shrink-0 font-bold">→</div>
-              </button>
-            ))}
+          <div className="text-base font-bold text-slate-900 mb-1.5">Revenue (7 days)</div>
+          <div className="text-xs text-slate-500 mb-3.5">Last week</div>
+          <div style={{ height: 180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueData} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis hide />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#0284c7" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
-          <div className="text-base font-bold text-slate-900 mb-1.5">Recent Activity</div>
-          <div className="text-xs text-slate-500 mb-3.5">Latest platform events for the superadmin.</div>
-          <div className="divide-y divide-slate-100">
-            {[
-              { dot: "#38bdf8", text: "New hotel registration received", time: "2 min ago" },
-              { dot: "#4ade80", text: "Booking confirmed for Grand Vista Hotel", time: "8 min ago" },
-              { dot: "#818cf8", text: "New app user joined the platform", time: "15 min ago" },
-              { dot: "#fbbf24", text: "Revenue report refreshed", time: "1 hr ago" },
-            ].map((item) => (
-              <div className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0" key={item.text}>
-                <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: item.dot }} />
-                <div>
-                  <div className="text-[13px] text-slate-900 leading-normal">{item.text}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{item.time}</div>
-                </div>
-              </div>
-            ))}
+          <RecentActivity items={recent} />
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr] gap-3 mt-3">
+        <div>
+          <PendingApprovals />
+        </div>
+        <div>
+          {/* Right column placeholder for additional widgets */}
+          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+            <div className="text-base font-bold text-slate-900 mb-2">Platform Health</div>
+            <div className="text-sm text-slate-600">All systems operational · No incidents reported</div>
           </div>
         </div>
       </section>

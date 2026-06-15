@@ -10,6 +10,8 @@ import Bookings from "../pages/Hotels/Bookings";
 import HotelStatus from "../pages/Hotels/HotelStatus";
 import Analysis from "../pages/Analysis";
 import Dashboard from "../pages/Dashboard";
+import Users from "../pages/Users";
+import Roles from "../pages/Roles";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -25,6 +27,8 @@ const router = createBrowserRouter(
           <Route path="hotels/bookings" element={<Bookings />} />
           <Route path="hotels/status" element={<HotelStatus />} />
           <Route path="analysis" element={<Analysis />} />
+          <Route path="users" element={<Users />} />
+          <Route path="roles" element={<Roles />} />
         </Route>
       </Route>
 
