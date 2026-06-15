@@ -14,7 +14,7 @@ import {
   RoomData,
   displayRooms,
   getHotelByLocation,
-  getPaymentCredentials
+  getPaymentCredentials,
   getAllRatings,
 } from "../controller/register.controller.js";
 

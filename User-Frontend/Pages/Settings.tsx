@@ -358,7 +358,7 @@ const SettingsPage: React.FC = () => {
     const rating = settings?.rating ?? 0;
     const reviews = settings?.numberOfReviews ?? 0;
     return {
-      rating: rating.toFixed(1),
+      rating: rating > 0 ? rating.toFixed(1) : "N/A",
       reviews,
       occupancy: reviews > 0 ? Math.min(100, 50 + Math.round(reviews / 2)) : 0,
     };

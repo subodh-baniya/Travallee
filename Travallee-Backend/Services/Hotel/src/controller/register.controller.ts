@@ -986,7 +986,7 @@ export {
   getAllResortHotels,
   displayRooms,
   getHotelByLocation,
-  getPaymentCredentials
+  getPaymentCredentials,
   getAllRatings,
 };
 
