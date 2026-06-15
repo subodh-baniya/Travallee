@@ -13,7 +13,8 @@ import {
   getAllResortHotels,
   RoomData,
   displayRooms,
-  getHotelByLocation
+  getHotelByLocation,
+  getAllRatings,
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -42,10 +43,15 @@ router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 router.get("/rooms/:hotelId", authenticate, RoomData);
 
 router.get("/display-rooms/:hotelId", authenticate, displayRooms);
-
 router.post("/booking-history", syncBookingHistory);
 
+router.get("/ratings/:hotelId",  getAllRatings);
+
+
+
 router.get("/booking-history/:hotelId", getBookingHistoryByHotelId);
+
+router.get("/hotel/:hotelId", authenticate, getHotelInfo);
 
 router.get("/:hotelId", authenticate, HotelData);
 
