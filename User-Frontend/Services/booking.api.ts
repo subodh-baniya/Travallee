@@ -27,3 +27,11 @@ export const createBooking = (data: CreateBookingPayload) =>{
 export const getGuestStatusByHotelId = (hotelId: string) => {
   return bookingClient.get(`/guest-status/${hotelId}`);
 }
+
+export const getTotalIncome = (hotelId: string) => {
+  return bookingClient.get(`/calculate-income/${hotelId}`);
+}
+
+export const getPendingIncome = (hotelId: string) => {
+  return bookingClient.get(`/calculate-pending-income/${hotelId}`);
+}
