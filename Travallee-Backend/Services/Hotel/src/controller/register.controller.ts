@@ -887,7 +887,7 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-// const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
+
 //   try {
 //     const userId = req.user?.id || req.user?._id;
 
@@ -959,7 +959,6 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
 //     return apiError(res, 500, "Dashboard error", error.message);
 //   }
 // });
-
 const displayRooms = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   try {
