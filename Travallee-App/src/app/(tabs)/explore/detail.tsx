@@ -295,7 +295,7 @@ export default function HotelDetailScreen() {
           <View style={styles.ratingCard}>
             <View style={styles.ratingLeft}>
               <Ionicons name="star" size={16} color="#FFB800" />
-              <Text style={styles.ratingNum}>{hotel.rating.toFixed(1)}</Text>
+              <Text style={styles.ratingNum}>{(typeof hotel.rating === 'number' ? hotel.rating : 0).toFixed(1)}</Text>
               <Text style={styles.ratingCount}>
                 {hotel.numberOfReviews > 0
                   ? `${hotel.numberOfReviews} review${hotel.numberOfReviews !== 1 ? 's' : ''}`
@@ -481,7 +481,7 @@ export default function HotelDetailScreen() {
                           <Text style={styles.roomDetailPrice}>${room.pricePerNight}/night</Text>
                         </View>
                         <View style={styles.roomDetailRating}>
-                          {room.rating > 0 ? (
+                          {typeof room.rating === 'number' && room.rating > 0 ? (
                             <>
                               <Ionicons name="star" size={14} color="#FFB800" />
                               <Text style={styles.roomDetailRatingText}>{room.rating.toFixed(1)}</Text>
@@ -532,7 +532,7 @@ export default function HotelDetailScreen() {
             </Pressable>
           </View>
           <View style={styles.revScore}>
-            <Text style={styles.bigNum}>{hotel.rating.toFixed(1)}</Text>
+            <Text style={styles.bigNum}>{(typeof hotel.rating === 'number' ? hotel.rating : 0).toFixed(1)}</Text>
             <View>
               <Text style={styles.stars}>★★★★★</Text>
               <Text style={styles.revCount}>
