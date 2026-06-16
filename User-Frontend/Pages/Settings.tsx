@@ -1,26 +1,18 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
-  FaHotel,
-  FaPhoneAlt,
-  FaMapMarkerAlt,
-  FaClock,
-  FaImage,
-  FaStar,
-  FaWifi,
-  FaParking,
-  FaSpa,
-  FaSwimmingPool,
-  FaFileAlt,
+  FaPhoneAlt, FaMapMarkerAlt, FaClock,
+  FaWifi, FaParking, FaSpa, FaSwimmingPool, FaStar,
+  FaLock, FaTrash, FaCheck, FaExclamationTriangle,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { getHotelById, getRooms } from "../Services/hotel.api";
+import { getHotelById } from "../Services/hotel.api";
 import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
 
 interface HotelSettings {
   _id?: string;
   hotelName: string;
-  owner: string;
+  ownerName: string;
   contact: string;
   location: string;
   propertyType: string;
@@ -29,1050 +21,497 @@ interface HotelSettings {
   checkOut: string;
   description: string;
   facilities: string[];
-  images: string[];
-  documents: string[];
-  rating?: number;
-  numberOfReviews?: number;
 }
 
-interface HotelRoom {
-  _id?: string;
-  roomNumber?: string;
-  roomType?: string;
-  suitetype?: string;
-  roomDescription?: string;
-  capacity?: number;
-  maxOccupancy?: number;
-  pricePerNight?: number;
-  basePrice?: number;
-  roomImages?: string[];
-  amenities?: string[];
-  bedType?: string;
-  floorNumber?: number;
-  status?: string;
-}
+const facilityOptions = [
+  { label: "Free WiFi",     icon: <FaWifi /> },
+  { label: "Parking",       icon: <FaParking /> },
+  { label: "Spa",           icon: <FaSpa /> },
+  { label: "Swimming Pool", icon: <FaSwimmingPool /> },
+  { label: "Restaurant",    icon: <FaStar /> },
+  { label: "Gym",           icon: <FaStar /> },
+  { label: "Bar",           icon: <FaStar /> },
+  { label: "Room Service",  icon: <FaStar /> },
+];
 
-const facilityIcons: Record<string, React.ReactNode> = {
-  "Free WiFi": <FaWifi />,
-  Parking: <FaParking />,
-  Spa: <FaSpa />,
-  "Swimming Pool": <FaSwimmingPool />,
-};
+type Tab = "property" | "security";
 
-const SettingsPage: React.FC = () => {
-  const auth = useAuth();
-  const navigate = useNavigate();
-  const hotelId = auth?.hotelId;
+const TABS: { id: Tab; label: string }[] = [
+  { id: "property", label: "Property" },
+  { id: "security", label: "Security" },
+];
 
-  const [settings, setSettings] = useState<HotelSettings | null>(null);
-  const [rooms, setRooms] = useState<HotelRoom[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [newRoomNumber, setNewRoomNumber] = useState("");
-  const [newRoomType, setNewRoomType] = useState("");
-  const [newBasePrice, setNewBasePrice] = useState("");
-  const [newCapacity, setNewCapacity] = useState("");
-  const [newAmenities, setNewAmenities] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newFloor, setNewFloor] = useState("");
-  const [creatingRoom, setCreatingRoom] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [createSuccess, setCreateSuccess] = useState("");
-  const [newSuiteType, setNewSuiteType] = useState("");
-  const [newMaxOccupancy, setNewMaxOccupancy] = useState("");
-  const [newBedType, setNewBedType] = useState("");
-  const [newRoomSize, setNewRoomSize] = useState("");
-  const [newViewType, setNewViewType] = useState("none");
-  const [newPricePerNight, setNewPricePerNight] = useState("");
-  const [newWeekendPrice, setNewWeekendPrice] = useState("");
-  const [newTaxRate, setNewTaxRate] = useState("");
-  const [newMinStayNights, setNewMinStayNights] = useState("");
-  const [newCancellationPolicy, setNewCancellationPolicy] = useState("");
-  const [newSpecialFeatures, setNewSpecialFeatures] = useState("");
-  const [newRoomImages, setNewRoomImages] = useState<File[]>([]);
-  const [newRoomImagePreviews, setNewRoomImagePreviews] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [newIsAccessible, setNewIsAccessible] = useState(false);
-  const [newHasBathtub, setNewHasBathtub] = useState(false);
-  const [newHasShower, setNewHasShower] = useState(false);
-  const [newHasBalcony, setNewHasBalcony] = useState(false);
-  const [newHasAC, setNewHasAC] = useState(true);
-  const [newHasHeating, setNewHasHeating] = useState(false);
-  const [newHasWifi, setNewHasWifi] = useState(true);
-  const [newIsActive, setNewIsActive] = useState(true);
-  const [newIsFeatured, setNewIsFeatured] = useState(false);
-  const [newRating, setNewRating] = useState("0");
-  const [newNumberOfReviews, setNewNumberOfReviews] = useState("0");
-  const [showCreateDrawer, setShowCreateDrawer] = useState(false);
+const SettingsPage = () => {
+  const auth    = useAuth();
+  const hotelId = auth?.hotelId || null;
 
-  const createRoomSubmit = async () => {
-    setCreateError("");
-    setCreateSuccess("");
-    if (!hotelId) {
-      setCreateError("No hotel id available");
-      return;
+  const [activeTab,   setActiveTab]   = useState<Tab>("property");
+  const [loading,     setLoading]     = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [fetchError,  setFetchError]  = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
+  const [saveError,   setSaveError]   = useState("");
+
+  const [form, setForm] = useState<HotelSettings>({
+    hotelName: "", ownerName: "", contact: "", location: "",
+    propertyType: "", pricePerNight: "", checkIn: "", checkOut: "",
+    description: "", facilities: [],
+  });
+
+  // Security
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword,      setNewPassword]      = useState("");
+  const [confirmPassword,  setConfirmPassword]  = useState("");
+  const [passwordError,    setPasswordError]    = useState("");
+  const [passwordSuccess,  setPasswordSuccess]  = useState("");
+  const [savingPassword,   setSavingPassword]   = useState(false);
+
+  const fetchHotel = useCallback(async () => {
+    if (!hotelId) { setFetchError("No hotel found in session."); return; }
+    setLoading(true);
+    try {
+      const res   = await getHotelById(hotelId);
+      const hotel = res?.data ?? res;
+      setForm({
+        _id:          hotel?._id,
+        hotelName:    hotel?.hotelName        || "",
+        ownerName:    hotel?.ownerName        || "",
+        contact:      hotel?.contactNumber    || "",
+        location:     hotel?.hotelLocation    || "",
+        propertyType: hotel?.propertyType     || "",
+        pricePerNight: hotel?.pricePerNight ? String(hotel.pricePerNight) : "",
+        checkIn:      hotel?.checkinTime      || "",
+        checkOut:     hotel?.checkoutTime     || "",
+        description:  hotel?.hotelDescription || "",
+        facilities:   Array.isArray(hotel?.facilities) ? hotel.facilities : [],
+      });
+    } catch {
+      setFetchError("Failed to load hotel details.");
+    } finally {
+      setLoading(false);
     }
-    if (!newRoomNumber) {
-      setCreateError("Room number is required");
-      return;
-    }
+  }, [hotelId]);
 
-    // validate required fields per Room.model.ts
-    if (!newRoomNumber || !newRoomType || !newSuiteType || !newDescription || !newMaxOccupancy || !newCapacity || !newBedType || !newBasePrice || !newPricePerNight || !newCancellationPolicy || !newAmenities) {
-      setCreateError("Please fill all required fields marked with *");
-      return;
-    }
-    if (!newRoomImages || newRoomImages.length === 0) {
-      setCreateError("Please upload at least one room image");
-      return;
-    }
+  useEffect(() => { fetchHotel(); }, [fetchHotel]);
 
-    setCreatingRoom(true);
+  const handleField = (field: keyof HotelSettings, value: string) => {
+    setSaveSuccess(""); setSaveError("");
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleFacility = (label: string) => {
+    setSaveSuccess(""); setSaveError("");
+    setForm((prev) => ({
+      ...prev,
+      facilities: prev.facilities.includes(label)
+        ? prev.facilities.filter((f) => f !== label)
+        : [...prev.facilities, label],
+    }));
+  };
+
+  const handleSaveProperty = async () => {
+    if (!hotelId) return;
+    setSaving(true); setSaveSuccess(""); setSaveError("");
     try {
       const token = auth?.user?.token;
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      // If user attached local File objects, send multipart/form-data (server will upload files)
-      if (newRoomImages && newRoomImages.length > 0) {
-        const fd = new FormData();
-        fd.append("hotelId", String(hotelId));
-        fd.append("roomNumber", newRoomNumber);
-        if (newRoomType) fd.append("roomType", newRoomType);
-        if (newSuiteType) fd.append("suitetype", newSuiteType);
-        if (newBasePrice) fd.append("basePrice", String(Number(newBasePrice) || 0));
-        if (newPricePerNight) fd.append("pricePerNight", String(Number(newPricePerNight) || 0));
-        if (newWeekendPrice) fd.append("weekendPrice", String(Number(newWeekendPrice) || 0));
-        if (newCapacity) fd.append("capacity", String(Number(newCapacity) || 1));
-        if (newMaxOccupancy) fd.append("maxOccupancy", String(Number(newMaxOccupancy) || 1));
-        if (newRoomSize) fd.append("roomSize", String(Number(newRoomSize) || 0));
-        if (newBedType) fd.append("bedType", newBedType);
-        if (newFloor) fd.append("floorNumber", String(Number(newFloor) || 0));
-        if (newViewType) fd.append("viewType", newViewType);
-        if (newDescription) fd.append("roomDescription", newDescription);
-        if (newCancellationPolicy) fd.append("cancellationPolicy", newCancellationPolicy);
-        if (newMinStayNights) fd.append("minStayNights", String(Number(newMinStayNights) || 1));
-        if (newTaxRate) fd.append("taxRate", String(Number(newTaxRate) || 0));
-        if (newSpecialFeatures) fd.append("specialFeatures", JSON.stringify(newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean)));
-        if (newAmenities) fd.append("amenities", JSON.stringify(newAmenities.split(",").map(s => s.trim()).filter(Boolean)));
-
-        // booleans
-        fd.append("isAccessible", String(newIsAccessible));
-        fd.append("hasBathtub", String(newHasBathtub));
-        fd.append("hasShower", String(newHasShower));
-        fd.append("hasBalcony", String(newHasBalcony));
-        fd.append("hasAC", String(newHasAC));
-        fd.append("hasHeating", String(newHasHeating));
-        fd.append("hasWifi", String(newHasWifi));
-        fd.append("isActive", String(newIsActive));
-        fd.append("isFeatured", String(newIsFeatured));
-        fd.append("rating", String(Number(newRating) || 0));
-        fd.append("numberOfReviews", String(Number(newNumberOfReviews) || 0));
-
-        // images (multiple files)
-        newRoomImages.forEach((file) => {
-          fd.append("roomImages", file);
-        });
-
-        // Debug: log FormData entries so we can compare with Postman
-        try {
-          for (const entry of fd.entries()) {
-            console.log("FormData entry:", entry[0], entry[1]);
-          }
-        } catch (logErr) {
-          console.warn("Failed to enumerate FormData entries:", logErr);
-        }
-
-        await hotelClient.post(`/room/${hotelId}`, fd, {
-          headers,
-          withCredentials: true,
-        });
-      } else {
-        // Build JSON payload aligned with backend createRoomSchema
-        const payload: any = {
-          hotelId,
-          roomNumber: String(newRoomNumber || ""),
-          roomType: String(newRoomType || ""),
-          suitetype: String(newSuiteType || ""),
-          roomDescription: String(newDescription || ""),
-
-          // numeric fields
-          maxOccupancy: Number(newMaxOccupancy) || Number(newCapacity) || 1,
-          capacity: Number(newCapacity) || 1,
-          roomSize: newRoomSize ? Number(newRoomSize) : undefined,
-          bedType: String(newBedType || ""),
-          floorNumber: Number(newFloor) || 0,
-          viewType: newViewType || "none",
-
-          // pricing
-          basePrice: Number(newBasePrice) || 0,
-          pricePerNight: Number(newPricePerNight) || Number(newBasePrice) || 0,
-          weekendPrice: newWeekendPrice ? Number(newWeekendPrice) : undefined,
-          taxRate: Number(newTaxRate) || 0,
-
-          // policies
-          minStayNights: Number(newMinStayNights) || 1,
-          cancellationPolicy: String(newCancellationPolicy || ""),
-
-          // arrays
-          amenities: newAmenities ? newAmenities.split(",").map(s => s.trim()).filter(Boolean) : [],
-          specialFeatures: newSpecialFeatures ? newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean) : [],
-
-          // images: prefer server-uploaded URLs; fallback to previews (note: preview blobs are not permanent URLs)
-          roomImages: (newRoomImagePreviews && newRoomImagePreviews.length > 0)
-            ? newRoomImagePreviews.filter(p => typeof p === 'string')
-            : [],
-
-          // booleans and flags
-          isAccessible: Boolean(newIsAccessible),
-          hasBathtub: Boolean(newHasBathtub),
-          hasShower: Boolean(newHasShower),
-          hasBalcony: Boolean(newHasBalcony),
-          hasAC: Boolean(newHasAC),
-          hasHeating: Boolean(newHasHeating),
-          hasWifi: Boolean(newHasWifi),
-
-          // status/rating defaults
-          isActive: Boolean(newIsActive),
-          isFeatured: Boolean(newIsFeatured),
-          rating: Number(newRating) || 0,
-          numberOfReviews: Number(newNumberOfReviews) || 0,
-        };
-
-        console.log("JSON payload:", payload);
-
-        await hotelClient.post(`/room/${hotelId}`, payload, {
-          headers,
-          withCredentials: true,
-        });
-      }
-      setCreateSuccess("Room created successfully");
-      setNewRoomNumber("");
-      setNewRoomType("");
-      setNewBasePrice("");
-      setNewCapacity("");
-      setNewAmenities("");
-      setNewDescription("");
-      setNewFloor("");
-
-      try {
-        const roomRes = await getRooms(hotelId);
-        const roomPayload = roomRes?.data ?? roomRes;
-        const roomList = Array.isArray(roomPayload?.rooms)
-          ? roomPayload.rooms
-          : Array.isArray(roomPayload)
-            ? roomPayload
-            : Array.isArray(roomPayload?.data)
-              ? roomPayload.data
-              : [];
-        setRooms(roomList);
-      } catch (e) {
-        // ignore refresh errors
-      }
+      await hotelClient.put(
+        `/hotel/${hotelId}`,
+        {
+          hotelName:       form.hotelName,
+          ownerName:       form.ownerName,
+          contactNumber:   form.contact,
+          hotelLocation:   form.location,
+          propertyType:    form.propertyType,
+          pricePerNight:   Number(form.pricePerNight) || 0,
+          checkinTime:     form.checkIn,
+          checkoutTime:    form.checkOut,
+          hotelDescription: form.description,
+          facilities:      form.facilities,
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
+      );
+      setSaveSuccess("Hotel details saved successfully.");
     } catch (err: any) {
-      console.error("Create room error:", err);
-      const resp = err?.response?.data;
-      if (resp) {
-        // Prefer validation array or data payload if present
-        if (Array.isArray(resp) && resp.length > 0) {
-          setCreateError(JSON.stringify(resp, null, 2));
-        } else if (resp?.data) {
-          setCreateError(typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data, null, 2));
-        } else if (resp?.errors) {
-          setCreateError(JSON.stringify(resp.errors, null, 2));
-        } else if (resp?.message || resp?.msg) {
-          setCreateError(String(resp.message || resp.msg));
-        } else {
-          setCreateError(JSON.stringify(resp, null, 2));
-        }
-      } else {
-        setCreateError(String(err));
-      }
+      const msg = err?.response?.data?.message || err?.response?.data?.msg;
+      setSaveError(msg || "Failed to save. Please try again.");
     } finally {
-      setCreatingRoom(false);
-      setShowCreateDrawer(false);
+      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    const fetchHotel = async () => {
-      if (!hotelId) {
-        setError("No hotel id found in auth context.");
-        return;
-      }
+  const handleChangePassword = async () => {
+    setPasswordError(""); setPasswordSuccess("");
+    if (!newPassword || !currentPassword) { setPasswordError("Please fill in all password fields."); return; }
+    if (newPassword !== confirmPassword)  { setPasswordError("New passwords do not match."); return; }
+    if (newPassword.length < 8)           { setPasswordError("Password must be at least 8 characters."); return; }
+    setSavingPassword(true);
+    try {
+      const token = auth?.user?.token;
+      await hotelClient.post(
+        "/auth/change-password",
+        { currentPassword, newPassword },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
+      );
+      setPasswordSuccess("Password updated successfully.");
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.msg;
+      setPasswordError(msg || "Failed to update password.");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
-      setLoading(true);
-      setError("");
+  /* ── LOADING / ERROR STATES (matches Finance) ── */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400 text-xs">
+        Loading settings...
+      </div>
+    );
+  }
 
-      try {
-        const res = await getHotelById(hotelId);
-        const hotel = res?.data ?? res;
-
-        try {
-          const roomRes = await getRooms(hotelId);
-          const roomPayload = roomRes?.data ?? roomRes;
-          const roomList = Array.isArray(roomPayload?.rooms)
-            ? roomPayload.rooms
-            : Array.isArray(roomPayload)
-              ? roomPayload
-              : Array.isArray(roomPayload?.data)
-                ? roomPayload.data
-                : [];
-
-          setRooms(roomList);
-        } catch (roomError) {
-          console.error("Failed to fetch hotel rooms:", roomError);
-          setRooms([]);
-        }
-
-        setSettings({
-          _id: hotel?._id,
-          hotelName: hotel?.hotelName || "Untitled hotel",
-          owner: hotel?.ownerName || "Unknown owner",
-          contact: hotel?.contactNumber || "Not provided",
-          location: hotel?.hotelLocation || "Not provided",
-          propertyType: hotel?.propertyType || "Not provided",
-          pricePerNight: hotel?.pricePerNight ? `Rs. ${hotel.pricePerNight}` : "Not provided",
-          checkIn: hotel?.checkinTime || "Not provided",
-          checkOut: hotel?.checkoutTime || "Not provided",
-          description: hotel?.hotelDescription || "No description available.",
-          facilities: Array.isArray(hotel?.facilities) ? hotel.facilities : [],
-          images: Array.isArray(hotel?.hotelImages) ? hotel.hotelImages : [],
-          documents: Array.isArray(hotel?.VerificationDocuments) ? hotel.VerificationDocuments : [],
-          rating: hotel?.rating,
-          numberOfReviews: hotel?.numberOfReviews,
-        });
-      } catch (fetchError) {
-        console.error("Failed to fetch hotel settings:", fetchError);
-        setError("Unable to load hotel details right now.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHotel();
-  }, [hotelId]);
-
-  const stats = useMemo(() => {
-    const rating = settings?.rating ?? 0;
-    const reviews = settings?.numberOfReviews ?? 0;
-    return {
-      rating: rating > 0 ? rating.toFixed(1) : "N/A",
-      reviews,
-      occupancy: reviews > 0 ? Math.min(100, 50 + Math.round(reviews / 2)) : 0,
-    };
-  }, [settings]);
+  if (fetchError) {
+    return (
+      <div className="m-6 bg-rose-50 border border-rose-200 text-rose-600 text-sm rounded-xl px-4 py-3">
+        {fetchError}
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* HEADER */}
-
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 shadow-sm">
-
+      {/* HEADER — matches Finance header pattern */}
+      <div className="flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-2">
-            <FaHotel />
-            Hotel Settings
-          </div>
-
-          <h1 className="text-3xl font-bold text-slate-900">
-            {settings?.hotelName || "Loading hotel..."}
-          </h1>
-
-          <p className="text-sm text-slate-500 mt-2">
-            View hotel information, facilities, pricing, and property details from the authenticated hotel record.
-          </p>
+          <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
+          <p className="text-xs text-slate-500">Manage your hotel profile and account security</p>
         </div>
-
-        <div className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
-          {hotelId ? `Hotel ID: ${hotelId}` : "No hotel id available"}
-        </div>
-
+        <button
+          onClick={fetchHotel}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Refresh
+        </button>
       </div>
 
-      {loading && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-slate-600">
-          Loading hotel details...
+      {/* SAVE / ERROR BANNER */}
+      {(saveSuccess || saveError) && (
+        <div className={`border text-sm rounded-xl px-4 py-3 flex items-center gap-2 ${
+          saveSuccess
+            ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+            : "bg-rose-50 border-rose-200 text-rose-600"
+        }`}>
+          {saveSuccess
+            ? <><FaCheck className="text-xs flex-shrink-0" /> {saveSuccess}</>
+            : <><FaExclamationTriangle className="text-xs flex-shrink-0" /> {saveError}</>
+          }
         </div>
       )}
 
-      {error && (
-        <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-sm text-red-600">
-          {error}
-        </div>
-      )}
-
-            
-
-      {/* STATS */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Average Rating
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.rating}
-          </div>
-
-          <div className="text-sm text-emerald-600 mt-1">
-            Live from hotel record
-          </div>
-
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Total Reviews
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.reviews}
-          </div>
-
-          <div className="text-sm text-slate-500 mt-1">
-            Guest feedback collected
-          </div>
-
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Occupancy Rate
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.occupancy}%
-          </div>
-
-          <div className="text-sm text-emerald-600 mt-1">
-            Derived from current review volume
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* MAIN GRID */}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        {/* LEFT */}
-
-        <div className="xl:col-span-2 space-y-6">
-
-          {/* BASIC INFO */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">
-              Basic Information
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-5">
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Hotel Name
-                </label>
-
-                <input
-                  value={settings?.hotelName || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Owner Name
-                </label>
-
-                <input
-                  value={settings?.owner || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Contact
-                </label>
-
-                <div className="relative mt-2">
-
-                  <FaPhoneAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
-
-                  <input
-                    value={settings?.contact || ""}
-                    readOnly
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                  />
-
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Property Type
-                </label>
-
-                <input
-                  value={settings?.propertyType || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-
-                <label className="text-xs font-medium text-slate-500">
-                  Location
-                </label>
-
-                <div className="relative mt-2">
-
-                  <FaMapMarkerAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
-
-                  <input
-                    value={settings?.location || ""}
-                    readOnly
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                  />
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Create room drawer (right side) */}
-          <div
-            aria-hidden={!showCreateDrawer}
-            className={`fixed inset-y-0 right-0 z-50 w-96 bg-white border-l border-slate-200 shadow-2xl transform transition-transform duration-350 ${showCreateDrawer ? 'translate-x-0' : 'translate-x-full'}`}
-            style={{ display: 'flex', flexDirection: 'column', maxHeight: '100vh' }}
+      {/* TAB BAR — same pill style as Finance filter buttons */}
+      <div className="bg-white border border-slate-200 rounded-xl p-1 flex gap-1 w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-1.5 text-xs rounded-lg transition font-medium ${
+              activeTab === tab.id
+                ? "bg-blue-600 text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="font-semibold text-lg">Quick Add Room</div>
-              <button onClick={() => setShowCreateDrawer(false)} className="text-sm text-slate-500">Close</button>
-            </div>
-            <div className="p-6 flex-1 flex flex-col relative">
-              <div className="space-y-4 text-base pb-36" style={{ WebkitOverflowScrolling: 'touch', height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
-                <div>
-                  <label className="text-sm font-medium">Room number <span className="text-rose-600">*</span></label>
-                  <input placeholder="101" value={newRoomNumber} onChange={(e) => setNewRoomNumber(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Room type <span className="text-rose-600">*</span></label>
-                  <input placeholder="deluxe" value={newRoomType} onChange={(e) => setNewRoomType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Suite type <span className="text-rose-600">*</span></label>
-                  <input placeholder="junior" value={newSuiteType} onChange={(e) => setNewSuiteType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Base price <span className="text-rose-600">*</span></label>
-                    <input placeholder="150" value={newBasePrice} onChange={(e) => setNewBasePrice(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Price per night <span className="text-rose-600">*</span></label>
-                    <input placeholder="150" value={newPricePerNight} onChange={(e) => setNewPricePerNight(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Capacity <span className="text-rose-600">*</span></label>
-                    <input placeholder="2" value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Max occupancy <span className="text-rose-600">*</span></label>
-                    <input placeholder="2" value={newMaxOccupancy} onChange={(e) => setNewMaxOccupancy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Bed type <span className="text-rose-600">*</span></label>
-                    <input placeholder="queen" value={newBedType} onChange={(e) => setNewBedType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Room size (sqm)</label>
-                    <input placeholder="20" value={newRoomSize} onChange={(e) => setNewRoomSize(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">View type <span className="text-rose-600">*</span></label>
-                  <select value={newViewType} onChange={(e) => setNewViewType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1 bg-white">
-                    <option value="none">none</option>
-                    <option value="city">city</option>
-                    <option value="garden">garden</option>
-                    <option value="beach">beach</option>
-                    <option value="mountain">mountain</option>
-                    <option value="street">street</option>
-                    <option value="pool">pool</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Amenities (comma separated) <span className="text-rose-600">*</span></label>
-                  <input placeholder="wifi,ac,tv" value={newAmenities} onChange={(e) => setNewAmenities(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Special features (comma separated)</label>
-                  <input placeholder="sea view,king bed" value={newSpecialFeatures} onChange={(e) => setNewSpecialFeatures(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Cancellation policy <span className="text-rose-600">*</span></label>
-                  <input placeholder="48 hours free cancellation" value={newCancellationPolicy} onChange={(e) => setNewCancellationPolicy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Tax rate <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newTaxRate} onChange={(e) => setNewTaxRate(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Min stay nights <span className="text-rose-600">*</span></label>
-                    <input placeholder="1" value={newMinStayNights} onChange={(e) => setNewMinStayNights(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Rating <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newRating} onChange={(e) => setNewRating(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Number of reviews <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newNumberOfReviews} onChange={(e) => setNewNumberOfReviews(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Description <span className="text-rose-600">*</span></label>
-                  <textarea placeholder="Spacious room with city view" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Images (at least 1) <span className="text-rose-600">*</span></label>
-                  <div className="mt-2 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm"
-                    >
-                      Choose images
-                    </button>
-                    <div className="text-sm text-slate-500">{newRoomImages.length} selected</div>
-                  </div>
-                  <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    // revoke previous urls
-                    newRoomImagePreviews.forEach(url => URL.revokeObjectURL(url));
-                    const previews = files.map(f => URL.createObjectURL(f));
-                    setNewRoomImages(files);
-                    setNewRoomImagePreviews(previews);
-                  }} className="hidden" />
-
-                  {newRoomImagePreviews.length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {newRoomImagePreviews.map((src, idx) => (
-                        <div key={src} className="relative">
-                          <img src={src} alt={`preview-${idx}`} className="h-20 w-full object-cover rounded-md border" />
-                          <button type="button" onClick={() => {
-                            // remove one
-                            const updatedFiles = newRoomImages.filter((_, i) => i !== idx);
-                            const updatedPreviews = newRoomImagePreviews.filter((_, i) => i !== idx);
-                            // revoke removed url
-                            URL.revokeObjectURL(src);
-                            setNewRoomImages(updatedFiles);
-                            setNewRoomImagePreviews(updatedPreviews);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }} className="absolute -top-1 -right-1 bg-white rounded-full p-1 text-xs border">✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="text-sm">Accessible</label>
-                  <input type="checkbox" checked={newIsAccessible} onChange={(e) => setNewIsAccessible(e.target.checked)} />
-
-                  <label className="text-sm">Bathtub</label>
-                  <input type="checkbox" checked={newHasBathtub} onChange={(e) => setNewHasBathtub(e.target.checked)} />
-
-                  <label className="text-sm">Shower</label>
-                  <input type="checkbox" checked={newHasShower} onChange={(e) => setNewHasShower(e.target.checked)} />
-
-                  <label className="text-sm">Balcony</label>
-                  <input type="checkbox" checked={newHasBalcony} onChange={(e) => setNewHasBalcony(e.target.checked)} />
-
-                  <label className="text-sm">AC</label>
-                  <input type="checkbox" checked={newHasAC} onChange={(e) => setNewHasAC(e.target.checked)} />
-
-                  <label className="text-sm">Heating</label>
-                  <input type="checkbox" checked={newHasHeating} onChange={(e) => setNewHasHeating(e.target.checked)} />
-
-                  <label className="text-sm">Wifi</label>
-                  <input type="checkbox" checked={newHasWifi} onChange={(e) => setNewHasWifi(e.target.checked)} />
-
-                  <label className="text-sm">Active</label>
-                  <input type="checkbox" checked={newIsActive} onChange={(e) => setNewIsActive(e.target.checked)} />
-
-                  <label className="text-sm">Featured</label>
-                  <input type="checkbox" checked={newIsFeatured} onChange={(e) => setNewIsFeatured(e.target.checked)} />
-                </div>
-
-                {createError && <div className="text-sm text-red-600">{createError}</div>}
-                {createSuccess && <div className="text-sm text-emerald-600">{createSuccess}</div>}
-              </div>
-            </div>
-            {/* footer with persistent actions (fixed inside drawer) */}
-            <div className="border-t p-4 bg-white flex items-center justify-end gap-2 h-20 absolute left-0 right-0 bottom-0" style={{ zIndex: 60 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setNewRoomNumber(''); setNewRoomType(''); setNewSuiteType(''); setNewBasePrice(''); setNewPricePerNight(''); setNewWeekendPrice(''); setNewTaxRate(''); setNewCapacity(''); setNewMaxOccupancy(''); setNewRoomSize(''); setNewBedType(''); setNewAmenities(''); setNewSpecialFeatures(''); setNewFloor(''); setNewMinStayNights(''); setNewDescription(''); setNewViewType('none'); setNewRoomImages([]); setNewIsAccessible(false); setNewHasBathtub(false); setNewHasShower(false); setNewHasBalcony(false); setNewHasHeating(false); setNewHasAC(true); setNewHasWifi(true); setNewIsActive(true); setNewIsFeatured(false); setNewRating('0'); setNewNumberOfReviews('0'); setCreateError(''); setCreateSuccess('');
-                }}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Reset
-              </button>
-
-              <button
-                type="button"
-                disabled={creatingRoom}
-                onClick={() => void createRoomSubmit()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 text-sm font-semibold shadow"
-              >
-                {creatingRoom ? 'Creating...' : 'Create Room'}
-              </button>
-            </div>
-          </div>
-
-          {showCreateDrawer && <div onClick={() => setShowCreateDrawer(false)} className="fixed inset-0 z-40 bg-black/30"></div>}
-
-          {/* DESCRIPTION */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Hotel Description
-            </h2>
-
-            <textarea
-              value={settings?.description || ""}
-              readOnly
-              rows={6}
-              className="w-full border border-slate-200 rounded-xl px-4 py-4 text-sm outline-none bg-slate-50 text-slate-700 cursor-default resize-none leading-7"
-            />
-
-          </div>
-
-          {/* IMAGES */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <div className="flex items-center gap-2 mb-5">
-
-              <FaImage className="text-blue-600" />
-
-              <h2 className="text-lg font-semibold text-slate-900">
-                Hotel Gallery
-              </h2>
-
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-              {(settings?.images || []).map((img, i) => (
-                <div
-                  key={i}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setPreviewImage(img)}
-                  onKeyDown={(event) => event.key === "Enter" && setPreviewImage(img)}
-                  className="overflow-hidden rounded-2xl border border-slate-200 cursor-pointer"
-                >
-
-                  <img
-                    src={img}
-                    alt={`Hotel image ${i + 1}`}
-                    className="h-52 w-full object-cover hover:scale-105 transition duration-300"
-                  />
-
-                </div>
-              ))}
-
-              {(settings?.images || []).length === 0 && (
-                <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                  No hotel images available.
-                </div>
-              )}
-
-            </div>
-
-            {previewImage && (
-              <div
-                className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-                onClick={() => setPreviewImage(null)}
-              >
-                <div
-                  className="max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-                    <span className="text-sm font-medium text-slate-700">Image preview</span>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewImage(null)}
-                      className="text-sm text-slate-500 hover:text-slate-900"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <img src={previewImage} alt="Hotel preview" className="w-full max-h-[80vh] object-contain bg-black" />
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* ROOMS */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Room Details
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                    Open a room to view or edit details in a separate page.
-                </p>
-              </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard/room-details")}
-                  className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
-                >
-                  Open all rooms
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateDrawer(true)}
-                  className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 hover:bg-rose-100 transition"
-                >
-                  Quick Add Room
-                </button>
-            </div>
-
-              <div className="flex flex-wrap gap-3">
-              {rooms.map((room, index) => (
-                <div
-                  key={room._id || room.roomNumber || index}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`);
-                      }
-                    }}
-                    className="min-w-[140px] flex-1 max-w-[180px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-blue-50 transition cursor-pointer"
-                >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">Room</div>
-                        <div className="text-2xl font-bold text-slate-900">{room.roomNumber || "N/A"}</div>
-                      </div>
-
-                      <span className="text-[10px] px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 uppercase">
-                        {room.status || "AVAILABLE"}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 text-xs text-slate-500 line-clamp-2">
-                      {room.roomType || room.suitetype || "Room details"}
-                    </div>
-                </div>
-              ))}
-
-              {rooms.length === 0 && !loading && (
-                  <div className="w-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50">
-                  No room details found for this hotel yet.
-                </div>
-              )}
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* RIGHT */}
-
-        <div className="space-y-6">
-
-          {/* PRICING */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Pricing & Timing
-            </h2>
-
-            <div className="space-y-5">
-
-              <div>
-
-                <div className="text-xs text-slate-500 mb-2">
-                  Price Per Night
-                </div>
-
-                <input
-                  value={settings?.pricePerNight || ""}
-                  readOnly
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <div>
-
-                  <div className="text-xs text-slate-500 mb-2">
-                    Check In
-                  </div>
-
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
-
-                    <FaClock className="text-slate-400" />
-
-                    {settings?.checkIn || "Not provided"}
-
-                  </div>
-
-                </div>
-
-                <div>
-
-                  <div className="text-xs text-slate-500 mb-2">
-                    Check Out
-                  </div>
-
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
-
-                    <FaClock className="text-slate-400" />
-
-                    {settings?.checkOut || "Not provided"}
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* FACILITIES */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Facilities
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              {(settings?.facilities || []).map((facility, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3"
-                >
-
-                  <div className="text-blue-600">
-                    {facilityIcons[facility] || <FaStar />}
-                  </div>
-
-                  <span className="text-sm font-medium text-slate-700">
-                    {facility}
-                  </span>
-
-                </div>
-              ))}
-
-
-                            {(settings?.facilities || []).length === 0 && (
-                              <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                                No facilities found.
-                              </div>
-                            )}
-            </div>
-
-          </div>
-
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-5">
-              <FaFileAlt className="text-blue-600" />
-              <h2 className="text-lg font-semibold text-slate-900">
-                Verification Documents
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(settings?.documents || []).map((doc, index) => (
-                <div
-                  key={index}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
-                >
-                  <img
-                    src={doc}
-                    alt={`Verification document ${index + 1}`}
-                    className="h-64 w-full object-contain bg-white"
-                  />
-                  <div className="px-4 py-3 text-xs text-slate-500 border-t border-slate-200">
-                    Verification document {index + 1}
-                  </div>
-                </div>
-              ))}
-
-              {(settings?.documents || []).length === 0 && (
-                <div className="text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center md:col-span-2">
-                  No verification documents available.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      {/* ── PROPERTY TAB ── */}
+      {activeTab === "property" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-5"
+        >
+          {/* Hotel Information */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <p className="text-sm font-medium text-slate-800">Hotel information</p>
+              <p className="text-xs text-slate-500 mt-0.5">Core details shown to guests across the platform</p>
+            </div>
+            <div className="p-6 grid md:grid-cols-2 gap-5">
+
+              <Field label="Hotel name" required>
+                <input
+                  value={form.hotelName}
+                  onChange={(e) => handleField("hotelName", e.target.value)}
+                  placeholder="Grand Himalaya Hotel"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Owner name" required>
+                <input
+                  value={form.ownerName}
+                  onChange={(e) => handleField("ownerName", e.target.value)}
+                  placeholder="Ramesh Shrestha"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Contact number" required>
+                <div className="relative">
+                  <FaPhoneAlt className="absolute top-1/2 -translate-y-1/2 left-3 text-slate-400 text-[10px] pointer-events-none" />
+                  <input
+                    value={form.contact}
+                    onChange={(e) => handleField("contact", e.target.value)}
+                    placeholder="+977 98XXXXXXXX"
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
+              </Field>
+
+              <Field label="Property type" required>
+                <select
+                  value={form.propertyType}
+                  onChange={(e) => handleField("propertyType", e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select type</option>
+                  {["Hotel","Resort","Boutique Hotel","Guesthouse","Hostel","Apartment","Villa"].map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Location" required className="md:col-span-2">
+                <div className="relative">
+                  <FaMapMarkerAlt className="absolute top-1/2 -translate-y-1/2 left-3 text-slate-400 text-[10px] pointer-events-none" />
+                  <input
+                    value={form.location}
+                    onChange={(e) => handleField("location", e.target.value)}
+                    placeholder="Thamel, Kathmandu"
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
+              </Field>
+
+              <Field label="Description" className="md:col-span-2">
+                <textarea
+                  value={form.description}
+                  onChange={(e) => handleField("description", e.target.value)}
+                  rows={3}
+                  placeholder="Describe your property for guests..."
+                  className={`${inputClass} resize-none leading-6`}
+                />
+              </Field>
+
+            </div>
+          </div>
+
+          {/* Pricing & Check-in */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <p className="text-sm font-medium text-slate-800">Pricing & check-in</p>
+              <p className="text-xs text-slate-500 mt-0.5">Set your base nightly rate and arrival times</p>
+            </div>
+            <div className="p-6 grid md:grid-cols-3 gap-5">
+
+              <Field label="Base price / night (Rs.)" required>
+                <input
+                  value={form.pricePerNight}
+                  onChange={(e) => handleField("pricePerNight", e.target.value)}
+                  type="number" min="0" placeholder="3500"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Check-in time" required>
+                <div className="relative">
+                  <FaClock className="absolute top-1/2 -translate-y-1/2 left-3 text-slate-400 text-[10px] pointer-events-none" />
+                  <input
+                    value={form.checkIn}
+                    onChange={(e) => handleField("checkIn", e.target.value)}
+                    placeholder="14:00"
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
+              </Field>
+
+              <Field label="Check-out time" required>
+                <div className="relative">
+                  <FaClock className="absolute top-1/2 -translate-y-1/2 left-3 text-slate-400 text-[10px] pointer-events-none" />
+                  <input
+                    value={form.checkOut}
+                    onChange={(e) => handleField("checkOut", e.target.value)}
+                    placeholder="11:00"
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
+              </Field>
+
+            </div>
+          </div>
+
+          {/* Facilities */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <p className="text-sm font-medium text-slate-800">Facilities</p>
+              <p className="text-xs text-slate-500 mt-0.5">Select amenities available at your property</p>
+            </div>
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {facilityOptions.map(({ label, icon }) => {
+                const active = form.facilities.includes(label);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleFacility(label)}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium transition ${
+                      active
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={active ? "text-blue-500" : "text-slate-400"}>{icon}</span>
+                    {label}
+                    {active && <FaCheck className="ml-auto text-blue-500 text-[10px]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Save bar */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSaveProperty}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── SECURITY TAB ── */}
+      {activeTab === "security" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-5"
+        >
+          {/* Change password */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+              <FaLock className="text-slate-400 text-xs" />
+              <div>
+                <p className="text-sm font-medium text-slate-800">Change password</p>
+                <p className="text-xs text-slate-500 mt-0.5">Use a strong password you don't use anywhere else</p>
+              </div>
+            </div>
+            <div className="p-6 max-w-md space-y-4">
+
+              <Field label="Current password">
+                <input
+                  type="password" value={currentPassword}
+                  onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(""); setPasswordSuccess(""); }}
+                  placeholder="••••••••" className={inputClass} autoComplete="current-password"
+                />
+              </Field>
+
+              <Field label="New password">
+                <input
+                  type="password" value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setPasswordError(""); setPasswordSuccess(""); }}
+                  placeholder="At least 8 characters" className={inputClass} autoComplete="new-password"
+                />
+              </Field>
+
+              <Field label="Confirm new password">
+                <input
+                  type="password" value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(""); setPasswordSuccess(""); }}
+                  placeholder="Repeat new password" className={inputClass} autoComplete="new-password"
+                />
+              </Field>
+
+              {passwordError && (
+                <p className="text-xs text-rose-500 flex items-center gap-2">
+                  <FaExclamationTriangle className="flex-shrink-0" /> {passwordError}
+                </p>
+              )}
+              {passwordSuccess && (
+                <p className="text-xs text-emerald-600 flex items-center gap-2">
+                  <FaCheck className="flex-shrink-0" /> {passwordSuccess}
+                </p>
+              )}
+
+              <button
+                type="button" disabled={savingPassword} onClick={handleChangePassword}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition"
+              >
+                {savingPassword ? "Updating…" : "Update password"}
+              </button>
+
+            </div>
+          </div>
+
+          {/* Danger zone */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <p className="text-sm font-medium text-slate-800">Danger zone</p>
+              <p className="text-xs text-slate-500 mt-0.5">Irreversible actions — proceed with caution</p>
+            </div>
+            <div className="p-6">
+              <div className="border border-rose-200 rounded-lg p-4 flex items-center justify-between gap-4 bg-rose-50">
+                <div>
+                  <p className="text-xs font-semibold text-rose-700 flex items-center gap-2">
+                    <FaTrash className="text-[10px]" /> Delete hotel account
+                  </p>
+                  <p className="text-xs text-rose-500 mt-1">
+                    Permanently removes your hotel, rooms, and bookings. This cannot be undone.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="flex-shrink-0 px-3 py-1.5 border border-rose-300 text-rose-600 text-xs font-medium rounded-lg hover:bg-rose-100 transition"
+                >
+                  Delete account
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </motion.div>
+      )}
 
     </div>
   );
 };
+
+/* ── Helpers ── */
+
+const inputClass =
+  "w-full border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 transition";
+
+function Field({
+  label, required, children, className = "",
+}: {
+  label: string; required?: boolean; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+        {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
 
 export default SettingsPage;

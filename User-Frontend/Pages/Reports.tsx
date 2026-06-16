@@ -145,8 +145,11 @@ const ReportsPage: React.FC = () => {
     filteredBookings
       .filter((b) => b.status === "PAID")
       .forEach((b) => {
-        const room  = rooms.find((r) => r.roomNumber === b.room);
-        const label = room ? normalizeRoomType(room.roomType) : "Other";
+        // b.room may be a type name ("STANDARD", "Deluxe Double") or a room number ("101")
+        // try matching by room number first, fall back to normalizing b.room directly
+        const roomFromList = rooms.find((r) => r.roomNumber === b.room);
+        const typeStr      = roomFromList?.roomType ?? b.room ?? "";
+        const label        = normalizeRoomType(typeStr);
         map[label] = (map[label] ?? 0) + parseAmount(b.amount);
       });
 
@@ -200,10 +203,16 @@ const ReportsPage: React.FC = () => {
 
   // ── top performing rooms ─────────────────────────────────────────────────
 
+  const isRoomNumber = (room: string) => {
+    // type names are words like "STANDARD", "Deluxe Double", "Family Safari View"
+    // room numbers are short alphanumeric like "101", "12A", "a-203", "1250"
+    return /^[a-zA-Z0-9\-]+$/.test(room) && room.length <= 6 && !/^[a-zA-Z\s]+$/.test(room);
+  };
+
   const topRooms = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredBookings
-      .filter((b) => b.status === "PAID")
+    bookings
+      .filter((b) => b.status === "PAID" && isRoomNumber(b.room))
       .forEach((b) => {
         map[b.room] = (map[b.room] ?? 0) + parseAmount(b.amount);
       });
@@ -218,7 +227,7 @@ const ReportsPage: React.FC = () => {
       ...r,
       progress: Math.round((r.revenue / max) * 100),
     }));
-  }, [filteredBookings]);
+  }, [bookings]);
 
   // ── booking distribution (pie) ───────────────────────────────────────────
 
