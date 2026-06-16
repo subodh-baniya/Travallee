@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGuestStatus, Booking, GuestStayStatus } from "../Hooks/useGuestStatus";
+import { useGuestStatus, type Booking,type  GuestStayStatus } from "../Hooks/useGuestStatus";
 
 
 type Filter = "ALL" | GuestStayStatus | "PAID" | "NOTPAID";
