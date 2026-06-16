@@ -310,7 +310,7 @@ const payment = await paymentService.createPayment({
   bookingId: booking._id,
   amount: booking.totalPrice,
   currency: 'Nepali',
-  paymentMethod: 'Esewa'
+  paymentMethod: 'Esewa, Khalti'
 });
 ```
 
@@ -395,5 +395,6 @@ docker-compose up booking
 4. Check integration endpoints for dependent services.
 
 ---
+
 
 **Booking and Reservation Management Service for the Travallee Hotel Management System**
