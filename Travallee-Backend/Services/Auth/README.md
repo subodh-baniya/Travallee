@@ -1,85 +1,84 @@
-# 🔐 Auth Service
+# Auth Service
 
-The **Authentication & Authorization Service** handles user registration, login, JWT token generation, OAuth integration, and role-based access control (RBAC). It's the gateway for all user authentication across the Travallee platform.
+The **Authentication and Authorization Service** handles user registration, login, JWT token generation, OAuth integration, and role-based access control (RBAC). It serves as the gateway for all user authentication across the Travallee platform.
 
-## 📋 Overview
+## Overview
 
 Auth Service is responsible for:
-- User registration (guests, hotel admins)
-- User login with email/password
-- JWT token generation and refresh
-- OAuth authentication (Google)
-- Email verification
-- Password reset & recovery
-- Role-based access control (RBAC)
-- User profile management
+
+* User registration (guests and hotel administrators)
+* User login with email and password
+* JWT token generation and refresh
+* OAuth authentication (Google)
+* Email verification
+* Password reset and recovery
+* Role-based access control (RBAC)
+* User profile management
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| **Framework** | Express.js 5.2 |
-| **Language** | TypeScript 5.9 |
-| **Database** | MongoDB + Mongoose |
-| **Caching** | Redis |
-| **Authentication** | JWT, bcrypt 6.0 |
-| **OAuth** | Passport.js (Google) |
-| **Validation** | Zod |
-| **Mail** | Resend API |
+| Component          | Technology           |
+| ------------------ | -------------------- |
+| **Framework**      | Express.js 5.2       |
+| **Language**       | TypeScript 5.9       |
+| **Database**       | MongoDB + Mongoose   |
+| **Caching**        | Redis                |
+| **Authentication** | JWT, bcrypt 6.0      |
+| **OAuth**          | Passport.js (Google) |
+| **Validation**     | Zod                  |
+| **Mail Service**   | Resend API           |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-```
+```text
 Auth/
 ├── src/
-│   ├── app.ts                  # Express app setup
-│   ├── index.ts                # Server entry point
-│   ├── Constants/              # Application constants
-│   ├── Controllers/            # Request handlers
-│   │   ├── auth.controller.ts  # Auth endpoints
-│   │   └── user.controller.ts  # User endpoints
-│   ├── Routes/                 # Route definitions
-│   │   └── auth.routes.ts      # Auth routes
-│   ├── Models/                 # Data models
-│   │   └── User.ts             # User schema
-│   ├── Services/               # Business logic
-│   │   ├── auth.service.ts     # Auth logic
-│   │   ├── user.service.ts     # User operations
-│   │   └── token.service.ts    # Token management
-│   ├── Middleware/             # Custom middleware
+│   ├── app.ts
+│   ├── index.ts
+│   ├── Constants/
+│   ├── Controllers/
+│   │   ├── auth.controller.ts
+│   │   └── user.controller.ts
+│   ├── Routes/
+│   │   └── auth.routes.ts
+│   ├── Models/
+│   │   └── User.ts
+│   ├── Services/
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   └── token.service.ts
+│   ├── Middleware/
 │   │   └── validate.middleware.ts
-│   └── Utils/                  # Helpers
-│       └── ...
+│   └── Utils/
 │
-├── .env.example                # Environment template
-├── package.json                # Dependencies
-├── tsconfig.json               # TypeScript config
-├── Dockerfile                  # Docker configuration
-└── README.md                   # This file
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- MongoDB
-- Redis
+
+* Node.js 18+
+* MongoDB
+* Redis
 
 ### Installation
 
 ```bash
 cd Travallee-Backend/Services/Auth
 
-# Install dependencies
 npm install
 
-# Create environment file
 cp .env.example .env
 ```
 
@@ -121,9 +120,13 @@ MOBILE_APP_URL=exp://localhost:8081
 npm run dev
 ```
 
-Server runs on: **http://localhost:3000**
+Server runs on:
 
-### Build & Run Production
+```text
+http://localhost:3000
+```
+
+### Production Build
 
 ```bash
 npm run build
@@ -132,247 +135,194 @@ npm start
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
-### Authentication
+### Authentication Endpoints
 
 #### Register User
-```
+
+```http
 POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "firstName": "John",
-  "lastName": "Doe",
-  "userType": "guest" // "guest" or "hotel_admin"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "_id": "...",
-      "email": "user@example.com",
-      "firstName": "John",
-      "role": "guest"
-    },
-    "token": "eyJhbGc...",
-    "refreshToken": "eyJhbGc..."
-  }
-}
 ```
 
 #### Login
-```
-POST /api/auth/login
-Content-Type: application/json
 
-{
-  "email": "user@example.com",
-  "password": "securePassword123"
-}
+```http
+POST /api/auth/login
 ```
 
 #### Refresh Token
-```
-POST /api/auth/refresh
-Content-Type: application/json
 
-{
-  "refreshToken": "eyJhbGc..."
-}
+```http
+POST /api/auth/refresh
 ```
 
 #### Google OAuth Login
-```
+
+```http
 GET /api/auth/google
 ```
 
 #### Logout
-```
+
+```http
 POST /api/auth/logout
-Authorization: Bearer <token>
 ```
 
 #### Verify Email
-```
-POST /api/auth/verify-email
-Content-Type: application/json
 
-{
-  "token": "verification_token"
-}
+```http
+POST /api/auth/verify-email
 ```
 
 #### Request Password Reset
-```
-POST /api/auth/forgot-password
-Content-Type: application/json
 
-{
-  "email": "user@example.com"
-}
+```http
+POST /api/auth/forgot-password
 ```
 
 #### Reset Password
-```
-POST /api/auth/reset-password
-Content-Type: application/json
 
-{
-  "token": "reset_token",
-  "newPassword": "newSecurePassword123"
-}
+```http
+POST /api/auth/reset-password
 ```
 
 ---
 
-### User Management
+### User Management Endpoints
 
 #### Get Current User
-```
+
+```http
 GET /api/auth/me
-Authorization: Bearer <token>
 ```
 
 #### Update User Profile
-```
-PATCH /api/auth/profile
-Authorization: Bearer <token>
-Content-Type: application/json
 
-{
-  "firstName": "Jane",
-  "lastName": "Smith",
-  "phone": "+1234567890"
-}
+```http
+PATCH /api/auth/profile
 ```
 
 #### Change Password
-```
-POST /api/auth/change-password
-Authorization: Bearer <token>
-Content-Type: application/json
 
-{
-  "currentPassword": "oldPassword",
-  "newPassword": "newPassword"
-}
+```http
+POST /api/auth/change-password
 ```
 
 ---
 
-## 📁 Controllers & Services
+## Controllers and Services
 
 ### Auth Controller
 
 **File:** `src/Controllers/auth.controller.ts`
 
-Handles all authentication requests:
-- `register()` - New user registration
-- `login()` - User login
-- `logout()` - User logout
-- `refreshToken()` - Refresh JWT
-- `googleAuth()` - Google OAuth
-- `verifyEmail()` - Email verification
-- `forgotPassword()` - Password reset request
-- `resetPassword()` - Password reset
+Handles authentication requests:
+
+* Register user
+* Login user
+* Logout user
+* Refresh JWT tokens
+* Google OAuth authentication
+* Email verification
+* Password reset requests
 
 ### User Controller
 
 **File:** `src/Controllers/user.controller.ts`
 
-Manages user profile operations:
-- `getCurrentUser()` - Get logged-in user
-- `updateProfile()` - Update user info
-- `changePassword()` - Change password
-- `deleteAccount()` - Delete account
+Handles user operations:
+
+* Retrieve current user
+* Update profile
+* Change password
+* Delete account
 
 ### Auth Service
 
 **File:** `src/Services/auth.service.ts`
 
-Business logic for authentication:
-- User registration validation
-- Email verification token generation
-- Password reset token generation
-- JWT token generation
-- Token validation
+Business logic for:
+
+* User registration
+* Authentication
+* Password management
+* Email verification
+* Token generation
 
 ### User Service
 
 **File:** `src/Services/user.service.ts`
 
-User management logic:
-- Create user
-- Find user by email/ID
-- Update user profile
-- Delete user
-- Verify email
-- Change password
+Responsible for:
+
+* User CRUD operations
+* Email verification
+* Password updates
+* Profile management
 
 ### Token Service
 
 **File:** `src/Services/token.service.ts`
 
-JWT token operations:
-- Generate access token
-- Generate refresh token
-- Verify token
-- Decode token
-- Refresh token rotation
+Handles:
+
+* Access token generation
+* Refresh token generation
+* Token validation
+* Token decoding
+* Refresh token rotation
 
 ---
 
-## 🔐 Authentication Flow
+## Authentication Flow
 
 ### Registration Flow
-```
+
+```text
 1. User submits registration form
-2. Validate email & password format
-3. Check if email already exists
-4. Hash password with bcrypt
-5. Create user in database
+2. Validate email and password
+3. Check existing account
+4. Hash password using bcrypt
+5. Create user record
 6. Send verification email
-7. Return JWT tokens
-8. Frontend stores tokens
+7. Generate JWT tokens
+8. Return response to frontend
 ```
 
 ### Login Flow
-```
-1. User submits email/password
-2. Find user by email
-3. Compare password with hash
+
+```text
+1. User submits credentials
+2. Verify email exists
+3. Compare password hash
 4. Generate JWT tokens
-5. Set refresh token in Redis
-6. Return tokens to frontend
-7. Frontend includes token in subsequent requests
+5. Store refresh token
+6. Return authentication response
+7. Frontend stores token
 ```
 
 ### Token Verification Flow
-```
+
+```text
 1. Extract token from Authorization header
-2. Verify token signature with JWT_SECRET
-3. Check if token expired
-4. Extract user info from token
-5. Attach user to request object
-6. Proceed to next middleware
+2. Verify JWT signature
+3. Validate expiration
+4. Extract user information
+5. Attach user to request
+6. Continue request processing
 ```
 
 ---
 
-## 🔄 JWT Token Structure
+## JWT Token Structure
 
 ### Access Token
+
 ```javascript
 {
   "iat": 1234567890,
-  "exp": 1234654290,  // 24 hours
+  "exp": 1234654290,
   "userId": "60d5ec49c1234567890abcde",
   "email": "user@example.com",
   "role": "guest",
@@ -381,10 +331,11 @@ JWT token operations:
 ```
 
 ### Refresh Token
+
 ```javascript
 {
   "iat": 1234567890,
-  "exp": 1237246290,  // 30 days
+  "exp": 1237246290,
   "userId": "60d5ec49c1234567890abcde",
   "type": "refresh"
 }
@@ -392,72 +343,62 @@ JWT token operations:
 
 ---
 
-## 📧 Email Templates
+## Email Templates
 
 ### Welcome Email
-Sent after user registration with verification link.
+
+Sent after successful registration.
 
 ### Email Verification
-Verification email with token link.
+
+Contains verification token and activation link.
 
 ### Password Reset
-Password reset email with reset link (valid for 1 hour).
 
-### Welcome After Verification
-Confirmation email after email verification.
+Contains password reset link valid for one hour.
 
----
+### Verification Confirmation
 
-## 🔒 Security Features
-
-- ✅ Password hashing with bcrypt (rounds: 12)
-- ✅ JWT token expiration
-- ✅ Refresh token rotation
-- ✅ Email verification required
-- ✅ Rate limiting on login attempts
-- ✅ Account lockout after failed attempts
-- ✅ HTTPS only in production
-- ✅ CORS protection
-- ✅ Input validation with Zod
-- ✅ SQL injection prevention (Mongoose)
+Sent after successful email verification.
 
 ---
 
-## 🧪 Testing
+## Security Features
+
+1. Password hashing with bcrypt (12 rounds)
+2. JWT token expiration and validation
+3. Refresh token rotation
+4. Email verification requirement
+5. Rate limiting on login attempts
+6. Account lockout protection
+7. HTTPS enforcement in production
+8. CORS protection
+9. Input validation using Zod
+10. Injection attack prevention through Mongoose
+
+---
+
+## Testing
 
 ### Unit Tests
+
 ```bash
 npm run test
 ```
 
 ### Integration Tests
+
 ```bash
 npm run test:integration
 ```
 
-### Example Test
-```typescript
-describe('Auth Service', () => {
-  it('should register a new user', async () => {
-    const user = await authService.register({
-      email: 'test@example.com',
-      password: 'Password123',
-      firstName: 'Test',
-      lastName: 'User'
-    });
-    expect(user.email).toBe('test@example.com');
-  });
-});
-```
-
 ---
 
-## 🐛 Error Handling
+## Error Handling
 
-Common error responses:
+Common API error responses:
 
 ```json
-// Invalid credentials
 {
   "success": false,
   "error": {
@@ -465,8 +406,9 @@ Common error responses:
     "message": "Email or password is incorrect"
   }
 }
+```
 
-// Email already exists
+```json
 {
   "success": false,
   "error": {
@@ -474,8 +416,9 @@ Common error responses:
     "message": "Email already registered"
   }
 }
+```
 
-// Token expired
+```json
 {
   "success": false,
   "error": {
@@ -487,20 +430,23 @@ Common error responses:
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker Build
+
 ```bash
 docker build -t travallee-auth:latest .
 docker run -p 3000:3000 --env-file .env travallee-auth:latest
 ```
 
 ### Docker Compose
+
 ```bash
 docker-compose up auth
 ```
 
-### Environment for Production
+### Production Environment
+
 ```env
 NODE_ENV=production
 JWT_SECRET=<generate-strong-secret>
@@ -510,31 +456,36 @@ REDIS_URL=<production-redis-url>
 
 ---
 
-## 📚 Related Documentation
+## Related Documentation
 
-- [Backend README](../README.md) - Backend overview
-- [Packages README](../../Packages/README.md) - Shared utilities
-- [Root README](../../../README.md) - Project overview
-
----
-
-## 🤝 Contributing
-
-1. Follow TypeScript best practices
-2. Add tests for new features
-3. Update API documentation
-4. Follow existing code patterns
-5. Commit: `git commit -am 'Add feature'`
+* Backend README
+* Packages README
+* Root README
 
 ---
 
-## 📞 Support
+## Contributing
 
-- Check API error responses
-- Review logs with `DEBUG=travallee:auth npm run dev`
-- Verify environment variables
-- Check MongoDB connection
+1. Follow TypeScript best practices.
+2. Add tests for new features.
+3. Update API documentation when endpoints change.
+4. Follow existing project conventions.
+5. Write meaningful commit messages.
 
 ---
 
-**Authentication Service of Travallee**
+## Support
+
+1. Review API error responses.
+2. Check service logs.
+3. Verify environment variables.
+4. Confirm MongoDB and Redis connectivity.
+5. Enable debugging when necessary.
+
+```bash
+DEBUG=travallee:auth npm run dev
+```
+
+---
+
+**Authentication Service for the Travallee Hotel Management System**
