@@ -1,69 +1,77 @@
-# 🏨 Hotel Service
+# Hotel Service
 
-The **Hotel & Room Management Service** handles hotel information, room inventory, pricing, amenities, availability, and hotel-related queries. It's the core service for hotel data management.
+The **Hotel Service** is responsible for managing hotel information, room inventory, pricing, amenities, availability, and hotel-related operations. It serves as the central service for hotel and room data management within the Travallee platform.
 
-## 📋 Overview
+## Overview
 
-Hotel Service manages:
-- Hotel information and details
-- Room inventory and types
-- Pricing and seasonal rates
-- Room amenities and features
-- Hotel search and filtering
-- Room availability
-- Floor/wing organization
-- Hotel photos and media
+The Hotel Service manages:
 
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| **Framework** | Express.js 5.2 |
-| **Language** | TypeScript 5.9 |
-| **Database** | MongoDB + Mongoose |
-| **Caching** | Redis |
-| **File Storage** | Cloudinary |
-| **Validation** | Zod |
+* Hotel information and details
+* Room inventory and room types
+* Pricing and seasonal rates
+* Room amenities and features
+* Hotel search and filtering
+* Room availability
+* Floor and wing organization
+* Hotel photos and media management
 
 ---
 
-## 📂 Project Structure
+## Technology Stack
 
-```
+| Component        | Technology         |
+| ---------------- | ------------------ |
+| **Framework**    | Express.js 5.2     |
+| **Language**     | TypeScript 5.9     |
+| **Database**     | MongoDB + Mongoose |
+| **Caching**      | Redis              |
+| **File Storage** | Cloudinary         |
+| **Validation**   | Zod                |
+
+---
+
+## Project Structure
+
+```text
 Hotel/
 ├── src/
-│   ├── app.ts                      # Express app setup
+│   ├── app.ts                      # Express application setup
 │   ├── index.ts                    # Server entry point
-│   ├── Controllers/                # Request handlers
+│   ├── Controllers/
 │   │   ├── hotel.controller.ts     # Hotel endpoints
 │   │   └── room.controller.ts      # Room endpoints
-│   ├── Routes/                     # Route definitions
+│   ├── Routes/
 │   │   ├── hotel.routes.ts         # Hotel routes
 │   │   └── room.routes.ts          # Room routes
-│   ├── Models/                     # Data models
+│   ├── Models/
 │   │   ├── Hotel.ts                # Hotel schema
 │   │   └── Room.ts                 # Room schema
-│   ├── Services/                   # Business logic
+│   ├── Services/
 │   │   ├── hotel.service.ts        # Hotel operations
 │   │   └── room.service.ts         # Room operations
-│   ├── Schemas/                    # Validation schemas
+│   ├── Schemas/
 │   │   ├── hotel.schema.ts         # Hotel validation
 │   │   └── room.schema.ts          # Room validation
-│   └── Utils/                      # Helper functions
+│   └── Utils/
 │       └── ...
 │
-├── .env.example                    # Environment template
-├── package.json                    # Dependencies
-├── tsconfig.json                   # TypeScript config
+├── .env.example                    # Environment variables template
+├── package.json                    # Project dependencies
+├── tsconfig.json                   # TypeScript configuration
 ├── Dockerfile                      # Docker configuration
-└── README.md                       # This file
+└── README.md                       # Documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
+
+### Prerequisites
+
+* Node.js 18 or later
+* MongoDB
+* Redis
+* Cloudinary account
 
 ### Installation
 
@@ -88,49 +96,62 @@ JWT_SECRET=your_secret_key
 CLOUDINARY_URL=cloudinary://key:secret@cloud
 ```
 
-### Start Development
+### Start Development Server
 
 ```bash
 npm run dev
 ```
 
-Runs on: **http://localhost:3001**
+The service runs on:
+
+```text
+http://localhost:3001
+```
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
-### Hotels
+### Hotel Endpoints
 
 #### Get All Hotels
-```
+
+```http
 GET /api/hotels
-Query Parameters:
-  - page: number (default: 1)
-  - limit: number (default: 10)
-  - search: string
-  - location: string
-  - minRating: number
-  - maxPrice: number
 ```
 
+Query Parameters:
+
+| Parameter | Type   | Description        |
+| --------- | ------ | ------------------ |
+| page      | number | Page number        |
+| limit     | number | Results per page   |
+| search    | string | Search keyword     |
+| location  | string | Hotel location     |
+| minRating | number | Minimum rating     |
+| maxPrice  | number | Maximum room price |
+
 #### Get Hotel by ID
-```
+
+```http
 GET /api/hotels/:id
 ```
 
 #### Create Hotel
-```
+
+```http
 POST /api/hotels
 Authorization: Bearer <token>
 Content-Type: application/json
+```
 
+```json
 {
   "name": "Grand Hotel",
   "email": "contact@grandhotel.com",
   "phone": "+1234567890",
   "location": "New York, NY",
-  "description": "Luxury 5-star hotel...",
+  "description": "Luxury 5-star hotel",
   "amenities": ["wifi", "gym", "pool"],
   "checkInTime": "15:00",
   "checkOutTime": "11:00"
@@ -138,52 +159,68 @@ Content-Type: application/json
 ```
 
 #### Update Hotel
-```
+
+```http
 PATCH /api/hotels/:id
 Authorization: Bearer <token>
 ```
 
 #### Delete Hotel
-```
+
+```http
 DELETE /api/hotels/:id
 Authorization: Bearer <token>
 ```
 
 #### Search Hotels
-```
+
+```http
 GET /api/hotels/search
-Query Parameters:
-  - location: string
-  - checkIn: date
-  - checkOut: date
-  - guests: number
 ```
+
+Query Parameters:
+
+| Parameter | Type   |
+| --------- | ------ |
+| location  | string |
+| checkIn   | date   |
+| checkOut  | date   |
+| guests    | number |
 
 ---
 
-### Rooms
+### Room Endpoints
 
 #### Get All Rooms
-```
+
+```http
 GET /api/rooms
-Query Parameters:
-  - hotelId: string
-  - type: string
-  - page: number
-  - limit: number
 ```
 
+Query Parameters:
+
+| Parameter | Type   |
+| --------- | ------ |
+| hotelId   | string |
+| type      | string |
+| page      | number |
+| limit     | number |
+
 #### Get Room by ID
-```
+
+```http
 GET /api/rooms/:id
 ```
 
 #### Create Room
-```
+
+```http
 POST /api/hotels/:hotelId/rooms
 Authorization: Bearer <token>
 Content-Type: application/json
+```
 
+```json
 {
   "roomNumber": "101",
   "type": "deluxe",
@@ -196,37 +233,43 @@ Content-Type: application/json
 ```
 
 #### Update Room
-```
+
+```http
 PATCH /api/rooms/:id
 Authorization: Bearer <token>
 ```
 
 #### Delete Room
-```
+
+```http
 DELETE /api/rooms/:id
 Authorization: Bearer <token>
 ```
 
 #### Check Availability
-```
+
+```http
 GET /api/rooms/:id/availability
-Query Parameters:
-  - checkIn: date
-  - checkOut: date
 ```
 
+Query Parameters:
+
+| Parameter | Type |
+| --------- | ---- |
+| checkIn   | date |
+| checkOut  | date |
+
 #### Upload Room Photos
-```
+
+```http
 POST /api/rooms/:id/photos
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
-
-[File upload]
 ```
 
 ---
 
-## 📁 Data Models
+## Data Models
 
 ### Hotel Model
 
@@ -240,11 +283,11 @@ interface IHotel {
   description: string;
   amenities: string[];
   photos: string[];
-  checkInTime: string;     // "15:00"
-  checkOutTime: string;    // "11:00"
-  rating: number;          // 0-5
+  checkInTime: string;
+  checkOutTime: string;
+  rating: number;
   totalReviews: number;
-  owner: ObjectId;         // Reference to User
+  owner: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -255,7 +298,7 @@ interface IHotel {
 ```typescript
 interface IRoom {
   _id: ObjectId;
-  hotelId: ObjectId;       // Reference to Hotel
+  hotelId: ObjectId;
   roomNumber: string;
   type: 'single' | 'double' | 'suite' | 'deluxe';
   basePrice: number;
@@ -272,15 +315,17 @@ interface IRoom {
 
 ---
 
-## 🔍 Search & Filtering
+## Search and Filtering
 
-### Hotel Search
+### Hotel Search Example
 
-```typescript
-// Search hotels by location and rating
+```http
 GET /api/hotels?location=New York&minRating=4
+```
 
 Response:
+
+```json
 {
   "success": true,
   "data": [
@@ -294,13 +339,15 @@ Response:
 }
 ```
 
-### Room Availability
+### Room Availability Example
 
-```typescript
-// Check room availability
+```http
 GET /api/rooms/:id/availability?checkIn=2024-05-20&checkOut=2024-05-25
+```
 
 Response:
+
+```json
 {
   "success": true,
   "data": {
@@ -313,101 +360,118 @@ Response:
 
 ---
 
-## 💾 Caching Strategy
+## Caching Strategy
 
-Uses Redis for performance:
+Redis is used to improve performance and reduce database load.
 
-- **Hotel Cache** - Cached for 24 hours
-  ```
-  Key: hotel:{id}
-  Value: Hotel document
-  TTL: 86400 seconds
-  ```
+### Hotel Cache
 
-- **Room Cache** - Cached for 12 hours
-  ```
-  Key: room:{id}
-  Value: Room document
-  TTL: 43200 seconds
-  ```
+```text
+Key: hotel:{id}
+Value: Hotel document
+TTL: 86400 seconds (24 hours)
+```
 
-- **Availability Cache** - Cached for 1 hour
-  ```
-  Key: availability:{roomId}:{checkIn}:{checkOut}
-  TTL: 3600 seconds
-  ```
+### Room Cache
+
+```text
+Key: room:{id}
+Value: Room document
+TTL: 43200 seconds (12 hours)
+```
+
+### Availability Cache
+
+```text
+Key: availability:{roomId}:{checkIn}:{checkOut}
+TTL: 3600 seconds (1 hour)
+```
 
 ### Cache Invalidation
 
-Cache invalidated when:
-- Hotel updated
-- Room updated
-- New booking created
-- Booking cancelled
+Cache is automatically cleared when:
+
+1. A hotel is updated.
+2. A room is updated.
+3. A new booking is created.
+4. A booking is cancelled.
 
 ---
 
-## 📸 Photo Management
+## Photo Management
 
 ### Upload Photos
 
-```typescript
+```http
 POST /api/rooms/:id/photos
 Authorization: Bearer <token>
-
-// Uses Cloudinary for image storage
-// Auto-generates thumbnails and optimized versions
 ```
 
-### Photo URLs
+Features:
 
-- Original: `https://res.cloudinary.com/...`
-- Thumbnail: `https://res.cloudinary.com/.../c_thumb,...`
-- Optimized: `https://res.cloudinary.com/.../w_600,...`
+* Cloudinary image storage
+* Automatic image optimization
+* Thumbnail generation
+* CDN delivery
+
+### Generated Image Variants
+
+| Type      | Description           |
+| --------- | --------------------- |
+| Original  | Full-resolution image |
+| Thumbnail | Small preview image   |
+| Optimized | Web-optimized version |
 
 ---
 
-## 📊 Controllers
+## Controllers
 
 ### Hotel Controller
 
 **File:** `src/Controllers/hotel.controller.ts`
 
-Endpoints:
-- `getAllHotels()` - List hotels with pagination
-- `getHotelById()` - Get single hotel details
-- `createHotel()` - Create new hotel
-- `updateHotel()` - Update hotel info
-- `deleteHotel()` - Delete hotel
-- `searchHotels()` - Search by criteria
+Responsibilities:
+
+* Retrieve hotels with pagination
+* Retrieve hotel details
+* Create hotels
+* Update hotel information
+* Delete hotels
+* Search hotels
 
 ### Room Controller
 
 **File:** `src/Controllers/room.controller.ts`
 
-Endpoints:
-- `getAllRooms()` - List rooms by hotel
-- `getRoomById()` - Get room details
-- `createRoom()` - Add room to hotel
-- `updateRoom()` - Update room info
-- `deleteRoom()` - Delete room
-- `checkAvailability()` - Check room availability
-- `uploadPhotos()` - Upload room photos
+Responsibilities:
+
+* Retrieve rooms
+* Retrieve room details
+* Create rooms
+* Update room information
+* Delete rooms
+* Check room availability
+* Upload room photos
 
 ---
 
-## 🔒 Security
+## Security
 
-- ✅ Only hotel admins can manage their hotels
-- ✅ Role-based access control
-- ✅ Input validation with Zod
-- ✅ Rate limiting
-- ✅ CORS protection
-- ✅ HTTPS only in production
+The service includes:
+
+1. Role-based access control (RBAC)
+2. Hotel owner authorization
+3. Input validation using Zod
+4. Rate limiting
+5. CORS protection
+6. HTTPS enforcement in production
+7. Secure JWT authentication
 
 ---
 
-## 🧪 Testing
+## Testing
+
+Run tests using:
 
 ```bash
 npm test
@@ -415,21 +479,50 @@ npm test
 
 ---
 
-## 🚀 Deployment
+## Deployment
+
+### Docker Build
 
 ```bash
 docker build -t travallee-hotel:latest .
+```
+
+### Docker Run
+
+```bash
 docker run -p 3001:3001 --env-file .env travallee-hotel:latest
 ```
 
 ---
 
-## 📚 Related Services
+## Related Services
 
-- **Auth Service** - Hotel owner authentication
-- **Booking Service** - Check room availability
-- **Admin Service** - Hotel analytics
+* Auth Service — Hotel owner authentication and authorization
+* Booking Service — Room reservations and availability
+* Admin Service — Analytics and management operations
 
 ---
 
-**Hotel Management Service of Travallee**
+## Contributing
+
+1. Follow TypeScript best practices.
+2. Add validation for new endpoints.
+3. Include tests for new features.
+4. Update documentation when APIs change.
+5. Follow established project architecture.
+
+---
+
+## Support
+
+For troubleshooting:
+
+1. Verify MongoDB connectivity.
+2. Verify Redis connectivity.
+3. Check Cloudinary configuration.
+4. Review application logs.
+5. Confirm environment variables are correctly configured.
+
+---
+
+**Hotel Management Service for the Travallee Hotel Management System**
