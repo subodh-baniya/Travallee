@@ -357,9 +357,9 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                             onChange={e => update("roomType", e.target.value as RoomType)}
                             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
                           >
-                            <option value="standard">Standard</option>
-                            <option value="deluxe">Deluxe</option>
-                            <option value="suite">Suite</option>
+                            <option value="STANDARD">Standard</option>
+                            <option value="DELUXE">Deluxe</option>
+                            <option value="SUITE">Suite</option>
                           </select>
                         </div>
                         <div>
