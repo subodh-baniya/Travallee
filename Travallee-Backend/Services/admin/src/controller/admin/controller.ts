@@ -133,6 +133,7 @@ const calculateIncome = asyncHandler(async (req: any, res: any) => {
   if (!hotelId) {
     return apiError(res, 400, "Hotel ID is required");
   }
+  
 });
 
 const getTransactionHistoryOfHotel = asyncHandler(
