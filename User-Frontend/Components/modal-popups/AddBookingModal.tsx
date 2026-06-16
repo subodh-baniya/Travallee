@@ -203,14 +203,14 @@ export default function CreateBookingModal({
         roomId,
         hotelId,
         hotelName,
-        roomNumber:   selectedRoom!.roomNumber,
-        checkIn:      new Date(checkIn).toISOString(),
-        checkOut:     new Date(checkOut).toISOString(),
+        roomNumber: selectedRoom!.roomNumber,
+        checkIn:new Date(checkIn).toISOString(),
+        checkOut:new Date(checkOut).toISOString(),
         guests,
         totalPrice,
         paymentMethod,
-        Name:         guestName,
-        email:        guestEmail,
+        Name:guestName,
+        email:guestEmail,
       });
       showToast("success", "Booking confirmed successfully!");
       onSuccess?.();

@@ -45,3 +45,7 @@ export const getHotelDashboard = () => {
 export const getBookingHistory = (hotelId: string) => {
     return hotelClient.get(`/booking-history/${hotelId}`)
 }
+
+export const getHotelRatings = (hotelId: string) => {
+    return hotelClient.get(`/ratings/${hotelId}`)
+}
