@@ -1060,6 +1060,11 @@ const approveRegistration = asyncHandler(async (req: any, res: any) => {
     await hoteldataCache.del("all_hotels");
     await hoteldataCache.del("all_resort_hotels");
 
+    pub.publish("newHotelApproved", JSON.stringify({
+      userID,
+      hotelId: newHotel._id,
+    }));
+
     return apiResponse(res, 200, true, "Hotel registration approved and created successfully", newHotel);
   } catch (error: any) {
     console.error("Error approving hotel registration:", error);

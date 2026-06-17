@@ -6,7 +6,7 @@ Travellee is a distributed hotel management system with three main layers:
 ```
 ┌─────────────────────────────────────────────────────┐
 │         Frontend Layer                              │
-│  ┌──────────────────┐      ┌──────────────────┐    │f
+│  ┌──────────────────┐      ┌──────────────────┐    │
 │  │  Admin Dashboard │      │  Mobile App      │    │
 │  │  (React)         │      │  (React Native)  │    │
 │  └──────────────────┘      └──────────────────┘    │
