@@ -38,6 +38,8 @@ router.get("/high-reviewed", authenticate, highReviewedHotels);
 router.get("/hotels", authenticate, getAllHotels);
 
 router.get("/resorts", authenticate, getAllResortHotels);
+router.post("/approve-registration", approveRegistration);
+router.post("/decline-registration", declineRegistration);
 
 router.get("/location/:location", getHotelByLocation);
 
@@ -60,7 +62,5 @@ router.get("/:hotelId", authenticate, HotelData);
 
 router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials);
 
-router.post("/approve-registration", approveRegistration);
-router.post("/decline-registration", declineRegistration);
 
 export default router;

@@ -10,6 +10,7 @@ import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 import { createClient } from "redis";
+import mongoose from "mongoose";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -19,27 +20,35 @@ const connection = {
 const sub = createClient({
   url: `redis://${connection.host}:${connection.port}`,
 });
-Promise.all([sub.connect()] )
+Promise.all([sub.connect()])
   .then(() => {
     console.log("Connected to Redis successfully");
   })
   .catch((err) => {
-    console.error("Error connecting to Redis:", err);   
+    console.error("Error connecting to Redis:", err);
   });
 
 sub.subscribe("newHotelApproved", async (message) => {
   try {
+    console.log("Received message on newHotelApproved channel:", message);
     const data = JSON.parse(message);
-    await UserModel.updateOne(
+    const result = await UserModel.updateOne(
       { _id: data.userID },
-      { role: "hotelAdmin" },
+      {
+        $set: {
+          hotelId: new mongoose.Types.ObjectId(data.hotelId),
+          role: "hotelAdmin",
+        },
+      }
     );
-  }
-  catch (err: any) {
+    console.log("Updated user with new hotel ID and role:", result);
+
+
+    await UserProfileRedis.del(`user:${data.userID}`);
+  } catch (err: any) {
     console.error("Error processing new hotel approval message:", err);
   }
 });
-
 
 // @ts-ignore
 const registerRedis = new Redis(connection);
