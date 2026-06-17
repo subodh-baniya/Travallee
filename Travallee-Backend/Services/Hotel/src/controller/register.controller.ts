@@ -212,6 +212,7 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     await registerHotelQueue.add("HotelRegistration", emailData);
     console.log("Published hotel registration data to queue for userID:", userID, "with data:", emailData);
     console.log( "lolde", parsedData.data);
+    await registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(parsedData.data), "EX", 60 * 60 * 24 * 1); // Cache for 1 day
     pub.publish("hotelRegistrationsData", JSON.stringify(parsedData.data));
     console.log("Published hotel registration data to Redis channel for userID:", userID);
 
@@ -1051,14 +1052,24 @@ const approveRegistration = asyncHandler(async (req: any, res: any) => {
 
     const newHotel = new hotelModel(hotelData);
     await newHotel.save();
+    console.log("New hotel created with ID:", newHotel._id);
 
     await registerHotel.del(`hotel_registration_${userID}`);
+    console.log("Deleted hotel registration for userID:", userID);  
+
+   
 
     // Clear list caches
     await hoteldataCache.del("featured_hotels");
     await hoteldataCache.del("high_reviewed_hotels");
     await hoteldataCache.del("all_hotels");
     await hoteldataCache.del("all_resort_hotels");
+
+    pub.publish("newHotelApproved", JSON.stringify({
+      userID,
+      hotelId: newHotel._id,
+    }));
+    console.log("Published new hotel approval to Redis channel for userID:", userID, "hotelId:", newHotel._id);
 
     return apiResponse(res, 200, true, "Hotel registration approved and created successfully", newHotel);
   } catch (error: any) {
