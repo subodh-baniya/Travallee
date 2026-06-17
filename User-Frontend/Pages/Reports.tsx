@@ -15,24 +15,20 @@ import {
 import { motion } from "framer-motion";
 import { FaChartLine, FaHotel, FaUsers, FaStar } from "react-icons/fa";
 
-// ── hooks ──────────────────────────────────────────────────────────────────
 import { useBookings,type Booking } from "../Hooks/useBooking";
 import { useGuestStatus } from "../Hooks/useGuestStatus";
 import { useRooms } from "../Hooks/useRooms";
 import { useAuth } from "../Contexts/Authcontext";
 import { getTotalIncome, getPendingIncome } from "../Services/booking.api";
 
-// ── income state shape ───────────────────────────────────────────────────────
 interface IncomeData {
   totalIncome: number;
   pendingIncome: number;
 }
 
-// ── helpers ─────────────────────────────────────────────────────────────────
 
 type Period = "This Week" | "This Month" | "This Year";
 
-/** Returns the UTC epoch start of the period window */
 function periodStart(period: Period): number {
   const now = new Date();
   if (period === "This Week") {
@@ -44,17 +40,14 @@ function periodStart(period: Period): number {
   if (period === "This Month") {
     return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   }
-  // This Year
   return new Date(now.getFullYear(), 0, 1).getTime();
 }
 
-/** Parse "Rs. 42000" → 42000 */
 const parseAmount = (str: string): number => {
-  const n = parseFloat(str.replace(/[^0-9.]/g, ""));
+  const n = parseFloat(str.replace(/^[^\d]+/, ""));
   return isNaN(n) ? 0 : n;
 };
 
-/** "Jan 05" back to a comparable date (assumes current year) */
 const parseDisplayDate = (str: string): Date => {
   if (!str || str === "-") return new Date(0);
   const d = new Date(`${str} ${new Date().getFullYear()}`);
@@ -67,7 +60,6 @@ const MONTH_LABELS = [
   "Jul","Aug","Sep","Oct","Nov","Dec",
 ];
 
-// ── component ────────────────────────────────────────────────────────────────
 
 const ReportsPage: React.FC = () => {
   const [period, setPeriod] = useState<Period>("This Month");
@@ -79,7 +71,6 @@ const ReportsPage: React.FC = () => {
   const { loading: gLoading }  = useGuestStatus();
   const { rooms,            loading: rLoading }  = useRooms();
 
-  // ── income from API ──────────────────────────────────────────────────────
   const [income, setIncome]           = useState<IncomeData>({ totalIncome: 0, pendingIncome: 0 });
   const [incomeLoading, setIncomeLoading] = useState(false);
 
@@ -99,7 +90,6 @@ const ReportsPage: React.FC = () => {
 
   const loading = bLoading || gLoading || rLoading || incomeLoading;
 
-  // ── filter bookings by period ────────────────────────────────────────────
   const start = periodStart(period);
 
   const filteredBookings: Booking[] = useMemo(() => {
@@ -109,7 +99,6 @@ const ReportsPage: React.FC = () => {
     });
   }, [bookings, start]);
 
-  // ── stat cards ───────────────────────────────────────────────────────────
 
   const totalRevenue  = income.totalIncome;
   const pendingIncome = income.pendingIncome;
@@ -130,7 +119,6 @@ const ReportsPage: React.FC = () => {
     return (sum / rated.length).toFixed(1);
   }, [rooms]);
 
-  // ── revenue by room type ─────────────────────────────────────────────────
 
   const normalizeRoomType = (type: string): string => {
     const t = type.toUpperCase();
