@@ -189,7 +189,7 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
   const [newBookingIds, setNewBookingIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hotelName,setName]=useState<string|null>(null);
+  const [hotelName, setName] = useState<string | null>(null);
 
 
   const fetchBookings = useCallback(async () => {
@@ -205,7 +205,7 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
         response.data?.bookingHistory ||
         [];
 
-        console.log(response)
+      console.log(response.data?.data?.bookingHistory)
 
       if (!Array.isArray(history)) {
         setBookings([]);
@@ -284,5 +284,5 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
     };
   }, [hotelId]);
 
-  return { bookings,hotelName,newBookingIds, loading, error, refetch: fetchBookings };
+  return { bookings, hotelName, newBookingIds, loading, error, refetch: fetchBookings };
 };
