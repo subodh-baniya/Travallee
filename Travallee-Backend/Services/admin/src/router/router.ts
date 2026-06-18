@@ -9,8 +9,6 @@ router.get("/guest-status/:bookingId", getGuestStatus);
 router.get('/transaction-history/:hotelId', getTransactionHistoryOfHotel);
 // Hotel registration routes
 
-router.post("/hotel-registrations/:userID/approve", approveRegistration);
-router.post("/hotel-registrations/:userID/decline", declineRegistration);
 router.get("/hotel-registrations", getNewRegistration);
 router.post("/hotel-registrations/:userID/approve", approveRegistration);
 router.post("/hotel-registrations/:userID/decline", declineRegistration);
