@@ -20,12 +20,15 @@ import {
   FaLock,
   FaEye,
   FaEyeSlash,
-  FaCheckCircle,
-  FaExclamationCircle,
 } from "react-icons/fa";
 import { getHotelById } from "../Services/hotel.api";
 import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
+import { Toast} from "../Components/modal-popups/Toast";
+import { ImagePreviewModal } from "../Components/modal-popups/ImagePreviewModal";
+import { useToast } from "../Hooks/useToast";
+
+// ─── Types ────────────────────────────────────────────────────
 
 interface HotelSettings {
   _id?: string;
@@ -41,6 +44,8 @@ interface HotelSettings {
   images: string[];
   documents: string[];
 }
+
+// ─── Constants ────────────────────────────────────────────────
 
 const PROPERTY_TYPES = [
   "Hotel",
@@ -73,15 +78,13 @@ const emptyHotel: HotelSettings = {
   documents: [],
 };
 
-/* ─── Reusable small components ──────────────────────────────── */
+// ─── Shared UI ────────────────────────────────────────────────
 
 const SectionCard: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
   className = "",
 }) => (
-  <div
-    className={`bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${className}`}
-  >
+  <div className={`bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${className}`}>
     {children}
   </div>
 );
@@ -116,34 +119,13 @@ const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const inputBase =
   "w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-all duration-150";
-
 const inputEditable =
   "border-slate-200 bg-white text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100/60";
-
 const inputReadonly =
   "border-transparent bg-slate-50 text-slate-600 cursor-default select-none";
-
 const fieldInput = (editable: boolean) =>
   `${inputBase} ${editable ? inputEditable : inputReadonly}`;
 
-const Toast: React.FC<{ type: "success" | "error"; message: string }> = ({ type, message }) => (
-  <div
-    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium animate-fade-in ${
-      type === "success"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-        : "border-red-200 bg-red-50 text-red-700"
-    }`}
-  >
-    {type === "success" ? (
-      <FaCheckCircle className="shrink-0 text-emerald-500" />
-    ) : (
-      <FaExclamationCircle className="shrink-0 text-red-500" />
-    )}
-    {message}
-  </div>
-);
-
-/* ─── Main component ──────────────────────────────────────────── */
 
 const SettingsPage: React.FC = () => {
   const auth = useAuth();
@@ -153,20 +135,15 @@ const SettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<HotelSettings>(emptyHotel);
   const [formData, setFormData] = useState<HotelSettings>(emptyHotel);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState("");
   const [facilityInput, setFacilityInput] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
   const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
-  const [imageActionError, setImageActionError] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -174,19 +151,25 @@ const SettingsPage: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState("");
 
+  const { toast: pageToast, showToast: showPageToast, clearToast: clearPageToast } = useToast();
+  const { toast: imageToast, showToast: showImageToast } = useToast();
+  const { toast: passwordToast, showToast: showPasswordToast, clearToast: clearPasswordToast } = useToast();
+
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
 
   useEffect(() => {
     const fetchHotel = async () => {
-      if (!hotelId) { setError("No hotel ID found in auth context."); return; }
+      if (!hotelId) {
+        showPageToast("error", "No hotel ID found in auth context.");
+        return;
+      }
       setLoading(true);
-      setError("");
       try {
-        const res = await getHotelById(hotelId);
-        const hotel = res?.data ?? res;
+        const res= await getHotelById(hotelId);
+         const hotel = res?.data ?? res;
         const mapped: HotelSettings = {
           _id: hotel?._id,
           hotelName: hotel?.hotelName || "",
@@ -199,19 +182,23 @@ const SettingsPage: React.FC = () => {
           hotelDescription: hotel?.hotelDescription || "",
           facilities: Array.isArray(hotel?.facilities) ? hotel.facilities : [],
           images: Array.isArray(hotel?.hotelImages) ? hotel.hotelImages : [],
-          documents: Array.isArray(hotel?.VerificationDocuments) ? hotel.VerificationDocuments : [],
+          documents: Array.isArray(hotel?.VerificationDocuments)
+            ? hotel.VerificationDocuments
+            : [],
         };
         setSettings(mapped);
         setFormData(mapped);
       } catch (e) {
         console.error(e);
-        setError("Unable to load hotel details. Please try again.");
+        showPageToast("error", "Unable to load hotel details. Please try again.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchHotel();
   }, [hotelId]);
+
 
   const display = isEditing ? formData : settings;
 
@@ -221,15 +208,14 @@ const SettingsPage: React.FC = () => {
   const startEdit = () => {
     setFormData(settings);
     setIsEditing(true);
-    setSaveError("");
-    setSaveSuccess("");
+    clearPageToast();
   };
 
   const cancelEdit = () => {
     setFormData(settings);
     setFacilityInput("");
     setIsEditing(false);
-    setSaveError("");
+    clearPageToast();
   };
 
   const addFacility = () => {
@@ -242,11 +228,11 @@ const SettingsPage: React.FC = () => {
   const removeFacility = (index: number) =>
     handleField("facilities", formData.facilities.filter((_, i) => i !== index));
 
+
   const saveDetails = async () => {
     if (!hotelId) return;
     setSaving(true);
-    setSaveError("");
-    setSaveSuccess("");
+    clearPageToast();
     try {
       const payload = {
         hotelName: formData.hotelName,
@@ -265,13 +251,14 @@ const SettingsPage: React.FC = () => {
       });
       setSettings(formData);
       setIsEditing(false);
-      setSaveSuccess("Hotel details saved successfully.");
+      showPageToast("success", "Hotel details saved successfully.");
     } catch (err: any) {
-      setSaveError(err?.response?.data?.message || "Failed to save hotel details.");
+      showPageToast("error", err?.response?.data?.message || "Failed to save hotel details.");
     } finally {
       setSaving(false);
     }
   };
+
 
   const handleSelectImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -290,7 +277,6 @@ const SettingsPage: React.FC = () => {
   const uploadPendingImages = async () => {
     if (!hotelId || !pendingImageFiles.length) return;
     setUploadingImages(true);
-    setImageActionError("");
     try {
       const fd = new FormData();
       pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
@@ -305,8 +291,9 @@ const SettingsPage: React.FC = () => {
       pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
       setPendingImageFiles([]);
       setPendingImagePreviews([]);
+      showImageToast("success", "Images uploaded successfully.");
     } catch (err: any) {
-      setImageActionError(err?.response?.data?.message || "Failed to upload images.");
+      showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
     } finally {
       setUploadingImages(false);
     }
@@ -315,7 +302,6 @@ const SettingsPage: React.FC = () => {
   const deleteExistingImage = async (imageUrl: string) => {
     if (!hotelId) return;
     setDeletingImage(imageUrl);
-    setImageActionError("");
     try {
       await hotelClient.delete(`/hotel/${hotelId}/images`, {
         headers: authHeaders,
@@ -325,26 +311,27 @@ const SettingsPage: React.FC = () => {
       const updated = settings.images.filter((img) => img !== imageUrl);
       setSettings((p) => ({ ...p, images: updated }));
       setFormData((p) => ({ ...p, images: updated }));
+      showImageToast("success", "Image removed.");
     } catch (err: any) {
-      setImageActionError(err?.response?.data?.message || "Failed to delete image.");
+      showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
     } finally {
       setDeletingImage(null);
     }
   };
 
+
   const handleChangePassword = async () => {
-    setPasswordError("");
-    setPasswordSuccess("");
+    clearPasswordToast();
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError("All fields are required.");
+      showPasswordToast("error", "All fields are required.");
       return;
     }
     if (newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters.");
+      showPasswordToast("error", "New password must be at least 8 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
+      showPasswordToast("error", "Passwords do not match.");
       return;
     }
     setChangingPassword(true);
@@ -354,24 +341,28 @@ const SettingsPage: React.FC = () => {
         { currentPassword, newPassword },
         { headers: authHeaders, withCredentials: true }
       );
-      setPasswordSuccess("Password updated.");
+      showPasswordToast("success", "Password updated successfully.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      setPasswordError(err?.response?.data?.message || "Failed to update password.");
+      showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
     } finally {
       setChangingPassword(false);
     }
   };
 
-  /* ─── Render ──────────────────────────────────────────────── */
 
   return (
     <div className="min-h-screen bg-[#f8f9fb] px-4 py-8 md:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ── Page Header ───────────────────────────────────── */}
+        {/* Page Toast */}
+        <div className="relative h-0">
+          <Toast toast={pageToast} />
+        </div>
+
+        {/* ── Page Header  */}
         <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">
@@ -424,22 +415,16 @@ const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Status toasts */}
-        {error && <Toast type="error" message={error} />}
-        {saveError && <Toast type="error" message={saveError} />}
-        {saveSuccess && <Toast type="success" message={saveSuccess} />}
-
-        {/* ── Main Grid ─────────────────────────────────────── */}
+        {/* ── Main Grid  */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-          {/* ── LEFT COLUMN ─────────────────────────────── */}
+          {/* ── LEFT COLUMN  */}
           <div className="xl:col-span-2 space-y-6">
 
             {/* Basic Info */}
             <SectionCard>
               <SectionHeader icon={<FaHotel />} title="Basic Information" subtitle="Core details visible to guests" />
               <div className="px-6 py-5 grid md:grid-cols-2 gap-5">
-
                 <div>
                   <FieldLabel>Hotel Name</FieldLabel>
                   <input
@@ -450,7 +435,6 @@ const SettingsPage: React.FC = () => {
                     placeholder="e.g. The Grand Himalaya"
                   />
                 </div>
-
                 <div>
                   <FieldLabel>Owner Name</FieldLabel>
                   <input
@@ -461,7 +445,6 @@ const SettingsPage: React.FC = () => {
                     placeholder="Full name"
                   />
                 </div>
-
                 <div>
                   <FieldLabel>Contact Number</FieldLabel>
                   <div className="relative">
@@ -475,7 +458,6 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <FieldLabel>Property Type</FieldLabel>
                   {isEditing ? (
@@ -493,7 +475,6 @@ const SettingsPage: React.FC = () => {
                     <input value={display.propertyType} readOnly className={fieldInput(false)} />
                   )}
                 </div>
-
                 <div className="md:col-span-2">
                   <FieldLabel>Location</FieldLabel>
                   <div className="relative">
@@ -530,7 +511,7 @@ const SettingsPage: React.FC = () => {
               </div>
             </SectionCard>
 
-            {/* Verification Documents — moved here from right column */}
+            {/* Verification Documents */}
             <SectionCard>
               <SectionHeader icon={<FaFileAlt />} title="Verification Documents" subtitle="Submitted during registration" />
               <div className="px-6 py-5">
@@ -565,7 +546,7 @@ const SettingsPage: React.FC = () => {
 
           </div>
 
-          {/* ── RIGHT COLUMN ────────────────────────────── */}
+          {/* ── RIGHT COLUMN  */}
           <div className="space-y-6">
 
             {/* Check-in / Check-out */}
@@ -588,7 +569,6 @@ const SettingsPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-
                 <div>
                   <FieldLabel>Check-out</FieldLabel>
                   {isEditing ? (
@@ -631,14 +611,12 @@ const SettingsPage: React.FC = () => {
                       )}
                     </div>
                   ))}
-
                   {display.facilities.length === 0 && (
                     <div className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-6 text-center">
                       <p className="text-xs text-slate-400">No facilities listed yet</p>
                     </div>
                   )}
                 </div>
-
                 {isEditing && (
                   <div className="flex items-center gap-2 pt-1">
                     <input
@@ -661,12 +639,16 @@ const SettingsPage: React.FC = () => {
               </div>
             </SectionCard>
 
-            {/* Change Password — moved here from below verification docs */}
+            {/* Change Password */}
             <SectionCard>
               <SectionHeader icon={<FaLock />} title="Change Password" subtitle="Keep your account secure" />
               <div className="px-6 py-5 space-y-4">
 
-                {/* Current password */}
+                {/* Password Toast */}
+                <div className="relative h-0">
+                  <Toast toast={passwordToast} />
+                </div>
+
                 <div>
                   <FieldLabel>Current Password</FieldLabel>
                   <div className="relative">
@@ -687,7 +669,6 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* New password */}
                 <div>
                   <FieldLabel>New Password</FieldLabel>
                   <div className="relative">
@@ -708,7 +689,6 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Confirm password */}
                 <div>
                   <FieldLabel>Confirm New Password</FieldLabel>
                   <input
@@ -719,9 +699,6 @@ const SettingsPage: React.FC = () => {
                     placeholder="Re-enter new password"
                   />
                 </div>
-
-                {passwordError && <Toast type="error" message={passwordError} />}
-                {passwordSuccess && <Toast type="success" message={passwordSuccess} />}
 
                 <button
                   type="button"
@@ -737,7 +714,7 @@ const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Gallery — Full Width at Bottom ────────────────── */}
+        {/* ── Gallery  */}
         <SectionCard>
           <SectionHeader
             icon={<FaImage />}
@@ -762,11 +739,13 @@ const SettingsPage: React.FC = () => {
             onChange={handleSelectImages}
             className="hidden"
           />
-
           <div className="px-6 py-5 space-y-5">
-            {imageActionError && <Toast type="error" message={imageActionError} />}
 
-            {/* Existing images grid — more columns now full width */}
+            {/* Image Toast */}
+            <div className="relative h-0">
+              <Toast toast={imageToast} />
+            </div>
+
             {settings.images.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3">
                 {settings.images.map((img, i) => (
@@ -803,7 +782,6 @@ const SettingsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Pending uploads */}
             {pendingImagePreviews.length > 0 && (
               <div className="border-t border-slate-100 pt-5 space-y-4">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -844,34 +822,9 @@ const SettingsPage: React.FC = () => {
 
       </div>
 
-      {/* ── Lightbox ──────────────────────────────────────────── */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-          onClick={() => setPreviewImage(null)}
-        >
-          <div
-            className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
-              <span className="text-sm font-semibold text-slate-700">Preview</span>
-              <button
-                type="button"
-                onClick={() => setPreviewImage(null)}
-                className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
-              >
-                <FaTimes className="text-xs" />
-              </button>
-            </div>
-            <img
-              src={previewImage}
-              alt="Preview"
-              className="w-full max-h-[80vh] object-contain bg-slate-950"
-            />
-          </div>
-        </div>
-      )}
+      {/* ── Image Preview Modal  */}
+      <ImagePreviewModal src={previewImage} onClose={() => setPreviewImage(null)} />
+
     </div>
   );
 };
