@@ -21,14 +21,13 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
-import { getHotelById } from "../Services/hotel.api";
+import { getHotelById,updateHotelInfo } from "../Services/hotel.api";
 import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
 import { Toast} from "../Components/modal-popups/Toast";
 import { ImagePreviewModal } from "../Components/modal-popups/ImagePreviewModal";
 import { useToast } from "../Hooks/useToast";
 
-// ─── Types ────────────────────────────────────────────────────
 
 interface HotelSettings {
   _id?: string;
@@ -77,6 +76,8 @@ const emptyHotel: HotelSettings = {
   images: [],
   documents: [],
 };
+
+
 
 // ─── Shared UI ────────────────────────────────────────────────
 
@@ -170,6 +171,7 @@ const SettingsPage: React.FC = () => {
       try {
         const res= await getHotelById(hotelId);
          const hotel = res?.data ?? res;
+         console.log("Fetched hotel data:", hotel);
         const mapped: HotelSettings = {
           _id: hotel?._id,
           hotelName: hotel?.hotelName || "",
@@ -229,35 +231,37 @@ const SettingsPage: React.FC = () => {
     handleField("facilities", formData.facilities.filter((_, i) => i !== index));
 
 
-  const saveDetails = async () => {
-    if (!hotelId) return;
-    setSaving(true);
-    clearPageToast();
-    try {
-      const payload = {
-        hotelName: formData.hotelName,
-        ownerName: formData.ownerName,
-        contactNumber: formData.contactNumber,
-        hotelLocation: formData.hotelLocation,
-        propertyType: formData.propertyType,
-        checkinTime: formData.checkinTime,
-        checkoutTime: formData.checkoutTime,
-        hotelDescription: formData.hotelDescription,
-        facilities: formData.facilities,
-      };
-      await hotelClient.put(`/hotel/${hotelId}`, payload, {
-        headers: authHeaders,
-        withCredentials: true,
-      });
-      setSettings(formData);
-      setIsEditing(false);
-      showPageToast("success", "Hotel details saved successfully.");
-    } catch (err: any) {
-      showPageToast("error", err?.response?.data?.message || "Failed to save hotel details.");
-    } finally {
-      setSaving(false);
-    }
-  };
+const saveDetails = async () => {
+  if (!hotelId) return;
+  setSaving(true);
+  clearPageToast();
+  try {
+    const payload = {
+      hotelName:        formData.hotelName,
+      ownerName:        formData.ownerName,
+      contactNumber:    formData.contactNumber,
+      hotelLocation:    formData.hotelLocation,
+      propertyType:     formData.propertyType,
+      checkinTime:      formData.checkinTime,
+      checkoutTime:     formData.checkoutTime,
+      hotelDescription: formData.hotelDescription,
+      facilities:       formData.facilities,
+    };
+
+    await updateHotelInfo(hotelId, payload);
+
+    setSettings(formData);
+    setIsEditing(false);
+    showPageToast("success", "Hotel details saved successfully.");
+  } catch (err: any) {
+    showPageToast(
+      "error",
+      err?.response?.data?.message || "Failed to save hotel details."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
 
   const handleSelectImages = (e: React.ChangeEvent<HTMLInputElement>) => {

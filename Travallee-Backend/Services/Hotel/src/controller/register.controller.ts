@@ -1094,40 +1094,42 @@ const declineRegistration = asyncHandler(async (req: any, res: any) => {
 });
 
 
-const updateHotelInfo= asyncHandler(async (req: any, res: any) => {
-        const { hotelId } = req.params;
-        const updateData = req.body;
+const updateHotelInfo = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const updateData = req.body;
 
-        if (!hotelId) {
-          return apiError(res, 400, "Hotel ID is required in URL parameters");
-        }
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
 
-        try{
-          const updatedHotel = await hotelModel.findByIdAndUpdate(
-            hotelId,
-            { $set: updateData },
-            { new: true, runValidators: true },
-          );
-          if (!updatedHotel) {
-            return apiError(res, 404, "Hotel not found", { hotelId });
-          }
+  try {
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $set: updateData },
+      { new: true, runValidators: true },
+    );
+    if (!updatedHotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
 
-             await Promise.all([
+
+
+    const results = await Promise.all([
       hoteldataCache.del(`hotel_${hotelId}`),
-      registerHotel.del(`hotel_${hotelId}`),
-      hoteldataCache.del(`hotel_${updatedHotel.userID}`), 
+      registerHotel.del(`hotel_${hotelId}`),       
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
       hoteldataCache.del("all_hotels"),
       hoteldataCache.del("featured_hotels"),
       hoteldataCache.del("high_reviewed_hotels"),
       hoteldataCache.del("all_resort_hotels"),
     ]);
 
-          return apiResponse(res, 200, true, "Hotel information updated successfully", updatedHotel);
-        }catch(error:any){
-          console.error("Error updating hotel information:", error);
-          return apiError(res, 500, "Internal server error: Unable to update hotel information");
-        }
 
+    return apiResponse(res, 200, true, "Hotel information updated successfully", updatedHotel);
+  } catch (error: any) {
+    console.error("Error updating hotel information:", error);
+    return apiError(res, 500, "Internal server error: Unable to update hotel information");
+  }
 });
 
 export {
