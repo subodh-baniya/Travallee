@@ -20,5 +20,4 @@ import hotelRoutes from "./routes/hotel.routes";
 app.use("/api/v1/hotels", hotelRoutes);
 
 
-
 export default app; 
