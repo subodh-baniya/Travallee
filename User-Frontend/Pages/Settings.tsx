@@ -21,7 +21,7 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
-import { getHotelById,updateHotelInfo,updateHotelGallery } from "../Services/hotel.api";
+import { getHotelById,updateHotelInfo,updateHotelGallery,deleteHotelGalleryImage } from "../Services/hotel.api";
 import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
 import { Toast} from "../Components/modal-popups/Toast";
@@ -304,25 +304,24 @@ const saveDetails = async () => {
   }
 };
 
-  const deleteExistingImage = async (imageUrl: string) => {
-    if (!hotelId) return;
-    setDeletingImage(imageUrl);
-    try {
-      await hotelClient.delete(`/hotel/${hotelId}/images`, {
-        headers: authHeaders,
-        withCredentials: true,
-        data: { imageUrl },
-      });
-      const updated = settings.images.filter((img) => img !== imageUrl);
-      setSettings((p) => ({ ...p, images: updated }));
-      setFormData((p) => ({ ...p, images: updated }));
-      showImageToast("success", "Image removed.");
-    } catch (err: any) {
-      showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
-    } finally {
-      setDeletingImage(null);
-    }
-  };
+const deleteExistingImage = async (imageUrl: string) => {
+  if (!hotelId) return;
+  setDeletingImage(imageUrl);
+  try {
+    const res = await deleteHotelGalleryImage(hotelId, imageUrl);
+    
+    const updatedImages: string[] =
+      res?.data?.hotelImages ?? res?.hotelImages ?? settings.images.filter((img) => img !== imageUrl);
+
+    setSettings((p) => ({ ...p, images: updatedImages }));
+    setFormData((p) => ({ ...p, images: updatedImages }));
+    showImageToast("success", "Image removed.");
+  } catch (err: any) {
+    showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
+  } finally {
+    setDeletingImage(null);
+  }
+};
 
 
   const handleChangePassword = async () => {

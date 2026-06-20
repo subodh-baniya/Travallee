@@ -1201,6 +1201,51 @@ const updateHotelGallery = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const deleteHotelGalleryImage = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const { imageUrl } = req.body;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+  if (!imageUrl) {
+    return apiError(res, 400, "Image URL is required in request body");
+  }
+
+  try {
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $pull: { hotelImages: imageUrl } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedHotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    await Promise.all([
+      hoteldataCache.del(`hotel_${hotelId}`),
+      registerHotel.del(`hotel_${hotelId}`),
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
+      hoteldataCache.del("all_hotels"),
+      hoteldataCache.del("featured_hotels"),
+      hoteldataCache.del("high_reviewed_hotels"),
+      hoteldataCache.del("all_resort_hotels"),
+    ]);
+
+    return apiResponse(res, 200, true, "Image deleted successfully", {
+      hotelId,
+      deletedImageUrl: imageUrl,
+      hotelImages: updatedHotel.hotelImages,
+    });
+  } catch (error: any) {
+    console.error("Error deleting hotel gallery image:", error);
+    return apiError(res, 500, "Internal server error: Unable to delete hotel gallery image");
+  }
+});
 
 export {
   registerHotelRequest,
@@ -1225,5 +1270,6 @@ export {
   updateHotelGallery,
   approveRegistration,
   declineRegistration,
+  deleteHotelGalleryImage,
 };
 

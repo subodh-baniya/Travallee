@@ -74,3 +74,11 @@ export const updateHotelGallery = (hotelId: string, data: FormData) => {
     })
     .then(res => res.data);
 };
+
+export const deleteHotelGalleryImage = (hotelId: string, imageUrl: string) => {
+  return hotelClient
+    .delete(`/delete-hotel-gallery-image/${hotelId}`, {
+      data: { imageUrl }
+    })
+    .then(res => res.data);
+};

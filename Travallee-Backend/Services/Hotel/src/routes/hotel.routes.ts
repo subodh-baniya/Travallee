@@ -20,6 +20,7 @@ import {
   declineRegistration,
   updateHotelInfo,
   updateHotelGallery,
+  deleteHotelGalleryImage,
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -46,6 +47,7 @@ router.post("/decline-registration", declineRegistration);
 router.get("/location/:location", getHotelByLocation);
 
 router.post("/update-hotel-gallery/:hotelId", authenticate, upload.any(), updateHotelGallery);
+router.delete("/delete-hotel-gallery-image/:hotelId", authenticate, deleteHotelGalleryImage);
 
 router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 
