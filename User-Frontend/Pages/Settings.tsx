@@ -130,7 +130,6 @@ const inputReadonly =
 const fieldInput = (editable: boolean) =>
   `${inputBase} ${editable ? inputEditable : inputReadonly}`;
 
-// Larger variant used for the Basic Information and About sections
 const inputBaseLg =
   "w-full rounded-xl border px-5 py-3.5 text-base outline-none transition-all duration-150";
 const fieldInputLg = (editable: boolean) =>
@@ -161,8 +160,6 @@ const SettingsPage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // Payment credentials visibility toggles (values now live in formData/settings,
-  // editing happens via the main Edit Details / Save Changes flow)
   const [showEsewaKey, setShowEsewaKey] = useState(false);
   const [showKhaltiKey, setShowKhaltiKey] = useState(false);
 
