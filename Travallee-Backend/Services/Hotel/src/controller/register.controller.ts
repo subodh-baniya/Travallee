@@ -1247,10 +1247,35 @@ const deleteHotelGalleryImage = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const deleteRoom = asyncHandler(async (req: any, res: any) => {
+  const {roomId } = req.params;
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  try {    const deletedRoom = await roomModel.findByIdAndDelete(roomId);
+    if (!deletedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+    await hoteldataCache.del(`rooms_${deletedRoom.hotelId}`); 
+    return apiResponse(res, 200, true, "Room deleted successfully", {
+      roomId,
+      hotelId: deletedRoom.hotelId,
+    });
+  } catch (error: any) {
+    console.error("Error deleting room:", error);
+    return apiError(res, 500, "Internal server error: Unable to delete room");
+  }
+
+});
+
 export {
   registerHotelRequest,
   createroom,
-  // deleteRoom,
+  deleteRoom,
   featuredHotels,
   HotelData,
   syncBookingHistory,

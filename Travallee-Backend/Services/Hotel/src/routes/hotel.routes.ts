@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   registerHotelRequest,
   createroom,
-  // deleteRoom,
+  deleteRoom,
   featuredHotels,
   HotelData,
   syncBookingHistory,
@@ -67,6 +67,8 @@ router.get("/hotel/:hotelId", authenticate, getHotelInfo);
 router.get("/:hotelId", authenticate, HotelData);
 
 router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials);
+
+router.delete("/room/:roomId", authenticate, deleteRoom);
 
 
 export default router;
