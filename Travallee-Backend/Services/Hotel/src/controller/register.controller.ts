@@ -1272,10 +1272,122 @@ const deleteRoom = asyncHandler(async (req: any, res: any) => {
 
 });
 
+const updateRoomInfo = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+
+  try {
+    const updatedData = { ...req.body };
+    delete updatedData._id;
+    delete updatedData.hotelId;
+    delete updatedData.roomImages;
+    delete updatedData.createdAt;
+    delete updatedData.updatedAt;
+
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $set: updatedData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+    return apiResponse(res, 200, true, "Room updated successfully", {
+      roomId,
+      hotelId: updatedRoom.hotelId,
+      roomData: updatedRoom,
+    });
+  } catch (error: any) {
+    console.error("Error updating room:", error);
+
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.entries(error.errors).map(
+        ([field, err]: any) => ({ field, message: err.message }),
+      );
+      return apiError(res, 400, "Room validation failed", validationErrors);
+    }
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return apiError(res, 409, `Room ${field} already exists. Please use a unique value.`);
+    }
+    if (error instanceof mongoose.Error.CastError) {
+      return apiError(res, 400, "Invalid data format");
+    }
+
+    return apiError(res, 500, "Internal server error: Unable to update room");
+  }
+});
+
+const updateRoomImages = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+  const files = req.files || [];
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  if (files.length === 0) {
+    return apiError(res, 400, "At least one image file is required");
+  }
+
+  try {
+    const room = await roomModel.findById(roomId);
+    if (!room) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    const uploadedUrls: string[] = [];
+    for (const file of files) {
+      const filePath = file.path || file.tempFilePath;
+      if (!filePath) {
+        console.error("File path not found", file);
+        continue;
+      }
+      const uploadResult = await uploadToCloudinary(filePath, "room_images");
+      if (uploadResult) uploadedUrls.push(uploadResult);
+    }
+
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $set: { roomImages: [...(room.roomImages || []), ...uploadedUrls] } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+    return apiResponse(res, 200, true, "Room images updated successfully", {
+      roomId,
+      hotelId: updatedRoom.hotelId,
+      roomData: updatedRoom,
+    });
+  } catch (error: any) {
+    console.error("Error uploading room images:", error);
+    return apiError(res, 500, "Failed to upload room images", {
+      error: error.message,
+    });
+  }
+});
+
 export {
   registerHotelRequest,
   createroom,
   deleteRoom,
+  updateRoomImages,
+  updateRoomInfo,
   featuredHotels,
   HotelData,
   syncBookingHistory,

@@ -84,3 +84,16 @@ export const deleteHotelGalleryImage = (hotelId: string, imageUrl: string) => {
     })
     .then(res => res.data);
 };
+
+export const updateRoomInfo = (roomId: string, data: payload) => {
+  return hotelClient.post(`/update-room-info/${roomId}`, data)
+    .then(res => res.data);
+}
+
+export const updateRoomImages = (roomId: string, data: FormData) => {
+  return hotelClient
+    .post(`/update-room-images/${roomId}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then(res => res.data);
+}

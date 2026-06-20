@@ -21,6 +21,8 @@ import {
   updateHotelInfo,
   updateHotelGallery,
   deleteHotelGalleryImage,
+  updateRoomImages,
+  updateRoomInfo
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -70,5 +72,7 @@ router.get("/payment-credentials/:hotelId", authenticate, getPaymentCredentials)
 
 router.delete("/room/:roomId", authenticate, deleteRoom);
 
+router.post("/update-room-info/:roomId", authenticate, updateRoomInfo);
+router.post("/update-room-images/:roomId", authenticate, upload.any(), updateRoomImages);
 
 export default router;
