@@ -1,4 +1,4 @@
-import React, { useState, useMemo,useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -13,9 +13,19 @@ import {
   YAxis,
 } from "recharts";
 import { motion } from "framer-motion";
-import { FaChartLine, FaHotel, FaUsers, FaStar } from "react-icons/fa";
+import {
+  FaChartLine,
+  FaHotel,
+  FaUsers,
+  FaStar,
+  FaChevronDown,
+  FaFilePdf,
+  FaFileCsv,
+} from "react-icons/fa";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-import { useBookings,type Booking } from "../Hooks/useBooking";
+import { useBookings, type Booking } from "../Hooks/useBooking";
 import { useGuestStatus } from "../Hooks/useGuestStatus";
 import { useRooms } from "../Hooks/useRooms";
 import { useAuth } from "../Contexts/Authcontext";
@@ -25,7 +35,6 @@ interface IncomeData {
   totalIncome: number;
   pendingIncome: number;
 }
-
 
 type Period = "This Week" | "This Month" | "This Year";
 
@@ -56,13 +65,29 @@ const parseDisplayDate = (str: string): Date => {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 
+const downloadBlob = (content: string, filename: string, mime: string) => {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const slug = (period: Period) => period.replace(/\s+/g, "-").toLowerCase();
+
 const ReportsPage: React.FC = () => {
   const [period, setPeriod] = useState<Period>("This Month");
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const auth    = useAuth();
   const hotelId = auth?.hotelId ?? null;
@@ -87,6 +112,16 @@ const ReportsPage: React.FC = () => {
       .catch(() => {/* keep zeros on error */})
       .finally(() => setIncomeLoading(false));
   }, [hotelId]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const loading = bLoading || gLoading || rLoading || incomeLoading;
 
@@ -133,8 +168,7 @@ const ReportsPage: React.FC = () => {
     filteredBookings
       .filter((b) => b.status === "PAID")
       .forEach((b) => {
-        // b.room may be a type name ("STANDARD", "Deluxe Double") or a room number ("101")
-        // try matching by room number first, fall back to normalizing b.room directly
+
         const roomFromList = rooms.find((r) => r.roomNumber === b.room);
         const typeStr      = roomFromList?.roomType ?? b.room ?? "";
         const label        = normalizeRoomType(typeStr);
@@ -147,11 +181,9 @@ const ReportsPage: React.FC = () => {
       .sort((a, b) => b.revenue - a.revenue);
   }, [filteredBookings, rooms]);
 
-  // ── occupancy trend (day-of-week or month) ───────────────────────────────
 
   const occupancyTrend = useMemo(() => {
     if (period === "This Week") {
-      // count bookings (checked-in guests) per day-of-week over last 7 days
       const counts: Record<number, number> = {};
       filteredBookings.forEach((b) => {
         const d = parseDisplayDate(b.checkIn).getDay();
@@ -161,7 +193,7 @@ const ReportsPage: React.FC = () => {
     }
 
     if (period === "This Month") {
-      // group by week-of-month (1-4)
+
       const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
       filteredBookings.forEach((b) => {
         const date = parseDisplayDate(b.checkIn).getDate();
@@ -171,7 +203,6 @@ const ReportsPage: React.FC = () => {
       return [1, 2, 3, 4].map((w) => ({ day: `Wk ${w}`, value: counts[w] }));
     }
 
-    // This Year → by month
     const counts: Record<number, number> = {};
     filteredBookings.forEach((b) => {
       const m = parseDisplayDate(b.checkIn).getMonth();
@@ -180,7 +211,6 @@ const ReportsPage: React.FC = () => {
     return MONTH_LABELS.map((label, i) => ({ day: label, value: counts[i] ?? 0 }));
   }, [filteredBookings, period]);
 
-  // ── financial summary ────────────────────────────────────────────────────
 
   const refunds = useMemo(
     () => filteredBookings
@@ -189,11 +219,8 @@ const ReportsPage: React.FC = () => {
     [filteredBookings]
   );
 
-  // ── top performing rooms ─────────────────────────────────────────────────
 
   const isRoomNumber = (room: string) => {
-    // type names are words like "STANDARD", "Deluxe Double", "Family Safari View"
-    // room numbers are short alphanumeric like "101", "12A", "a-203", "1250"
     return /^[a-zA-Z0-9\-]+$/.test(room) && room.length <= 6 && !/^[a-zA-Z\s]+$/.test(room);
   };
 
@@ -217,7 +244,6 @@ const ReportsPage: React.FC = () => {
     }));
   }, [bookings]);
 
-  // ── booking distribution (pie) ───────────────────────────────────────────
 
   const pieData = useMemo(() => {
     const booked    = occupancyPct;
@@ -230,10 +256,125 @@ const ReportsPage: React.FC = () => {
 
   const COLORS = ["#2563eb", "#dbeafe"];
 
-  // ── loading / empty states ───────────────────────────────────────────────
 
   const fmt = (n: number) =>
     `Rs. ${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+
+  const handleExportCSV = () => {
+    const today = new Date().toLocaleDateString("en-IN");
+    const rows: (string | number)[][] = [];
+
+    rows.push([`Hotel Report - ${period}`]);
+    rows.push([`Generated on ${today}`]);
+    rows.push([]);
+
+    rows.push(["Summary"]);
+    rows.push(["Metric", "Value"]);
+    rows.push(["Total Revenue", totalRevenue]);
+    rows.push(["Pending Income", pendingIncome]);
+    rows.push(["Occupancy %", occupancyPct]);
+    rows.push(["Occupied Rooms", `${occupiedRooms} / ${totalRooms}`]);
+    rows.push(["Total Guests", uniqueGuestIds]);
+    rows.push(["Bookings In Period", filteredBookings.length]);
+    rows.push(["Average Rating", avgRating]);
+    rows.push(["Refund Loss", refunds]);
+    rows.push([]);
+
+    rows.push(["Revenue by Room Type"]);
+    rows.push(["Room Type", "Revenue"]);
+    revenueByRoomType.forEach((r) => rows.push([r.name, r.revenue]));
+    rows.push([]);
+
+    rows.push(["Top Performing Rooms"]);
+    rows.push(["Room", "Revenue"]);
+    if (topRooms.length === 0) {
+      rows.push(["-", "No data for this period"]);
+    } else {
+      topRooms.forEach((r) => rows.push([r.room, r.revenue]));
+    }
+
+    const csvContent = rows
+      .map((row) =>
+        row
+          .map((cell) => {
+            const s = String(cell ?? "");
+            return s.includes(",") ? `"${s}"` : s;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    downloadBlob(csvContent, `hotel-report-${slug(period)}.csv`, "text/csv;charset=utf-8;");
+    setShowExportMenu(false);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const today = new Date().toLocaleDateString("en-IN");
+
+    doc.setFontSize(18);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Hotel Performance Report", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Period: ${period}  |  Generated: ${today}`, 14, 27);
+
+    autoTable(doc, {
+      startY: 34,
+      head: [["Metric", "Value"]],
+      body: [
+        ["Total Revenue", fmt(totalRevenue)],
+        ["Pending Income", fmt(pendingIncome)],
+        ["Occupancy", `${occupancyPct}% (${occupiedRooms}/${totalRooms} rooms)`],
+        ["Total Guests", String(uniqueGuestIds)],
+        ["Bookings in Period", String(filteredBookings.length)],
+        ["Average Rating", String(avgRating)],
+        ["Refund Loss", `-${fmt(refunds)}`],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [37, 99, 235] },
+      styles: { fontSize: 10 },
+    });
+
+    const afterSummaryY = (doc as any).lastAutoTable.finalY + 10;
+
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Revenue by Room Type", 14, afterSummaryY);
+
+    autoTable(doc, {
+      startY: afterSummaryY + 4,
+      head: [["Room Type", "Revenue"]],
+      body: revenueByRoomType.length
+        ? revenueByRoomType.map((r) => [r.name, fmt(r.revenue)])
+        : [["-", "No paid bookings in this period"]],
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+      styles: { fontSize: 10 },
+    });
+
+    const afterRoomTypeY = (doc as any).lastAutoTable.finalY + 10;
+
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Top Performing Rooms", 14, afterRoomTypeY);
+
+    autoTable(doc, {
+      startY: afterRoomTypeY + 4,
+      head: [["Room", "Revenue"]],
+      body: topRooms.length
+        ? topRooms.map((r) => [`Room ${r.room}`, fmt(r.revenue)])
+        : [["-", "No data for this period"]],
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235] },
+      styles: { fontSize: 10 },
+    });
+
+    doc.save(`hotel-report-${slug(period)}.pdf`);
+    setShowExportMenu(false);
+  };
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen space-y-6">
@@ -258,9 +399,36 @@ const ReportsPage: React.FC = () => {
             <option>This Year</option>
           </select>
 
-          <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition">
-            Export Report
-          </button>
+          <div className="relative" ref={exportRef}>
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition"
+            >
+              Export Report
+              <FaChevronDown
+                className={`text-xs transition-transform ${showExportMenu ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-10">
+                <button
+                  onClick={handleExportPDF}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <FaFilePdf className="text-rose-500" />
+                  Export as PDF
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition border-t border-slate-100"
+                >
+                  <FaFileCsv className="text-emerald-600" />
+                  Export as CSV
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -469,7 +637,6 @@ const ReportsPage: React.FC = () => {
   );
 };
 
-// ── sub-components ───────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
