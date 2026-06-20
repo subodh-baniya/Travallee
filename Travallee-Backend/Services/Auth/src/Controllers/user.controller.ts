@@ -461,6 +461,49 @@ const googleAuth = asyncHandler(async (req: any, res: any) => {
   );
 });
 
+const updateHotelUserPassword = asyncHandler(async (req: any, res: any) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return apiError(res, 400, "Current password and new password are required");
+  }
+
+  if (newPassword.length < 8) {
+    return apiError(res, 400, "New password must be at least 8 characters");
+  }
+
+  if (currentPassword === newPassword) {
+    return apiError(res, 400, "New password must be different from current password");
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return apiError(res, 404, "User not found");
+    }
+
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    if (!isPasswordValid) {
+      return apiError(res, 400, "Current password is incorrect");
+    }
+
+    user.password = newPassword; 
+    await user.save();
+
+    await Promise.all([
+      UserProfileRedis.del(`user:${userId}`),
+      UserProfileRedis.del(`token:${userId}`),
+    ]);
+
+    return apiResponse(res, 200, true, "Password updated successfully");
+  } catch (error: any) {
+    console.error("Error updating password:", error);
+    return apiError(res, 500, "Internal server error: Unable to update password");
+  }
+});
+
+
 export {
   registerUser,
   loginUser,
@@ -470,4 +513,5 @@ export {
   updateUserProfile,
   verifyOTP,
   deleteAccount,
+  updateHotelUserPassword,
 };
