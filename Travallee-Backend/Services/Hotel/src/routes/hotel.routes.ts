@@ -19,6 +19,7 @@ import {
   approveRegistration,
   declineRegistration,
   updateHotelInfo,
+  updateHotelGallery,
 } from "../controller/register.controller.js";
 
 import { authenticate } from "../middleware/role.middleware.js";
@@ -43,6 +44,8 @@ router.post("/approve-registration", approveRegistration);
 router.post("/decline-registration", declineRegistration);
 
 router.get("/location/:location", getHotelByLocation);
+
+router.post("/update-hotel-gallery/:hotelId", authenticate, upload.any(), updateHotelGallery);
 
 router.post("/room/:hotelId", authenticate, upload.any(), createroom);
 

@@ -1112,9 +1112,7 @@ const updateHotelInfo = asyncHandler(async (req: any, res: any) => {
       return apiError(res, 404, "Hotel not found", { hotelId });
     }
 
-
-
-    const results = await Promise.all([
+    await Promise.all([
       hoteldataCache.del(`hotel_${hotelId}`),
       registerHotel.del(`hotel_${hotelId}`),       
       hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
@@ -1131,6 +1129,78 @@ const updateHotelInfo = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error: Unable to update hotel information");
   }
 });
+
+const updateHotelGallery = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const files = req.files || [];
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
+  if (files.length === 0) {
+    return apiError(res, 400, "No images provided for gallery update");
+  }
+
+  try {
+    const hotel = await hotelModel.findById(hotelId);
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      const filePath = file.path || file.tempFilePath;
+
+      if (!filePath) {
+        console.error("File path not found", file);
+        continue;
+      }
+
+      const uploadResult = await uploadToCloudinary(filePath, "hotel_images");
+      if (uploadResult) uploadedUrls.push(uploadResult);
+    }
+
+    if (uploadedUrls.length === 0) {
+      return apiError(res, 500, "Failed to upload any images to Cloudinary");
+    }
+
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $push: { hotelImages: { $each: uploadedUrls } } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedHotel) {
+      return apiError(res, 500, "Failed to update hotel gallery");
+    }
+
+    await Promise.all([
+      hoteldataCache.del(`hotel_${hotelId}`),
+      registerHotel.del(`hotel_${hotelId}`),
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
+      hoteldataCache.del("all_hotels"),
+      hoteldataCache.del("featured_hotels"),
+      hoteldataCache.del("high_reviewed_hotels"),
+      hoteldataCache.del("all_resort_hotels"),
+    ]);
+
+    return apiResponse(res, 200, true, "Hotel gallery updated successfully", {
+      hotelId,
+      uploadedCount: uploadedUrls.length,
+      hotelImages: updatedHotel.hotelImages,
+    });
+  } catch (error: any) {
+    console.error("Error updating hotel gallery:", error);
+    return apiError(res, 500, "Internal server error: Unable to update hotel gallery");
+  }
+});
+
 
 export {
   registerHotelRequest,
@@ -1152,6 +1222,7 @@ export {
   getPaymentCredentials,
   getAllRatings,
   updateHotelInfo,
+  updateHotelGallery,
   approveRegistration,
   declineRegistration,
 };

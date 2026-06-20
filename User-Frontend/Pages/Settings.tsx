@@ -21,7 +21,7 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
-import { getHotelById,updateHotelInfo } from "../Services/hotel.api";
+import { getHotelById,updateHotelInfo,updateHotelGallery } from "../Services/hotel.api";
 import { hotelClient } from "../Services/httpclient/hotel.client";
 import { useAuth } from "../Contexts/Authcontext";
 import { Toast} from "../Components/modal-popups/Toast";
@@ -279,29 +279,30 @@ const saveDetails = async () => {
   };
 
   const uploadPendingImages = async () => {
-    if (!hotelId || !pendingImageFiles.length) return;
-    setUploadingImages(true);
-    try {
-      const fd = new FormData();
-      pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
-      const res = await hotelClient.post(`/hotel/${hotelId}/images`, fd, {
-        headers: authHeaders,
-        withCredentials: true,
-      });
-      const updatedImages: string[] =
-        res?.data?.hotelImages || res?.data?.images || [...settings.images];
-      setSettings((p) => ({ ...p, images: updatedImages }));
-      setFormData((p) => ({ ...p, images: updatedImages }));
-      pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
-      setPendingImageFiles([]);
-      setPendingImagePreviews([]);
-      showImageToast("success", "Images uploaded successfully.");
-    } catch (err: any) {
-      showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
-    } finally {
-      setUploadingImages(false);
-    }
-  };
+  if (!hotelId || !pendingImageFiles.length) return;
+  setUploadingImages(true);
+  try {
+    const fd = new FormData();
+    pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
+
+    const res = await updateHotelGallery(hotelId, fd);
+
+    const updatedImages: string[] =
+      res?.data?.hotelImages ?? res?.hotelImages ?? [...settings.images];
+
+    setSettings((p) => ({ ...p, images: updatedImages }));
+    setFormData((p) => ({ ...p, images: updatedImages }));
+
+    pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
+    setPendingImageFiles([]);
+    setPendingImagePreviews([]);
+    showImageToast("success", "Images uploaded successfully.");
+  } catch (err: any) {
+    showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
+  } finally {
+    setUploadingImages(false);
+  }
+};
 
   const deleteExistingImage = async (imageUrl: string) => {
     if (!hotelId) return;
