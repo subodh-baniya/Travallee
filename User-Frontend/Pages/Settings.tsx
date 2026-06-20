@@ -21,10 +21,9 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
-import { getHotelById,updateHotelInfo,updateHotelGallery,deleteHotelGalleryImage } from "../Services/hotel.api";
-import { hotelClient } from "../Services/httpclient/hotel.client";
+import { getHotelById, updateHotelInfo, updateHotelGallery, deleteHotelGalleryImage } from "../Services/hotel.api";
 import { useAuth } from "../Contexts/Authcontext";
-import { Toast} from "../Components/modal-popups/Toast";
+import { Toast } from "../Components/modal-popups/Toast";
 import { ImagePreviewModal } from "../Components/modal-popups/ImagePreviewModal";
 import { useToast } from "../Hooks/useToast";
 import axios from "axios";
@@ -43,6 +42,8 @@ interface HotelSettings {
   facilities: string[];
   images: string[];
   documents: string[];
+  esewa_Merchantid?: string;
+  khalti_SecretKey?: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────
@@ -76,8 +77,9 @@ const emptyHotel: HotelSettings = {
   facilities: [],
   images: [],
   documents: [],
+  esewa_Merchantid: "",
+  khalti_SecretKey: "",
 };
-
 
 
 // ─── Shared UI ────────────────────────────────────────────────
@@ -97,16 +99,16 @@ const SectionHeader: React.FC<{
   subtitle?: string;
   action?: React.ReactNode;
 }> = ({ icon, title, subtitle, action }) => (
-  <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-5 border-b border-slate-100">
-    <div className="flex items-center gap-3">
+  <div className="flex items-start justify-between gap-4 px-7 pt-7 pb-6 border-b border-slate-100">
+    <div className="flex items-center gap-3.5">
       {icon && (
-        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 text-sm">
+        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-blue-600 text-sm">
           {icon}
         </span>
       )}
       <div>
         <h2 className="text-base font-semibold text-slate-800 leading-tight">{title}</h2>
-        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
       </div>
     </div>
     {action}
@@ -114,7 +116,7 @@ const SectionHeader: React.FC<{
 );
 
 const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">
+  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
     {children}
   </label>
 );
@@ -128,11 +130,16 @@ const inputReadonly =
 const fieldInput = (editable: boolean) =>
   `${inputBase} ${editable ? inputEditable : inputReadonly}`;
 
+// Larger variant used for the Basic Information and About sections
+const inputBaseLg =
+  "w-full rounded-xl border px-5 py-3.5 text-base outline-none transition-all duration-150";
+const fieldInputLg = (editable: boolean) =>
+  `${inputBaseLg} ${editable ? inputEditable : inputReadonly}`;
+
 
 const SettingsPage: React.FC = () => {
   const auth = useAuth();
   const hotelId = auth?.hotelId;
-  const token = auth?.user?.token;
 
   const [settings, setSettings] = useState<HotelSettings>(emptyHotel);
   const [formData, setFormData] = useState<HotelSettings>(emptyHotel);
@@ -154,12 +161,16 @@ const SettingsPage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Payment credentials visibility toggles (values now live in formData/settings,
+  // editing happens via the main Edit Details / Save Changes flow)
+  const [showEsewaKey, setShowEsewaKey] = useState(false);
+  const [showKhaltiKey, setShowKhaltiKey] = useState(false);
+
   const { toast: pageToast, showToast: showPageToast, clearToast: clearPageToast } = useToast();
   const { toast: imageToast, showToast: showImageToast } = useToast();
   const { toast: passwordToast, showToast: showPasswordToast, clearToast: clearPasswordToast } = useToast();
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
 
   useEffect(() => {
@@ -170,9 +181,9 @@ const SettingsPage: React.FC = () => {
       }
       setLoading(true);
       try {
-        const res= await getHotelById(hotelId);
-         const hotel = res?.data ?? res;
-         console.log("Fetched hotel data:", hotel);
+        const res = await getHotelById(hotelId);
+        const hotel = res?.data ?? res;
+        console.log("Fetched hotel data:", hotel);
         const mapped: HotelSettings = {
           _id: hotel?._id,
           hotelName: hotel?.hotelName || "",
@@ -188,6 +199,8 @@ const SettingsPage: React.FC = () => {
           documents: Array.isArray(hotel?.VerificationDocuments)
             ? hotel.VerificationDocuments
             : [],
+          esewa_Merchantid: hotel?.esewa_Merchantid || "",
+          khalti_SecretKey: hotel?.khalti_SecretKey || "",
         };
         setSettings(mapped);
         setFormData(mapped);
@@ -232,37 +245,39 @@ const SettingsPage: React.FC = () => {
     handleField("facilities", formData.facilities.filter((_, i) => i !== index));
 
 
-const saveDetails = async () => {
-  if (!hotelId) return;
-  setSaving(true);
-  clearPageToast();
-  try {
-    const payload = {
-      hotelName:        formData.hotelName,
-      ownerName:        formData.ownerName,
-      contactNumber:    formData.contactNumber,
-      hotelLocation:    formData.hotelLocation,
-      propertyType:     formData.propertyType,
-      checkinTime:      formData.checkinTime,
-      checkoutTime:     formData.checkoutTime,
-      hotelDescription: formData.hotelDescription,
-      facilities:       formData.facilities,
-    };
+  const saveDetails = async () => {
+    if (!hotelId) return;
+    setSaving(true);
+    clearPageToast();
+    try {
+      const payload = {
+        hotelName: formData.hotelName,
+        ownerName: formData.ownerName,
+        contactNumber: formData.contactNumber,
+        hotelLocation: formData.hotelLocation,
+        propertyType: formData.propertyType,
+        checkinTime: formData.checkinTime,
+        checkoutTime: formData.checkoutTime,
+        hotelDescription: formData.hotelDescription,
+        facilities: formData.facilities,
+        esewa_Merchantid: formData.esewa_Merchantid,
+        khalti_SecretKey: formData.khalti_SecretKey,
+      };
 
-    await updateHotelInfo(hotelId, payload);
+      await updateHotelInfo(hotelId, payload);
 
-    setSettings(formData);
-    setIsEditing(false);
-    showPageToast("success", "Hotel details saved successfully.");
-  } catch (err: any) {
-    showPageToast(
-      "error",
-      err?.response?.data?.message || "Failed to save hotel details."
-    );
-  } finally {
-    setSaving(false);
-  }
-};
+      setSettings(formData);
+      setIsEditing(false);
+      showPageToast("success", "Hotel details saved successfully.");
+    } catch (err: any) {
+      showPageToast(
+        "error",
+        err?.response?.data?.message || "Failed to save hotel details."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
 
   const handleSelectImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,103 +295,103 @@ const saveDetails = async () => {
   };
 
   const uploadPendingImages = async () => {
-  if (!hotelId || !pendingImageFiles.length) return;
-  setUploadingImages(true);
-  try {
-    const fd = new FormData();
-    pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
+    if (!hotelId || !pendingImageFiles.length) return;
+    setUploadingImages(true);
+    try {
+      const fd = new FormData();
+      pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
 
-    const res = await updateHotelGallery(hotelId, fd);
+      const res = await updateHotelGallery(hotelId, fd);
 
-    const updatedImages: string[] =
-      res?.data?.hotelImages ?? res?.hotelImages ?? [...settings.images];
+      const updatedImages: string[] =
+        res?.data?.hotelImages ?? res?.hotelImages ?? [...settings.images];
 
-    setSettings((p) => ({ ...p, images: updatedImages }));
-    setFormData((p) => ({ ...p, images: updatedImages }));
+      setSettings((p) => ({ ...p, images: updatedImages }));
+      setFormData((p) => ({ ...p, images: updatedImages }));
 
-    pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
-    setPendingImageFiles([]);
-    setPendingImagePreviews([]);
-    showImageToast("success", "Images uploaded successfully.");
-  } catch (err: any) {
-    showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
-  } finally {
-    setUploadingImages(false);
-  }
-};
+      pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
+      setPendingImageFiles([]);
+      setPendingImagePreviews([]);
+      showImageToast("success", "Images uploaded successfully.");
+    } catch (err: any) {
+      showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
+    } finally {
+      setUploadingImages(false);
+    }
+  };
 
-const deleteExistingImage = async (imageUrl: string) => {
-  if (!hotelId) return;
-  setDeletingImage(imageUrl);
-  try {
-    const res = await deleteHotelGalleryImage(hotelId, imageUrl);
-    
-    const updatedImages: string[] =
-      res?.data?.hotelImages ?? res?.hotelImages ?? settings.images.filter((img) => img !== imageUrl);
+  const deleteExistingImage = async (imageUrl: string) => {
+    if (!hotelId) return;
+    setDeletingImage(imageUrl);
+    try {
+      const res = await deleteHotelGalleryImage(hotelId, imageUrl);
 
-    setSettings((p) => ({ ...p, images: updatedImages }));
-    setFormData((p) => ({ ...p, images: updatedImages }));
-    showImageToast("success", "Image removed.");
-  } catch (err: any) {
-    showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
-  } finally {
-    setDeletingImage(null);
-  }
-};
+      const updatedImages: string[] =
+        res?.data?.hotelImages ?? res?.hotelImages ?? settings.images.filter((img) => img !== imageUrl);
+
+      setSettings((p) => ({ ...p, images: updatedImages }));
+      setFormData((p) => ({ ...p, images: updatedImages }));
+      showImageToast("success", "Image removed.");
+    } catch (err: any) {
+      showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
+    } finally {
+      setDeletingImage(null);
+    }
+  };
 
 
-const handleChangePassword = async () => {
-  clearPasswordToast();
+  const handleChangePassword = async () => {
+    clearPasswordToast();
 
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    showPasswordToast("error", "All fields are required.");
-    return;
-  }
-  if (newPassword.length < 8) {
-    showPasswordToast("error", "New password must be at least 8 characters.");
-    return;
-  }
-  if (newPassword !== confirmPassword) {
-    showPasswordToast("error", "Passwords do not match.");
-    return;
-  }
-  if (currentPassword === newPassword) {
-    showPasswordToast("error", "New password must be different from current password.");
-    return;
-  }
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showPasswordToast("error", "All fields are required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      showPasswordToast("error", "New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showPasswordToast("error", "Passwords do not match.");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      showPasswordToast("error", "New password must be different from current password.");
+      return;
+    }
 
-  setChangingPassword(true);
-  try {
-    await axios.post(
-      `${import.meta.env.VITE_AUTH_API_BASE_URL}/update-hotel-user-password`,
-      { currentPassword, newPassword },
-      { withCredentials: true }  
-    );
-    showPasswordToast("success", "Password updated successfully.");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  } catch (err: any) {
-    showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
-  } finally {
-    setChangingPassword(false);
-  }
-};
+    setChangingPassword(true);
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_AUTH_API_BASE_URL}/update-hotel-user-password`,
+        { currentPassword, newPassword },
+        { withCredentials: true }
+      );
+      showPasswordToast("success", "Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] px-4 py-8 md:px-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#f8f9fb] px-4 py-8 sm:px-6 md:px-10">
+      <div className="max-w-6xl mx-auto space-y-8">
 
         {/* Page Toast */}
         <div className="relative h-0">
           <Toast toast={pageToast} />
         </div>
 
-        {/* ── Page Header  */}
-        <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ── Page Header */}
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] px-7 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2 text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">
+            <div className="flex items-center gap-2 text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1.5">
               <FaHotel />
               Hotel Settings
             </div>
@@ -387,12 +402,12 @@ const handleChangePassword = async () => {
                 {settings.hotelName || "Your Hotel"}
               </h1>
             )}
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1.5">
               Manage your profile, gallery, documents and account security.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             {!isEditing ? (
               <button
                 type="button"
@@ -426,23 +441,23 @@ const handleChangePassword = async () => {
           </div>
         </div>
 
-        {/* ── Main Grid  */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* ── Main Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-          {/* ── LEFT COLUMN  */}
-          <div className="xl:col-span-2 space-y-6">
+          {/* ── LEFT COLUMN */}
+          <div className="xl:col-span-2 space-y-8">
 
             {/* Basic Info */}
             <SectionCard>
               <SectionHeader icon={<FaHotel />} title="Basic Information" subtitle="Core details visible to guests" />
-              <div className="px-6 py-5 grid md:grid-cols-2 gap-5">
+              <div className="px-8 py-9 grid md:grid-cols-2 gap-7">
                 <div>
                   <FieldLabel>Hotel Name</FieldLabel>
                   <input
                     value={display.hotelName}
                     readOnly={!isEditing}
                     onChange={(e) => handleField("hotelName", e.target.value)}
-                    className={fieldInput(isEditing)}
+                    className={fieldInputLg(isEditing)}
                     placeholder="e.g. The Grand Himalaya"
                   />
                 </div>
@@ -452,19 +467,19 @@ const handleChangePassword = async () => {
                     value={display.ownerName}
                     readOnly={!isEditing}
                     onChange={(e) => handleField("ownerName", e.target.value)}
-                    className={fieldInput(isEditing)}
+                    className={fieldInputLg(isEditing)}
                     placeholder="Full name"
                   />
                 </div>
                 <div>
                   <FieldLabel>Contact Number</FieldLabel>
                   <div className="relative">
-                    <FaPhoneAlt className="absolute top-1/2 -translate-y-1/2 left-4 text-slate-300 text-xs pointer-events-none" />
+                    <FaPhoneAlt className="absolute top-1/2 -translate-y-1/2 left-5 text-slate-300 text-sm pointer-events-none" />
                     <input
                       value={display.contactNumber}
                       readOnly={!isEditing}
                       onChange={(e) => handleField("contactNumber", e.target.value)}
-                      className={`${fieldInput(isEditing)} pl-10`}
+                      className={`${fieldInputLg(isEditing)} pl-12`}
                       placeholder="+977 98XXXXXXXX"
                     />
                   </div>
@@ -475,7 +490,7 @@ const handleChangePassword = async () => {
                     <select
                       value={display.propertyType}
                       onChange={(e) => handleField("propertyType", e.target.value)}
-                      className={`${inputBase} ${inputEditable} bg-white`}
+                      className={`${inputBaseLg} ${inputEditable} bg-white`}
                     >
                       <option value="">Select type</option>
                       {PROPERTY_TYPES.map((t) => (
@@ -483,18 +498,18 @@ const handleChangePassword = async () => {
                       ))}
                     </select>
                   ) : (
-                    <input value={display.propertyType} readOnly className={fieldInput(false)} />
+                    <input value={display.propertyType} readOnly className={fieldInputLg(false)} />
                   )}
                 </div>
                 <div className="md:col-span-2">
                   <FieldLabel>Location</FieldLabel>
                   <div className="relative">
-                    <FaMapMarkerAlt className="absolute top-1/2 -translate-y-1/2 left-4 text-slate-300 text-xs pointer-events-none" />
+                    <FaMapMarkerAlt className="absolute top-1/2 -translate-y-1/2 left-5 text-slate-300 text-sm pointer-events-none" />
                     <input
                       value={display.hotelLocation}
                       readOnly={!isEditing}
                       onChange={(e) => handleField("hotelLocation", e.target.value)}
-                      className={`${fieldInput(isEditing)} pl-10`}
+                      className={`${fieldInputLg(isEditing)} pl-12`}
                       placeholder="City, District, Nepal"
                     />
                   </div>
@@ -505,17 +520,17 @@ const handleChangePassword = async () => {
             {/* Description */}
             <SectionCard>
               <SectionHeader title="About the Hotel" subtitle="Write a compelling description for guests" />
-              <div className="px-6 py-5">
+              <div className="px-8 py-9">
                 <textarea
                   value={display.hotelDescription}
                   readOnly={!isEditing}
                   onChange={(e) => handleField("hotelDescription", e.target.value)}
-                  rows={6}
+                  rows={10}
                   placeholder={isEditing ? "Describe your property, atmosphere, and what makes it unique…" : ""}
-                  className={`${fieldInput(isEditing)} resize-none leading-relaxed`}
+                  className={`${fieldInputLg(isEditing)} resize-none leading-relaxed`}
                 />
                 {isEditing && (
-                  <p className="text-xs text-slate-400 mt-1.5 text-right">
+                  <p className="text-xs text-slate-400 mt-2 text-right">
                     {display.hotelDescription.length} characters
                   </p>
                 )}
@@ -525,9 +540,9 @@ const handleChangePassword = async () => {
             {/* Verification Documents */}
             <SectionCard>
               <SectionHeader icon={<FaFileAlt />} title="Verification Documents" subtitle="Submitted during registration" />
-              <div className="px-6 py-5">
+              <div className="px-8 py-9">
                 {settings.documents.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     {settings.documents.map((doc, index) => (
                       <div
                         key={index}
@@ -537,19 +552,19 @@ const handleChangePassword = async () => {
                         <img
                           src={doc}
                           alt={`Document ${index + 1}`}
-                          className="h-40 w-full object-contain bg-slate-50"
+                          className="h-64 w-full object-contain bg-slate-50"
                         />
-                        <div className="px-4 py-2.5 flex items-center gap-2 border-t border-slate-100 bg-white">
-                          <FaFileAlt className="text-slate-300 text-xs" />
-                          <span className="text-xs text-slate-500 font-medium">Document {index + 1}</span>
+                        <div className="px-5 py-3.5 flex items-center gap-2 border-t border-slate-100 bg-white">
+                          <FaFileAlt className="text-slate-300 text-sm" />
+                          <span className="text-sm text-slate-500 font-medium">Document {index + 1}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-8 text-center">
-                    <FaFileAlt className="text-slate-300 text-xl" />
-                    <p className="text-xs text-slate-400">No documents submitted</p>
+                  <div className="flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-12 text-center">
+                    <FaFileAlt className="text-slate-300 text-2xl" />
+                    <p className="text-sm text-slate-400">No documents submitted</p>
                   </div>
                 )}
               </div>
@@ -557,13 +572,13 @@ const handleChangePassword = async () => {
 
           </div>
 
-          {/* ── RIGHT COLUMN  */}
-          <div className="space-y-6">
+          {/* ── RIGHT COLUMN */}
+          <div className="space-y-8">
 
             {/* Check-in / Check-out */}
             <SectionCard>
               <SectionHeader icon={<FaClock />} title="Check-in & Check-out" subtitle="Guest arrival and departure times" />
-              <div className="px-6 py-5 grid grid-cols-2 gap-4">
+              <div className="px-7 py-7 grid grid-cols-2 gap-5">
                 <div>
                   <FieldLabel>Check-in</FieldLabel>
                   {isEditing ? (
@@ -602,8 +617,8 @@ const handleChangePassword = async () => {
             {/* Facilities */}
             <SectionCard>
               <SectionHeader title="Facilities" subtitle="Amenities available to guests" />
-              <div className="px-6 py-5 space-y-4">
-                <div className="flex flex-wrap gap-2">
+              <div className="px-7 py-7 space-y-5">
+                <div className="flex flex-wrap gap-2.5">
                   {display.facilities.map((facility, i) => (
                     <div
                       key={facility + i}
@@ -623,13 +638,13 @@ const handleChangePassword = async () => {
                     </div>
                   ))}
                   {display.facilities.length === 0 && (
-                    <div className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-6 text-center">
+                    <div className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-7 text-center">
                       <p className="text-xs text-slate-400">No facilities listed yet</p>
                     </div>
                   )}
                 </div>
                 {isEditing && (
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-3 pt-2">
                     <input
                       value={facilityInput}
                       onChange={(e) => setFacilityInput(e.target.value)}
@@ -653,7 +668,7 @@ const handleChangePassword = async () => {
             {/* Change Password */}
             <SectionCard>
               <SectionHeader icon={<FaLock />} title="Change Password" subtitle="Keep your account secure" />
-              <div className="px-6 py-5 space-y-4">
+              <div className="px-7 py-7 space-y-5">
 
                 {/* Password Toast */}
                 <div className="relative h-0">
@@ -722,10 +737,71 @@ const handleChangePassword = async () => {
               </div>
             </SectionCard>
 
+            {/* Payment Credentials */}
+            <SectionCard>
+              <SectionHeader
+                icon={<FaStar />}
+                title="Payment Credentials"
+                subtitle="eSewa and Khalti gateway keys"
+              />
+              <div className="px-7 py-7 space-y-5">
+
+                {/* eSewa */}
+                <div>
+                  <FieldLabel>eSewa Merchant ID</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showEsewaKey ? "text" : "password"}
+                      value={display.esewa_Merchantid || ""}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("esewa_Merchantid", e.target.value)}
+                      placeholder={isEditing ? "Enter eSewa Merchant ID" : ""}
+                      className={`${fieldInput(isEditing)} pr-11`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEsewaKey((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showEsewaKey ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Khalti */}
+                <div>
+                  <FieldLabel>Khalti Secret Key</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showKhaltiKey ? "text" : "password"}
+                      value={display.khalti_SecretKey || ""}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("khalti_SecretKey", e.target.value)}
+                      placeholder={isEditing ? "Enter Khalti Secret Key" : ""}
+                      className={`${fieldInput(isEditing)} pr-11`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKhaltiKey((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showKhaltiKey ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                {!isEditing && (
+                  <p className="text-xs text-slate-400">
+                    Keep these keys secure and never share them publicly.
+                  </p>
+                )}
+              </div>
+            </SectionCard>
+
           </div>
         </div>
 
-        {/* ── Gallery  */}
+        {/* ── Gallery */}
         <SectionCard>
           <SectionHeader
             icon={<FaImage />}
@@ -750,7 +826,7 @@ const handleChangePassword = async () => {
             onChange={handleSelectImages}
             className="hidden"
           />
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-7 py-7 space-y-6">
 
             {/* Image Toast */}
             <div className="relative h-0">
@@ -758,7 +834,7 @@ const handleChangePassword = async () => {
             </div>
 
             {settings.images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
                 {settings.images.map((img, i) => (
                   <div
                     key={img + i}
@@ -784,21 +860,21 @@ const handleChangePassword = async () => {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200 rounded-2xl py-14 text-center">
+              <div className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
                 <FaImage className="text-slate-300 text-3xl" />
                 <div>
                   <p className="text-sm font-medium text-slate-500">No photos yet</p>
-                  <p className="text-xs text-slate-400">Add photos to attract more guests</p>
+                  <p className="text-xs text-slate-400 mt-1">Add photos to attract more guests</p>
                 </div>
               </div>
             )}
 
             {pendingImagePreviews.length > 0 && (
-              <div className="border-t border-slate-100 pt-5 space-y-4">
+              <div className="border-t border-slate-100 pt-6 space-y-5">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   Ready to upload · {pendingImagePreviews.length} photo{pendingImagePreviews.length > 1 ? "s" : ""}
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
                   {pendingImagePreviews.map((src, idx) => (
                     <div
                       key={src}
@@ -833,7 +909,7 @@ const handleChangePassword = async () => {
 
       </div>
 
-      {/* ── Image Preview Modal  */}
+      {/* ── Image Preview Modal */}
       <ImagePreviewModal src={previewImage} onClose={() => setPreviewImage(null)} />
 
     </div>

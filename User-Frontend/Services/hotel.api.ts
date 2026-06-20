@@ -1,6 +1,6 @@
 import { hotelClient } from "./httpclient/hotel.client";
 
-interface payload{
+interface payload {
  hotelName: string;
  ownerName: string;
  contactNumber: string;
@@ -10,6 +10,8 @@ interface payload{
  checkoutTime: string;
  hotelDescription: string;
  facilities: string[];
+ esewa_Merchantid: string | undefined;
+ khalti_SecretKey: string | undefined;
 }
 
 export const registerHotel = (data: FormData) => {
