@@ -27,6 +27,7 @@ import { useAuth } from "../Contexts/Authcontext";
 import { Toast} from "../Components/modal-popups/Toast";
 import { ImagePreviewModal } from "../Components/modal-popups/ImagePreviewModal";
 import { useToast } from "../Hooks/useToast";
+import axios from "axios";
 
 
 interface HotelSettings {
@@ -324,37 +325,43 @@ const deleteExistingImage = async (imageUrl: string) => {
 };
 
 
-  const handleChangePassword = async () => {
-    clearPasswordToast();
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      showPasswordToast("error", "All fields are required.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      showPasswordToast("error", "New password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showPasswordToast("error", "Passwords do not match.");
-      return;
-    }
-    setChangingPassword(true);
-    try {
-      await hotelClient.put(
-        `/hotel/${hotelId}/change-password`,
-        { currentPassword, newPassword },
-        { headers: authHeaders, withCredentials: true }
-      );
-      showPasswordToast("success", "Password updated successfully.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err: any) {
-      showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
-    } finally {
-      setChangingPassword(false);
-    }
-  };
+const handleChangePassword = async () => {
+  clearPasswordToast();
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showPasswordToast("error", "All fields are required.");
+    return;
+  }
+  if (newPassword.length < 8) {
+    showPasswordToast("error", "New password must be at least 8 characters.");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    showPasswordToast("error", "Passwords do not match.");
+    return;
+  }
+  if (currentPassword === newPassword) {
+    showPasswordToast("error", "New password must be different from current password.");
+    return;
+  }
+
+  setChangingPassword(true);
+  try {
+    await axios.post(
+      `${import.meta.env.VITE_AUTH_API_BASE_URL}/update-hotel-user-password`,
+      { currentPassword, newPassword },
+      { withCredentials: true }  
+    );
+    showPasswordToast("success", "Password updated successfully.");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  } catch (err: any) {
+    showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
+  } finally {
+    setChangingPassword(false);
+  }
+};
 
 
   return (
