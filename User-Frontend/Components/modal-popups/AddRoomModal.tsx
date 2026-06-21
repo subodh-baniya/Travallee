@@ -4,7 +4,7 @@ import { Toast } from "./Toast";
 import { useToast } from "../../Hooks/useToast";
 
 type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
-type RoomType = "standard" | "deluxe" | "suite";
+type RoomType = "STANDARD" | "DELUXE" | "SUITE";
 type ViewType = "city" | "garden" | "beach" | "mountain" | "street" | "pool" | "none";
 
 interface AddRoomFormData {
@@ -56,7 +56,7 @@ const SUITE_TYPES = ["Junior Suite", "Executive Suite", "Presidential Suite", "P
 
 const initialForm: AddRoomFormData = {
   roomNumber: "",
-  roomType: "standard",
+  roomType: "STANDARD",
   suitetype: "N/A",
   status: "AVAILABLE",
   roomDescription: "",
@@ -180,7 +180,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
       if (form.floorNumber === "")       errs.floorNumber     = "Floor number is required";
       if (!form.roomDescription.trim())  errs.roomDescription = "Description is required";
       if (!form.bedType)                 errs.bedType         = "Bed type is required";
-      if (form.roomType === "suite" && (!form.suitetype || form.suitetype === "N/A"))
+      if (form.roomType === "SUITE" && (!form.suitetype || form.suitetype === "N/A"))
         errs.suitetype = "Please select a suite type";
     }
     if (step === 1) {
@@ -376,7 +376,7 @@ export const AddRoomModal = ({ isOpen, onClose, onSubmit }: AddRoomModalProps) =
                         </div>
                       </div>
 
-                      {form.roomType === "suite" && (
+                      {form.roomType === "SUITE" && (
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1.5">Suite Type *</label>
                           <select

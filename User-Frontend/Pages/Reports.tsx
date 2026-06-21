@@ -254,7 +254,7 @@ const ReportsPage: React.FC = () => {
     ];
   }, [occupancyPct]);
 
-  const COLORS = ["#2563eb", "#dbeafe"];
+  const COLORS = ["#2563eb", "#9ECAE1"];
 
 
   const fmt = (n: number) =>

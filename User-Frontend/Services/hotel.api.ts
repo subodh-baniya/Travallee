@@ -36,14 +36,6 @@ export const createRoom = (hotelId: string, data: FormData) => {
     .then(res => res.data);
 };
 
-export const deleteRoom = (  hotelId: string,roomId: string,password: string) => {
-  return hotelClient
-    .delete(`/room/${hotelId}/${roomId}`, {
-      data: { password },
-    })
-    .then(res => res.data);
-};
-
 export const getRooms = (hotelId: string, page = 1, limit = 12) => {
   return hotelClient
     .get(`/rooms/${hotelId}`, {
@@ -80,6 +72,31 @@ export const updateHotelGallery = (hotelId: string, data: FormData) => {
 export const deleteHotelGalleryImage = (hotelId: string, imageUrl: string) => {
   return hotelClient
     .delete(`/delete-hotel-gallery-image/${hotelId}`, {
+      data: { imageUrl }
+    })
+    .then(res => res.data);
+};
+
+export const updateRoomInfo = (roomId: string, data: payload) => {
+  return hotelClient.post(`/update-room-info/${roomId}`, data)
+    .then(res => res.data);
+}
+
+export const updateRoomImages = (roomId: string, data: FormData) => {
+  return hotelClient
+    .post(`/update-room-images/${roomId}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then(res => res.data);
+}
+
+export const deleteRoom=(roomId:string)=>{
+  return hotelClient.delete(`room/${roomId}`).then(res=>res.data);
+}
+
+export const deleteRoomImage = (roomId: string, imageUrl: string) => {
+  return hotelClient
+    .delete(`/roomImage/${roomId}`, {
       data: { imageUrl }
     })
     .then(res => res.data);
