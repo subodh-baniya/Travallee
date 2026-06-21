@@ -36,14 +36,6 @@ export const createRoom = (hotelId: string, data: FormData) => {
     .then(res => res.data);
 };
 
-export const deleteRoom = (  hotelId: string,roomId: string,password: string) => {
-  return hotelClient
-    .delete(`/room/${hotelId}/${roomId}`, {
-      data: { password },
-    })
-    .then(res => res.data);
-};
-
 export const getRooms = (hotelId: string, page = 1, limit = 12) => {
   return hotelClient
     .get(`/rooms/${hotelId}`, {
@@ -97,3 +89,15 @@ export const updateRoomImages = (roomId: string, data: FormData) => {
     })
     .then(res => res.data);
 }
+
+export const deleteRoom=(roomId:string)=>{
+  return hotelClient.delete(`room/${roomId}`).then(res=>res.data);
+}
+
+export const deleteRoomImage = (roomId: string, imageUrl: string) => {
+  return hotelClient
+    .delete(`/roomImage/${roomId}`, {
+      data: { imageUrl }
+    })
+    .then(res => res.data);
+};

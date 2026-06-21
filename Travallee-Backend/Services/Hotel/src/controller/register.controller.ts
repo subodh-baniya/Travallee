@@ -1382,8 +1382,47 @@ const updateRoomImages = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const deleteRoomImages = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+  const { imageUrl } = req.body; 
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  if (!imageUrl) {
+    return apiError(res, 400, "Image URL is required in request body");
+  }
+
+  try {
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $pull: { roomImages: imageUrl } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId }); 
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+
+    return apiResponse(res, 200, true, "Image deleted successfully", {
+      roomId,
+      deletedImageUrl: imageUrl,
+      roomImages: updatedRoom.roomImages,
+    });
+
+  } catch (error) {
+    return apiError(res, 500, "Failed to delete room image", { error }); 
+  }
+});
+
 export {
   registerHotelRequest,
+  deleteRoomImages,
   createroom,
   deleteRoom,
   updateRoomImages,
