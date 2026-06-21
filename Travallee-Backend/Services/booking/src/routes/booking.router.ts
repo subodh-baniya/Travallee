@@ -1,6 +1,6 @@
 import Router from "express"
 
-import {createBooking, verifyBookingOtp, getGuestStatus,getBookingHistoryOfUser,createBookingFromHotel,calculateIncomeHotel,calculatePendingIncomeHotel,getHotelIdfromBooking,updateBookingPaymentStatus,getTransactionHistoryOfHotel} from "../controller/booking.controller.js";
+import {createBooking, verifyBookingOtp, getGuestStatus,getBookingHistoryOfUser,createBookingFromHotel,calculateIncomeHotel,calculatePendingIncomeHotel,getHotelIdfromBooking,updateBookingPaymentStatus,getTransactionHistoryOfHotel,updateBooking} from "../controller/booking.controller.js";
 
 
 import { authenticate, hotelAdminMiddleware} from "../middleware/role.middleware.js";
@@ -25,6 +25,6 @@ router.get("/transaction-history/:hotelId", getTransactionHistoryOfHotel);
 router.get("/booking-history/:userId",  getBookingHistoryOfUser)
 
 router.post("/payment-update", updateBookingPaymentStatus);
-
+router.post("/update-booking/:bookingId",updateBooking)
 
 export default router

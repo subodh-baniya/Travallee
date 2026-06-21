@@ -14,6 +14,11 @@ export interface CreateBookingPayload {
   email: string;
 }
 
+export interface updateBookingPayload {
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  bookingPayment: "PAID" | "NOTPAID";
+}
+
 export const getGuestStatus = (bookingId: string) => {
     return bookingAdmin.get(`/guest-status/${bookingId}`)
 }
@@ -34,4 +39,8 @@ export const getTotalIncome = (hotelId: string) => {
 
 export const getPendingIncome = (hotelId: string) => {
   return bookingClient.get(`/calculate-pending-income/${hotelId}`);
+}
+
+export const updateBooking = (bookingId: string,data:CreateBookingPayload) => {
+  return bookingClient.post(`/update-booking/${bookingId}`,data);
 }
