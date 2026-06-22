@@ -1,80 +1,89 @@
-# 🔔 Notifications Service
+# Notifications Service
 
-The **Notifications Service** handles email, SMS, and push notifications. It provides templated messaging, delivery tracking, and multi-channel notification capabilities.
-
-## 📋 Overview
-
-Notifications Service manages:
-- Email notifications (Resend)
-- SMS notifications
-- Push notifications (Expo)
-- Notification templates
-- Delivery tracking
-- Retry mechanisms
-- Notification preferences
-- Bulk notifications
+The **Notifications Service** handles email, SMS, and push notifications across the Travallee platform. It provides templated messaging, delivery tracking, retry mechanisms, and multi-channel notification capabilities.
 
 ---
 
-## 🛠️ Tech Stack
+# Overview
 
-| Component | Technology |
-|-----------|-----------|
-| **Framework** | Express.js 5.2 |
-| **Language** | TypeScript 5.9 |
-| **Database** | MongoDB + Mongoose |
-| **Queue** | BullMQ |
-| **Email** | Resend API |
-| **SMS** | Twilio (configurable) |
-| **Push** | Expo Notifications |
+The Notifications Service is responsible for:
+
+* Email notifications (Resend)
+* SMS notifications
+* Push notifications (Expo)
+* Notification template management
+* Delivery tracking and reporting
+* Retry mechanisms for failed deliveries
+* User notification preferences
+* Bulk notification support
 
 ---
 
-## 📂 Project Structure
+# Tech Stack
 
-```
+| Component          | Technology            |
+| ------------------ | --------------------- |
+| Framework          | Express.js 5.2        |
+| Language           | TypeScript 5.9        |
+| Database           | MongoDB + Mongoose    |
+| Queue              | BullMQ                |
+| Email Provider     | Resend API            |
+| SMS Provider       | Twilio (Configurable) |
+| Push Notifications | Expo Notifications    |
+
+---
+
+# Project Structure
+
+```text
 notifications/
 ├── src/
-│   ├── app.ts                      # Express app setup
-│   ├── index.ts                    # Server entry point
-│   ├── Controllers/                # Request handlers
+│   ├── app.ts
+│   ├── index.ts
+│   ├── Controllers/
 │   │   ├── notification.controller.ts
 │   │   └── template.controller.ts
-│   ├── Routes/                     # Route definitions
+│   ├── Routes/
 │   │   ├── notification.routes.ts
 │   │   └── template.routes.ts
-│   ├── Models/                     # Data models
-│   │   ├── Notification.ts         # Notification schema
-│   │   └── Template.ts             # Email template schema
-│   ├── Services/                   # Business logic
-│   │   ├── notification.service.ts # Core logic
-│   │   ├── email.service.ts        # Email sending
-│   │   ├── sms.service.ts          # SMS sending
-│   │   ├── push.service.ts         # Push notifications
-│   │   └── template.service.ts     # Template management
-│   ├── Jobs/                       # Background jobs
-│   │   ├── sendEmail.job.ts        # Email job
-│   │   ├── sendSms.job.ts          # SMS job
-│   │   └── sendPush.job.ts         # Push job
-│   ├── Templates/                  # Email templates
+│   ├── Models/
+│   │   ├── Notification.ts
+│   │   └── Template.ts
+│   ├── Services/
+│   │   ├── notification.service.ts
+│   │   ├── email.service.ts
+│   │   ├── sms.service.ts
+│   │   ├── push.service.ts
+│   │   └── template.service.ts
+│   ├── Jobs/
+│   │   ├── sendEmail.job.ts
+│   │   ├── sendSms.job.ts
+│   │   └── sendPush.job.ts
+│   ├── Templates/
 │   │   ├── welcome.html
 │   │   ├── confirmation.html
 │   │   └── ...
-│   └── Utils/                      # Helpers
+│   └── Utils/
 │       └── ...
 │
-├── .env.example                    # Environment template
-├── package.json                    # Dependencies
-├── tsconfig.json                   # TypeScript config
-├── Dockerfile                      # Docker configuration
-└── README.md                       # This file
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+# Getting Started
 
-### Installation
+## Prerequisites
+
+* Node.js 18+
+* MongoDB
+* Redis
+
+## Installation
 
 ```bash
 cd Travallee-Backend/Services/notifications
@@ -83,7 +92,7 @@ npm install
 cp .env.example .env
 ```
 
-### Environment Variables
+## Environment Variables
 
 ```env
 PORT=6000
@@ -98,79 +107,77 @@ JWT_SECRET=your_secret_key
 RESEND_API_KEY=re_your_api_key
 SENDER_EMAIL=noreply@travallee.com
 
-# Twilio (SMS) - Optional
+# Twilio (SMS)
 TWILIO_ACCOUNT_SID=your_account_sid
 TWILIO_AUTH_TOKEN=your_auth_token
 TWILIO_PHONE_NUMBER=+1234567890
 
-# Expo (Push Notifications)
+# Expo Push Notifications
 EXPO_ACCESS_TOKEN=your_expo_token
 ```
 
-### Start Development
+## Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Runs on: **http://localhost:6000**
+Server runs on:
+
+```text
+http://localhost:6000
+```
 
 ---
 
-## 🔌 API Endpoints
+# API Endpoints
+
+## Notifications
 
 ### Send Notification
 
-```
+```http
 POST /api/notifications/send
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "userId": "60d5ec49c1234567890abcde",
-  "type": "email",
-  "template": "booking_confirmation",
-  "data": {
-    "bookingNumber": "BK-2024-001",
-    "hotelName": "Grand Hotel",
-    "checkInDate": "2024-05-20"
-  }
-}
 ```
 
 ### Get Notification Status
 
-```
+```http
 GET /api/notifications/:notificationId
-Authorization: Bearer <token>
 ```
 
 ### Get User Notifications
 
-```
+```http
 GET /api/notifications/user/me
-Authorization: Bearer <token>
+```
+
 Query Parameters:
-  - type: email|sms|push
-  - status: pending|sent|failed
-  - page: number
-  - limit: number
-```
 
-### Preferences
+* `type=email|sms|push`
+* `status=pending|sent|failed`
+* `page`
+* `limit`
 
-#### Get Notification Preferences
-```
+---
+
+## Notification Preferences
+
+### Get Preferences
+
+```http
 GET /api/notifications/preferences
-Authorization: Bearer <token>
 ```
 
-#### Update Preferences
-```
+### Update Preferences
+
+```http
 PUT /api/notifications/preferences
-Authorization: Bearer <token>
-Content-Type: application/json
+```
 
+Example:
+
+```json
 {
   "emailNotifications": true,
   "smsNotifications": false,
@@ -181,13 +188,15 @@ Content-Type: application/json
 
 ---
 
-## 📧 Email Templates
+# Email Templates
 
-### Built-in Templates
+## Built-in Templates
 
-#### Welcome Email
-**Template:** `welcome.html`
-```
+### Welcome Email
+
+Template: `welcome.html`
+
+```html
 Hello {{firstName}},
 
 Welcome to Travallee! We're excited to have you on board.
@@ -196,9 +205,11 @@ Best regards,
 Travallee Team
 ```
 
-#### Booking Confirmation
-**Template:** `booking_confirmation.html`
-```
+### Booking Confirmation
+
+Template: `booking_confirmation.html`
+
+```html
 Your booking is confirmed!
 
 Booking Number: {{bookingNumber}}
@@ -207,83 +218,73 @@ Check-in: {{checkInDate}}
 Check-out: {{checkOutDate}}
 ```
 
-#### Check-in Reminder
-**Template:** `checkin_reminder.html`
-```
+### Check-in Reminder
+
+Template: `checkin_reminder.html`
+
+```html
 Your check-in is today!
 
 Don't forget to check in by {{checkInTime}}.
 ```
 
-#### Booking Cancellation
-**Template:** `booking_cancellation.html`
-```
+### Booking Cancellation
+
+Template: `booking_cancellation.html`
+
+```html
 Your booking has been cancelled.
 
 Refund: {{refundAmount}}
-Refund will be processed within 3-5 business days.
-```
-
-### Custom Templates
-
-Create custom email templates:
-
-```
-POST /api/templates
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "name": "custom_promo",
-  "subject": "Special Offer for You!",
-  "html": "<h1>{{title}}</h1>...",
-  "variables": ["title", "offerText"]
-}
+Refund will be processed within 3–5 business days.
 ```
 
 ---
 
-## 📱 Notification Types
+# Notification Types
 
-### Email Notifications
-- Booking confirmation
-- Check-in reminder
-- Check-out confirmation
-- Cancellation notice
-- Password reset
-- Account verification
-- Promotional offers
+## Email Notifications
 
-### SMS Notifications
-- Booking confirmation (short)
-- Check-in reminder
-- Cancellation notice
-- One-time passwords (OTP)
+* Booking confirmation
+* Check-in reminder
+* Check-out confirmation
+* Cancellation notice
+* Password reset
+* Account verification
+* Promotional offers
 
-### Push Notifications
-- Booking updates
-- Check-in reminder
-- New messages
-- Special offers
-- Account alerts
+## SMS Notifications
+
+* Booking confirmation
+* Check-in reminder
+* Cancellation notice
+* One-time passwords (OTP)
+
+## Push Notifications
+
+* Booking updates
+* Check-in reminders
+* New messages
+* Special offers
+* Account alerts
 
 ---
 
-## 📁 Data Models
+# Data Models
 
-### Notification Model
+## Notification Model
 
 ```typescript
 interface INotification {
   _id: ObjectId;
-  userId: ObjectId;                 // Recipient
+  userId: ObjectId;
   type: 'email' | 'sms' | 'push';
   templateName: string;
-  subject?: string;                 // For email
+  subject?: string;
   body: string;
-  data?: object;                    // Template variables
+  data?: object;
   status: 'pending' | 'sent' | 'failed';
-  recipient: string;                // Email/phone/push token
+  recipient: string;
   sentAt?: Date;
   failureReason?: string;
   retryCount: number;
@@ -292,7 +293,7 @@ interface INotification {
 }
 ```
 
-### Template Model
+## Template Model
 
 ```typescript
 interface ITemplate {
@@ -301,8 +302,8 @@ interface ITemplate {
   type: 'email' | 'sms' | 'push';
   subject?: string;
   body: string;
-  htmlContent?: string;             // For email
-  variables: string[];              // {{variable}} names
+  htmlContent?: string;
+  variables: string[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -311,13 +312,11 @@ interface ITemplate {
 
 ---
 
-## 🎯 Sending Notifications
+# Notification Delivery
 
-### Email Service
+## Email Service
 
 ```typescript
-import { emailService } from '@services/email.service';
-
 await emailService.sendEmail({
   to: user.email,
   template: 'booking_confirmation',
@@ -328,22 +327,18 @@ await emailService.sendEmail({
 });
 ```
 
-### SMS Service
+## SMS Service
 
 ```typescript
-import { smsService } from '@services/sms.service';
-
 await smsService.sendSms({
   to: user.phone,
   message: `Booking confirmed! Confirmation #: ${bookingNumber}`
 });
 ```
 
-### Push Notification Service
+## Push Notification Service
 
 ```typescript
-import { pushService } from '@services/push.service';
-
 await pushService.sendPush({
   to: user.expoPushToken,
   title: 'Booking Confirmed',
@@ -353,90 +348,105 @@ await pushService.sendPush({
 
 ---
 
-## 🔄 Queue Processing
+# Queue Processing
 
-Using BullMQ for asynchronous sending:
+BullMQ is used for asynchronous notification processing.
 
-### Email Queue
+## Email Queue Example
+
 ```typescript
 await emailQueue.add('send', {
   userId: user._id,
   template: 'welcome',
-  data: { firstName: user.firstName }
+  data: {
+    firstName: user.firstName
+  }
 }, {
   attempts: 3,
-  backoff: { type: 'exponential', delay: 2000 }
+  backoff: {
+    type: 'exponential',
+    delay: 2000
+  }
 });
 ```
 
-### Processing Jobs
+## Job Processing Example
+
 ```typescript
 emailQueue.process(async (job) => {
   const { userId, template, data } = job.data;
+
   await emailService.sendEmail({
     to: user.email,
     template,
     data
   });
+
   return { success: true };
 });
 ```
 
 ---
 
-## 📊 Delivery Tracking
+# Delivery Tracking
 
-Track notification delivery status:
+Monitor notification delivery statistics:
 
 ```typescript
-// Get delivery statistics
 const stats = await notificationService.getStats({
   startDate: '2024-05-01',
   endDate: '2024-05-31',
   type: 'email'
 });
+```
 
-// Response
+Example Response:
+
+```json
 {
-  total: 1250,
-  sent: 1200,
-  failed: 40,
-  pending: 10,
-  successRate: 96
+  "total": 1250,
+  "sent": 1200,
+  "failed": 40,
+  "pending": 10,
+  "successRate": 96
 }
 ```
 
 ---
 
-## 🔄 Retry Mechanism
+# Retry Mechanism
 
-Failed notifications are automatically retried:
+Failed notifications are retried automatically.
 
 ```typescript
 {
   maxRetries: 3,
   retryStrategy: {
-    1: 60 * 1000,      // 1 minute
-    2: 5 * 60 * 1000,  // 5 minutes
-    3: 30 * 60 * 1000  // 30 minutes
+    1: 60000,
+    2: 300000,
+    3: 1800000
   }
 }
 ```
 
 ---
 
-## 🔐 Security
+# Security
 
-- ✅ API key validation for all requests
-- ✅ User can only access their own notifications
-- ✅ Sensitive data not logged
-- ✅ Rate limiting on API calls
-- ✅ Validation of email/phone numbers
-- ✅ Unsubscribe support for emails
+The service includes:
+
+1. API key validation for all requests
+2. User-level access control
+3. Secure handling of sensitive information
+4. Rate limiting protection
+5. Email and phone number validation
+6. Email unsubscribe support
 
 ---
 
-## 🧪 Testing
+# Testing
+
+Run automated tests:
 
 ```bash
 npm test
@@ -444,21 +454,41 @@ npm test
 
 ---
 
-## 🚀 Deployment
+# Deployment
+
+## Docker
 
 ```bash
 docker build -t travallee-notifications:latest .
-docker run -p 6000:6000 --env-file .env travallee-notifications:latest
+
+docker run \
+  -p 6000:6000 \
+  --env-file .env \
+  travallee-notifications:latest
 ```
 
 ---
 
-## 📚 Related Services
+# Related Services
 
-- **Auth Service** - User data
-- **Booking Service** - Booking notifications
-- **Hotel Service** - Hotel data
+* Auth Service – User authentication and account data
+* Booking Service – Booking-related notifications
+* Hotel Service – Hotel information and reservation data
 
 ---
 
-**Notifications Service of Travallee**
+# Support
+
+For troubleshooting:
+
+1. Verify environment variables are configured correctly.
+2. Ensure MongoDB and Redis are running.
+3. Check notification queue status.
+4. Review application logs for delivery failures.
+5. Verify third-party provider credentials (Resend, Twilio, Expo).
+
+---
+
+# License
+
+This service is part of the Travallee Hotel Management System.

@@ -1,101 +1,147 @@
 # User Frontend - Travallee Hotel Management System
 
-The public-facing website for Travallee hotel management platform. Browse hotels, search availability, and manage bookings with a modern, responsive React TypeScript interface.
+The public-facing website for the Travallee Hotel Management Platform. Browse hotels, search availability, and manage bookings through a modern, responsive React and TypeScript interface.
 
-## 🎯 Features
+## Overview
 
-- 🏨 **Hotel Browsing** - Discover available hotels and rooms
-- 🔍 **Search & Filter** - Find perfect rooms by date, location, and amenities
-- 📅 **Booking System** - Easy reservation management
-- 👤 **User Accounts** - Sign up, login, and manage bookings
-- 💳 **Payment Integration** - Secure payment processing
-- ⭐ **Reviews & Ratings** - See guest reviews and ratings
-- 📱 **Responsive Design** - Mobile-optimized interface
+### Features
 
-## 💻 Technology Stack
+* Hotel Browsing - Discover available hotels and rooms
+* Search & Filter - Find rooms by date, location, price, and amenities
+* Booking System - Manage reservations with ease
+* User Accounts - Register, log in, and manage bookings
+* Payment Integration - Secure payment processing
+* Reviews & Ratings - View guest reviews and ratings
+* Responsive Design - Optimized for desktop, tablet, and mobile devices
 
-- **React 19.2** with TypeScript 5.9
-- **Vite 8.0** for fast builds
-- **Tailwind CSS 3.4** for styling
-- **React Router v6** for navigation
-- **Zustand** for state management (optional)
+---
 
-## 📁 Project Structure
+## Technology Stack
 
-```
+* **React 19.2** with **TypeScript 5.9**
+* **Vite 8.0** for fast builds and development
+* **Tailwind CSS 3.4** for styling
+* **React Router v6** for navigation
+* **Zustand** for state management (optional)
+
+---
+
+## Project Structure
+
+```text
 src/
-├── Pages/               # Page components
+├── Pages/
 │   ├── InitialHome.tsx
 │   ├── AboutUs.tsx
 │   ├── Services.tsx
 │   ├── ContactUs.tsx
 │   └── Loginpage.tsx
-├── Components/          # Reusable components
+├── Components/
 │   ├── InitialNav.tsx
 │   ├── Herosection.tsx
 │   └── Footer.tsx
-├── Contexts/            # React Context
+├── Contexts/
 │   └── Authcontext.tsx
-├── Routes/              # Routing configuration
+├── Routes/
 │   └── Route.tsx
-├── App.tsx              # Root component
-└── main.tsx             # Entry point
+├── App.tsx
+└── main.tsx
 ```
 
-## 🚀 Quick Start
+---
+
+## Getting Started
+
+### Prerequisites
+
+* Node.js 18.0.0 or higher
+* npm or yarn
 
 ### Installation
+
 ```bash
 npm install
 ```
 
 ### Development
+
 ```bash
 npm run dev
 ```
-App opens at **http://localhost:5173**
+
+Application runs at:
+
+```text
+http://localhost:5173
+```
 
 ### Production Build
+
 ```bash
 npm run build
 npm run preview
 ```
 
-## 📝 Environment Variables
+---
 
-Create `.env` file:
+## Environment Variables
+
+Create a `.env` file in the project root:
 
 ```env
 # API Configuration
 VITE_API_BASE_URL=http://localhost:4000/api/v1
 VITE_AUTH_SERVICE_URL=http://localhost:3000/api/v1
 
-# App Settings
+# Application Settings
 VITE_APP_NAME=Travallee
 VITE_MOCK_API=true
 ```
 
-## 🎨 Styling
+---
 
-- **Tailwind CSS** for utility styles
-- **Global styles** in `src/App.css`
-- **Responsive design** with mobile-first approach
-- **Plus Jakarta Sans** font family
+## Styling
 
-## 🔗 Available Scripts
+* Tailwind CSS for utility-first styling
+* Global styles located in `src/App.css`
+* Mobile-first responsive design
+* Plus Jakarta Sans font family
+
+---
+
+## Available Scripts
 
 ```bash
-npm run dev          # Development server
-npm run build        # Production build
+npm run dev          # Start development server
+npm run build        # Build for production
 npm run preview      # Preview production build
-npm run lint         # Run linting
+npm run lint         # Run ESLint
 npm run format       # Format code
 ```
 
-## 🤝 Contributing
+---
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+## Development Guidelines
 
-## 📄 License
+1. Follow TypeScript best practices.
+2. Keep components modular and reusable.
+3. Use environment variables for configuration values.
+4. Maintain responsive design principles.
+5. Write clean and maintainable code.
+6. Test changes before deployment.
 
-MIT License
+---
+
+## Contributing
+
+Refer to the project's `CONTRIBUTING.md` file for contribution guidelines and development standards.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+---
+
+**Part of the Travallee Hotel Management System**

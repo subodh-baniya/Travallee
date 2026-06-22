@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const HotelPayment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const stateHotel = (location.state as any)?.hotelData;
-  const [hotelData, setHotelData] = useState<any>(stateHotel || JSON.parse(localStorage.getItem('pendingHotel') || 'null'));
-  const [paid, setPaid] = useState(false);
+  const [hotelData] = useState<any>(stateHotel || JSON.parse(localStorage.getItem('pendingHotel') || 'null'));
 
   useEffect(() => {
     if (!hotelData) {
@@ -16,7 +15,6 @@ const HotelPayment = () => {
 
   const handlePay = () => {
     // Mock payment flow
-    setPaid(true);
     setTimeout(() => {
       // After payment, we would send request to admin. For now just show confirmation.
       localStorage.removeItem('pendingHotel');

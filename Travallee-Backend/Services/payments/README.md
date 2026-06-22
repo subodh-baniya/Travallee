@@ -1,76 +1,86 @@
-# 💳 Payment Service
+# Payment Service
 
-The **Payment Processing Service** handles payment processing, invoicing, refunds, and financial transactions. It integrates with payment providers and manages the complete payment lifecycle.
-
-## 📋 Overview
-
-Payment Service manages:
-- Payment processing (credit cards, digital wallets)
-- Invoice generation
-- Refund management
-- Payment history and reconciliation
-- Transaction tracking
-- Receipt generation
-- Multiple payment methods
-- Payment security
+The **Payment Processing Service** handles payment processing, invoicing, refunds, and financial transactions across the Travallee platform. It integrates with payment gateways and manages the complete payment lifecycle securely and efficiently.
 
 ---
 
-## 🛠️ Tech Stack
+# Overview
 
-| Component | Technology |
-|-----------|-----------|
-| **Framework** | Express.js 5.2 |
-| **Language** | TypeScript 5.9 |
-| **Database** | MongoDB + Mongoose |
-| **Caching** | Redis |
-| **Payment Gateway** | Stripe (configurable) |
-| **Queue** | BullMQ |
+The Payment Service is responsible for:
+
+* Payment processing (credit cards, digital wallets, bank transfers)
+* Invoice generation and management
+* Refund processing
+* Transaction tracking
+* Payment history and reconciliation
+* Receipt generation
+* Multiple payment method support
+* Payment security and compliance
 
 ---
 
-## 📂 Project Structure
+# Tech Stack
 
-```
+| Component        | Technology            |
+| ---------------- | --------------------- |
+| Framework        | Express.js 5.2        |
+| Language         | TypeScript 5.9        |
+| Database         | MongoDB + Mongoose    |
+| Caching          | Redis                 |
+| Payment Gateway  | Stripe (Configurable) |
+| Queue Processing | BullMQ                |
+
+---
+
+# Project Structure
+
+```text
 payments/
 ├── src/
-│   ├── app.ts                      # Express app setup
-│   ├── index.ts                    # Server entry point
-│   ├── Controllers/                # Request handlers
-│   │   ├── payment.controller.ts   # Payment endpoints
-│   │   ├── invoice.controller.ts   # Invoice endpoints
-│   │   └── refund.controller.ts    # Refund endpoints
-│   ├── Routes/                     # Route definitions
+│   ├── app.ts
+│   ├── index.ts
+│   ├── Controllers/
+│   │   ├── payment.controller.ts
+│   │   ├── invoice.controller.ts
+│   │   └── refund.controller.ts
+│   ├── Routes/
 │   │   ├── payment.routes.ts
 │   │   ├── invoice.routes.ts
 │   │   └── refund.routes.ts
-│   ├── Models/                     # Data models
-│   │   ├── Payment.ts              # Payment schema
-│   │   ├── Invoice.ts              # Invoice schema
-│   │   └── Refund.ts               # Refund schema
-│   ├── Services/                   # Business logic
-│   │   ├── payment.service.ts      # Payment operations
-│   │   ├── stripe.service.ts       # Stripe integration
-│   │   ├── invoice.service.ts      # Invoice generation
-│   │   └── refund.service.ts       # Refund handling
-│   ├── Jobs/                       # Background jobs
-│   │   ├── processPayment.job.ts   # Process payment
-│   │   └── sendReceipt.job.ts      # Send receipt
-│   └── Utils/                      # Helpers
+│   ├── Models/
+│   │   ├── Payment.ts
+│   │   ├── Invoice.ts
+│   │   └── Refund.ts
+│   ├── Services/
+│   │   ├── payment.service.ts
+│   │   ├── stripe.service.ts
+│   │   ├── invoice.service.ts
+│   │   └── refund.service.ts
+│   ├── Jobs/
+│   │   ├── processPayment.job.ts
+│   │   └── sendReceipt.job.ts
+│   └── Utils/
 │       └── ...
 │
-├── .env.example                    # Environment template
-├── package.json                    # Dependencies
-├── tsconfig.json                   # TypeScript config
-├── Dockerfile                      # Docker configuration
-└── README.md                       # This file
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+# Getting Started
 
-### Installation
+## Prerequisites
+
+* Node.js 18+
+* MongoDB
+* Redis
+* Stripe Account (for payment processing)
+
+## Installation
 
 ```bash
 cd Travallee-Backend/Services/payments
@@ -79,7 +89,7 @@ npm install
 cp .env.example .env
 ```
 
-### Environment Variables
+## Environment Variables
 
 ```env
 PORT=3002
@@ -102,154 +112,111 @@ DEFAULT_CURRENCY=USD
 NOTIFICATION_SERVICE_URL=http://localhost:6000
 ```
 
-### Start Development
+## Start Development Server
 
 ```bash
 npm run dev
 ```
 
-Runs on: **http://localhost:3002**
+Server runs on:
+
+```text
+http://localhost:3002
+```
 
 ---
 
-## 🔌 API Endpoints
+# API Endpoints
+
+## Payments
 
 ### Create Payment
 
-```
+```http
 POST /api/payments/create
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "bookingId": "60d5ec49c1234567890abcde",
-  "amount": 750,
-  "currency": "USD",
-  "paymentMethodId": "pm_...",  // Stripe payment method
-  "saveCard": true
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "60d5ec49c1234567890abce0",
-    "transactionId": "txn_...",
-    "status": "processing",
-    "amount": 750,
-    "currency": "USD"
-  }
-}
 ```
 
 ### Get Payment Details
 
-```
+```http
 GET /api/payments/:paymentId
-Authorization: Bearer <token>
 ```
 
 ### Get Payment History
 
-```
+```http
 GET /api/payments/user/me
-Authorization: Bearer <token>
-Query Parameters:
-  - status: completed|failed|pending
-  - page: number
-  - limit: number
-```
-
-### Refund Payment
-
-```
-POST /api/payments/:paymentId/refund
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "reason": "Booking cancelled by guest",
-  "amount": 750  // Optional: partial refund
-}
 ```
 
 ### Confirm Payment
 
-```
+```http
 POST /api/payments/:paymentId/confirm
-Authorization: Bearer <token>
+```
+
+### Refund Payment
+
+```http
+POST /api/payments/:paymentId/refund
 ```
 
 ---
 
-### Invoices
+## Invoices
 
-#### Generate Invoice
+### Generate Invoice
 
-```
+```http
 POST /api/invoices/generate
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "paymentId": "60d5ec49c1234567890abce0",
-  "bookingId": "60d5ec49c1234567890abcde"
-}
 ```
 
-#### Get Invoice
+### Get Invoice
 
-```
+```http
 GET /api/invoices/:invoiceId
-Authorization: Bearer <token>
 ```
 
-#### Download Invoice PDF
+### Download Invoice PDF
 
-```
+```http
 GET /api/invoices/:invoiceId/download
-Authorization: Bearer <token>
 ```
 
 ---
 
-### Refunds
+## Refunds
 
-#### Get Refund Status
+### Get Refund Status
 
-```
+```http
 GET /api/refunds/:refundId
-Authorization: Bearer <token>
 ```
 
-#### List User Refunds
+### List User Refunds
 
-```
+```http
 GET /api/refunds/user/me
-Authorization: Bearer <token>
 ```
 
 ---
 
-## 📁 Data Models
+# Data Models
 
-### Payment Model
+## Payment Model
 
 ```typescript
 interface IPayment {
   _id: ObjectId;
-  bookingId: ObjectId;              // Associated booking
-  userId: ObjectId;                 // Payer (User)
-  hotelId: ObjectId;                // Hotel
-  transactionId: string;            // Payment provider ID (Stripe)
+  bookingId: ObjectId;
+  userId: ObjectId;
+  hotelId: ObjectId;
+  transactionId: string;
   amount: number;
-  currency: string;                 // USD, EUR, etc.
+  currency: string;
   paymentMethod: {
     type: 'card' | 'wallet' | 'bank_transfer';
-    last4?: string;                 // Last 4 digits if card
-    brand?: string;                 // visa, mastercard, etc.
+    last4?: string;
+    brand?: string;
   };
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   failureReason?: string;
@@ -259,15 +226,15 @@ interface IPayment {
 }
 ```
 
-### Invoice Model
+## Invoice Model
 
 ```typescript
 interface IInvoice {
   _id: ObjectId;
-  invoiceNumber: string;            // Unique invoice ID
-  paymentId: ObjectId;              // Associated payment
-  bookingId: ObjectId;              // Associated booking
-  userId: ObjectId;                 // Customer
+  invoiceNumber: string;
+  paymentId: ObjectId;
+  bookingId: ObjectId;
+  userId: ObjectId;
   hotelId: ObjectId;
   items: Array<{
     description: string;
@@ -288,7 +255,7 @@ interface IInvoice {
 }
 ```
 
-### Refund Model
+## Refund Model
 
 ```typescript
 interface IRefund {
@@ -309,17 +276,20 @@ interface IRefund {
 
 ---
 
-## 💳 Payment Methods
+# Supported Payment Methods
 
-### Supported Methods
-- Credit/Debit Cards (Visa, Mastercard, Amex)
-- Digital Wallets (Apple Pay, Google Pay)
-- Bank Transfers
-- Saved Cards (stored securely)
+The service supports:
 
-### Save Payment Method
-```typescript
-// Users can save cards for future bookings
+1. Credit Cards (Visa, Mastercard, American Express)
+2. Debit Cards
+3. Apple Pay
+4. Google Pay
+5. Bank Transfers
+6. Saved Payment Methods
+
+Example:
+
+```json
 {
   "saveCard": true,
   "paymentMethodId": "pm_..."
@@ -328,154 +298,168 @@ interface IRefund {
 
 ---
 
-## 💰 Invoice Details
+# Invoice Management
 
-### Invoice Structure
+Invoices are automatically generated after successful payments and include:
 
-```
-INVOICE #INV-2024-0001
-
-From:
-Hotel Name
-Hotel Email
-
-To:
-Guest Name
-Guest Email
-
-Items:
-Room Night 1          $150
-Room Night 2          $150
-Room Night 3          $150
-Room Night 4          $150
-Room Night 5          $150
-                ___________
-Subtotal              $750
-Tax (10%)             $75
-                ___________
-Total                 $825
-
-Payment Method: Visa ending in 4242
-Transaction ID: txn_...
-Date Issued: 2024-05-20
-```
+* Booking details
+* Hotel information
+* Customer information
+* Itemized charges
+* Tax calculations
+* Discounts
+* Transaction references
+* Downloadable PDF receipts
 
 ---
 
-## 🔄 Refund Process
+# Refund Management
 
-### Automatic Refund (Cancellation)
-```
-1. Booking cancelled
-2. Refund initiated automatically
-3. Refund processed to original payment method
-4. 3-5 business days processing time
-5. Refund confirmation sent to guest
-```
+## Automatic Refund Flow
 
-### Manual Refund
-```
-1. Hotel admin initiates refund
-2. Refund amount verified
-3. Refund processed
-4. Guest receives refund confirmation
-```
+1. Booking cancellation is initiated.
+2. Refund request is created automatically.
+3. Refund is processed through the original payment method.
+4. Payment gateway confirms the refund.
+5. Customer receives refund confirmation.
 
-### Refund Policies
-```
-- Full refund: 24 hours before check-in
-- 50% refund: 24-72 hours before check-in
-- No refund: Less than 24 hours before check-in
-```
+## Manual Refund Flow
 
----
+1. Hotel administrator requests a refund.
+2. Refund amount is validated.
+3. Refund is processed.
+4. Customer receives notification.
 
-## 🔐 Security
+## Refund Policy Example
 
-- ✅ PCI DSS compliant (Stripe handles cards)
-- ✅ Never store full card numbers
-- ✅ HTTPS only
-- ✅ Payment tokens/IDs instead of card data
-- ✅ Webhook signature verification
-- ✅ Rate limiting on payment endpoints
-- ✅ Fraud detection via Stripe
+| Time Before Check-In | Refund Amount |
+| -------------------- | ------------- |
+| More than 72 Hours   | 100%          |
+| 24–72 Hours          | 50%           |
+| Less than 24 Hours   | No Refund     |
 
 ---
 
-## 🔄 Stripe Integration
+# Stripe Integration
 
-### Webhook Handling
+## Webhook Handling
 
 ```typescript
-// Stripe webhooks for payment status updates
 app.post('/api/payments/webhook', (req, res) => {
   const event = req.body;
 
   switch (event.type) {
     case 'payment_intent.succeeded':
-      // Update payment status to 'completed'
       break;
+
     case 'payment_intent.payment_failed':
-      // Update payment status to 'failed'
       break;
+
     case 'charge.refunded':
-      // Process refund
       break;
   }
 });
 ```
 
+Supported webhook events include:
+
+* Payment Success
+* Payment Failure
+* Refund Processed
+* Chargebacks
+* Subscription Events (optional)
+
 ---
 
-## 📊 Payment Reconciliation
+# Payment Reconciliation
 
-### Daily Reconciliation
+The service supports reconciliation between:
+
+* Stripe transactions
+* Internal payment records
+* Refund records
+* Invoice records
+
+Example:
+
 ```typescript
-// Check Stripe payments vs Database records
 const stripePayments = await stripe.paymentIntents.list();
-const dbPayments = await Payment.find({ 
+const dbPayments = await Payment.find({
   createdAt: { $gte: today }
 });
-
-// Reconcile differences
 ```
 
 ---
 
-## 🧪 Testing
+# Security
+
+The Payment Service includes:
+
+1. PCI DSS compliance through Stripe.
+2. Secure tokenized payment processing.
+3. No storage of full card information.
+4. HTTPS enforcement in production.
+5. Webhook signature verification.
+6. Fraud detection support via Stripe.
+7. JWT-based authentication.
+8. API rate limiting.
+9. Audit logging for financial transactions.
+
+---
+
+# Testing
+
+Run automated tests:
 
 ```bash
 npm test
 ```
 
-### Test Mode (Stripe)
-Use test card: `4242 4242 4242 4242`
+### Stripe Test Card
 
----
-
-## 🚀 Deployment
-
-```bash
-docker build -t travallee-payments:latest .
-docker run -p 3002:3002 --env-file .env travallee-payments:latest
+```text
+4242 4242 4242 4242
 ```
 
 ---
 
-## 📚 Related Services
+# Deployment
 
-- **Booking Service** - Booking data
-- **Notification Service** - Send receipts
-- **Auth Service** - User authentication
+## Docker
+
+```bash
+docker build -t travallee-payments:latest .
+
+docker run \
+  -p 3002:3002 \
+  --env-file .env \
+  travallee-payments:latest
+```
 
 ---
 
-## 🔗 Stripe Integration Guide
+# Related Services
 
-- [Stripe Documentation](https://stripe.com/docs)
-- [Payment Intents API](https://stripe.com/docs/payments/payment-intents)
-- [Webhooks](https://stripe.com/docs/webhooks)
+* Auth Service – User authentication and authorization
+* Booking Service – Reservation and booking management
+* Notification Service – Payment receipts and notifications
+* Hotel Service – Hotel and room information
 
 ---
 
-**Payment Service of Travallee**
+# Support
+
+For troubleshooting:
+
+1. Verify Stripe API credentials.
+2. Ensure MongoDB and Redis are running.
+3. Check webhook configuration.
+4. Review payment processing logs.
+5. Validate notification service connectivity.
+6. Verify environment variables are configured correctly.
+
+---
+
+# License
+
+This service is part of the Travallee Hotel Management System.

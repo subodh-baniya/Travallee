@@ -1,4 +1,4 @@
-# Travallee — Hotel Management System
+# **Travallee — Hotel Management System**
 
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-green?style=flat-square)
@@ -7,57 +7,67 @@
 
 A modern, full-stack **Hotel Management System** built with React, TypeScript, React Native, and Node.js microservices. Manage guests, rooms, bookings, payments, and more with a beautiful and intuitive interface.
 
-## 🎯 Features
+## **Features**
 
-### Admin Dashboard
-- 📊 Real-time analytics and KPIs
-- 👥 Guest management with detailed profiles
-- Room inventory and occupancy tracking
-- 💰 Revenue analytics and payment management
-- ⭐ Customer reviews and feedback
-- 📅 Booking management and reservations
-- 💳 Deal & promotion management
+### **Admin Dashboard**
 
-### Mobile App (Travallee)
-- User authentication (coming soon)
-- Browse available rooms
-- Make bookings
-- View booking history
-- Payment integration
-- Push notifications
+* Real-time analytics and KPIs
+* Guest management with detailed profiles
+* Room inventory and occupancy tracking
+* Revenue analytics and payment management
+* Customer reviews and feedback
+* Booking management and reservations
+* Deal and promotion management
 
-### Backend Services
-- Auth service (JWT-based)
-- Guest management API
-- Room booking system
-- Payment processing
-- Email notifications
-- Admin management
+### **Mobile App (Travallee)**
 
-## 💻 Tech Stack
+* User authentication (coming soon)
+* Browse available rooms
+* Make bookings
+* View booking history
+* Payment integration
+* Push notifications
 
-### Frontend
-- **React 19.2** with TypeScript 5.9
-- **Vite 8.0** for fast builds
-- **React Router v6** for navigation
-- **Tailwind CSS 3.4** for styling
-- **Zustand** for state management (optional)
+### **Backend Services**
 
-### Mobile
-- **React Native** with Expo
-- **TypeScript** for type safety
-- **React Navigation** for routing
+* Auth service (JWT-based)
+* Guest management API
+* Room booking system
+* Payment processing
+* Email notifications
+* Admin management
 
-### Backend
-- **Node.js** with Express
-- **TypeScript** for type safety
-- **MongoDB/SQL** (configurable)
-- **Docker** containerization
-- **Microservices** architecture
+---
 
-## Project Structure
+## **Tech Stack**
 
-```
+### **Frontend**
+
+* **React 19.2** with TypeScript 5.9
+* **Vite 8.0** for fast builds
+* **React Router v6** for navigation
+* **Tailwind CSS 3.4** for styling
+* **Zustand** for state management (optional)
+
+### **Mobile**
+
+* **React Native** with Expo
+* **TypeScript** for type safety
+* **React Navigation** for routing
+
+### **Backend**
+
+* **Node.js** with Express
+* **TypeScript** for type safety
+* **MongoDB/SQL** (configurable)
+* **Docker** containerization
+* **Microservices** architecture
+
+---
+
+## **Project Structure**
+
+```text
 Travallee/
 ├── Admin-Frontend/          # React admin dashboard
 │   ├── src/
@@ -65,27 +75,30 @@ Travallee/
 │   │   ├── pages/           # Page components
 │   │   ├── hooks/           # Custom React hooks
 │   │   ├── services/        # API services
-│   │   └── types/          # TypeScript definitions
+│   │   └── types/           # TypeScript definitions
 │   └── package.json
 ├── Travallee-App/           # React Native mobile app
 ├── Travallee-Backend/       # Backend microservices
-│   ├── Packages/           # Shared utilities
-│   └── Services/           # Individual microservices
+│   ├── Packages/            # Shared utilities
+│   └── Services/            # Individual microservices
 ├── User-Frontend/           # Public website (coming soon)
 └── docker-compose.yml       # Docker setup
-
 ```
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
-- **Node.js** 18.0.0 or higher
-- **npm** or **yarn**
-- **Docker** (for backend services)
+## **Quick Start**
 
-### ⚡ Quick Commands
+### **Prerequisites**
 
-#### Option 1: Full Stack with Docker (Recommended for Production)
+* Node.js 18.0.0 or higher
+* npm or yarn
+* Docker (for backend services)
+
+### **Quick Commands**
+
+#### **Option 1: Full Stack with Docker (Recommended for Production)**
+
 ```bash
 # Start all services at once
 docker-compose up -d
@@ -105,173 +118,205 @@ docker-compose down
 docker-compose up -d --build
 ```
 
-#### Option 2: Individual Services (Development)
+#### **Option 2: Individual Services (Development)**
+
 ```bash
 # Terminal 1: Admin Frontend
 cd Admin-Frontend && npm install && npm run dev
-# Runs on http://localhost:5173
 
 # Terminal 2: Mobile App
 cd Travallee-App && npm install && npm start
-# Scan QR code with Expo Go
 
 # Terminal 3: Backend Auth Service
 cd Travallee-Backend/Services/Auth && npm install && npm run dev
-# Runs on http://localhost:3000
 
 # Terminal 4: Backend Admin Service
 cd Travallee-Backend/Services/admin && npm install && npm run dev
-# Runs on http://localhost:4001
 
 # Terminal 5: Backend Booking Service
 cd Travallee-Backend/Services/booking && npm install && npm run dev
-# Runs on http://localhost:5002
 
 # Terminal 6: Backend Hotel Service
 cd Travallee-Backend/Services/Hotel && npm install && npm run dev
-# Runs on http://localhost:5003
 ```
 
-#### Option 3: Parallel NPM Scripts (All Frontends at Once)
+#### **Option 3: Parallel NPM Scripts (All Frontends at Once)**
+
 ```bash
-# From root directory
 npm install
 
-# If package.json has workspaces setup, run:
 npm run dev:all
 
-# Or manually:
+# Or manually
 npm run dev:admin & npm run dev:user & npm run dev:app
 ```
 
-#### Option 4: Docker Compose + Manual Frontend (Hybrid)
+#### **Option 4: Docker Compose + Manual Frontend (Hybrid)**
+
 ```bash
 # Terminal 1: Start backend services only
 docker-compose up -d
 
-# Terminal 2: Run Admin Frontend locally for hot-reload
+# Terminal 2: Run Admin Frontend locally
 cd Admin-Frontend && npm install && npm run dev
 
-# Terminal 3: Run Mobile App locally for hot-reload
+# Terminal 3: Run Mobile App locally
 cd Travallee-App && npm install && npm start
 ```
 
-### Standard Setup (Step by Step)
+### **Standard Setup**
 
-**Admin Frontend:**
+#### **Admin Frontend**
+
 ```bash
 cd Admin-Frontend
 npm install
 npm run dev
 ```
-Visit http://localhost:5173 with credentials:
-- **Email:** admin@travallee.com
-- **Password:** admin123
 
-**Mobile App:**
+Visit: `http://localhost:5173`
+
+**Credentials**
+
+```text
+Email: admin@travallee.com
+Password: admin123
+```
+
+#### **Mobile App**
+
 ```bash
 cd Travallee-App
 npm install
 npm start
 ```
-Scan the QR code with Expo Go app on your phone.
 
-**Backend Services:**
+Scan the QR code with Expo Go.
+
+#### **Backend Services**
+
 ```bash
 docker-compose up -d
 ```
-Services run on:
-- Auth: http://localhost:3000
-- Admin: http://localhost:4001
-- Bookings: http://localhost:5002
-- Hotel: http://localhost:5003
 
-## 📖 Documentation
+**Available Services**
 
-- [Admin Frontend Setup](Admin-Frontend/README.md)
-- [Mobile App Setup](Travallee-App/README.md)
-- [Backend API Docs](Travallee-Backend/README.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Changelog](CHANGELOG.md)
-- [Security Policy](SECURITY.md)
+* Auth: http://localhost:3000
+* Admin: http://localhost:4001
+* Bookings: http://localhost:5002
+* Hotel: http://localhost:5003
 
-## Demo Credentials
+---
 
-### Admin Dashboard
-```
+## **Documentation**
+
+* Admin Frontend Setup
+* Mobile App Setup
+* Backend API Documentation
+* Contributing Guidelines
+* Changelog
+* Security Policy
+
+---
+
+## **Demo Credentials**
+
+### **Admin Dashboard**
+
+```text
 Email: admin@travallee.com
 Password: admin123
 ```
 
-### Additional Test Accounts
-```
+### **Additional Test Accounts**
+
+```text
 manager@travallee.com / manager123
 test@example.com / test123
 ```
 
-## 📋 Sample Data
+---
 
-The app comes with pre-loaded sample data:
-- **10 Guests** with various booking statuses
-- **8 Rooms** across 5 floors
-- **4 Active Deals** and promotions
-- **6 Vendors** for payments
-- **5 Customer Reviews** with ratings
+## **Sample Data**
 
-All data is managed through mock API services for demo purposes.
+The application includes pre-loaded sample data:
 
-## 🛠️ Development
+1. 10 Guests with various booking statuses
+2. 8 Rooms across 5 floors
+3. 4 Active Deals and promotions
+4. 6 Vendors for payments
+5. 5 Customer Reviews with ratings
 
-### Running Tests
+All data is managed through mock API services for demonstration purposes.
+
+---
+
+## **Development**
+
+### **Running Tests**
+
 ```bash
 npm run test
 ```
 
-### Building for Production
+### **Building for Production**
+
 ```bash
 npm run build
 ```
 
-### Linting & Formatting
+### **Linting & Formatting**
+
 ```bash
 npm run lint
 npm run format
 ```
 
-## 🐛 Reporting Issues
+---
 
-Found a bug? Please open an [issue](https://github.com/kcprabin/Travallee/issues) using the bug report template.
+## **Reporting Issues**
 
-## 💡 Feature Requests
+Found a bug? Open an issue using the project's bug report template.
 
-Have an idea? Submit a [feature request](https://github.com/kcprabin/Travallee/issues) with details.
+---
 
-## Contributing
+## **Feature Requests**
 
-We welcome contributions! Please:
-1. Read [CONTRIBUTING.md](CONTRIBUTING.md)
-2. Create a branch for your feature
-3. Follow code style guidelines
-4. Submit a PR with details
+Have an idea? Submit a feature request with detailed requirements and use cases.
 
-## 📝 License
+---
 
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) file for details.
+## **Contributing**
 
-## 🙏 Acknowledgments
+We welcome contributions.
 
-- Built with care for hotel management professionals
-- Special thanks to contributors and testers
-- Icons and graphics from open-source libraries
+1. Read the contribution guidelines.
+2. Create a branch for your feature.
+3. Follow code style guidelines.
+4. Submit a pull request with implementation details.
 
-## 📞 Support
+---
 
-- Email: kcprabin2063@gmail.com
-- 💬 Discussions: GitHub Discussions
-- 🐛 Issues: GitHub Issues
+## **License**
+
+This project is licensed under the **MIT License**. See the LICENSE file for details.
+
+---
+
+## **Acknowledgments**
+
+1. Built for hotel management professionals.
+2. Special thanks to contributors and testers.
+3. Icons and graphics sourced from open-source libraries.
+
+---
+
+## **Support**
+
+* Email: [kcprabin2063@gmail.com](mailto:kcprabin2063@gmail.com)
+* GitHub Discussions
+* GitHub Issues
 
 ---
 
 **Made with care by Prabin K.C.**
-
-⭐ If you find this helpful, please star the repository!
