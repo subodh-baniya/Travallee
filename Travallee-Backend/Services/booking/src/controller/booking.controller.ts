@@ -542,15 +542,20 @@ const updateBooking = asyncHandler(async (req: any, res: any) => {
     }
 
     try {
-      await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
-        bookingId: String(updatedBooking._id),
-        hotelId: updatedBooking.hotelId,
-        status: updatedBooking.status,
-        bookingPayment: updatedBooking.bookingPayment,
-      });
-    } catch (syncError: any) {
-      console.error("Failed to sync booking update with Hotel service:", syncError?.message || syncError);
+  await axios.post(
+    `${process.env.HOTEL_SERVICE_URL}/booking-history`,
+    {
+      bookingId: String(updatedBooking._id),
+      hotelId: String(updatedBooking.hotel),
+      status: updatedBooking.status,
+      bookingPayment: updatedBooking.bookingPayment,
     }
+  );
+} catch (syncError: any) {
+  console.error("Status:", syncError.response?.status);
+  console.error("Data:", syncError.response?.data);
+  console.error("URL:", syncError.config?.url);
+}
 
     return apiResponse(res, 200, true, "Booking updated successfully", updatedBooking);
   } catch (error: any) {

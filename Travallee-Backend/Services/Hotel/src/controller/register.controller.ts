@@ -497,30 +497,57 @@ const syncBookingHistory = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    const hotel = await hotelModel.findByIdAndUpdate(
-      hotelId,
+    const updateResult = await hotelModel.updateOne(
+      { _id: hotelId, "bookingHistory.bookingId": bookingId },
       {
-        $push: {
-          bookingHistory: {
-            bookingId,
-            userId,
-            roomId,
-            guestName,
-            roomNumber,
-            checkinDate,
-            checkoutDate,
-            totalPrice,
-            stayDurationNights,
-            paymentMethod,
-            bookingPayment,
-            status,
-            guests,
-            email,
+        $set: {
+          "bookingHistory.$.userId": userId,
+          "bookingHistory.$.roomId": roomId,
+          "bookingHistory.$.guestName": guestName,
+          "bookingHistory.$.roomNumber": roomNumber,
+          "bookingHistory.$.checkinDate": checkinDate,
+          "bookingHistory.$.checkoutDate": checkoutDate,
+          "bookingHistory.$.totalPrice": totalPrice,
+          "bookingHistory.$.stayDurationNights": stayDurationNights,
+          "bookingHistory.$.paymentMethod": paymentMethod,
+          "bookingHistory.$.bookingPayment": bookingPayment,
+          "bookingHistory.$.status": status,
+          "bookingHistory.$.guests": guests,
+          "bookingHistory.$.email": email,
+        },
+      }
+    );
+
+    let hotel;
+
+    if (updateResult.matchedCount > 0) {
+      hotel = await hotelModel.findById(hotelId).select("bookingHistory");
+    } else {
+      hotel = await hotelModel.findByIdAndUpdate(
+        hotelId,
+        {
+          $push: {
+            bookingHistory: {
+              bookingId,
+              userId,
+              roomId,
+              guestName,
+              roomNumber,
+              checkinDate,
+              checkoutDate,
+              totalPrice,
+              stayDurationNights,
+              paymentMethod,
+              bookingPayment,
+              status,
+              guests,
+              email,
+            },
           },
         },
-      },
-      { new: true },
-    );
+        { new: true },
+      );
+    }
 
     if (!hotel) {
       return apiError(res, 404, "Hotel not found", { hotelId });
