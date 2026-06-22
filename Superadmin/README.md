@@ -1,44 +1,45 @@
-# 🏢 Superadmin Dashboard
+# Superadmin Dashboard
 
 A comprehensive **Admin Dashboard** for system administrators to manage hotels, guests, rooms, bookings, payments, analytics, and system configuration.
 
-## 📋 Overview
+## Overview
 
 The Superadmin Dashboard provides complete control over the Travallee Hotel Management System with real-time analytics, user management, room inventory tracking, and payment monitoring.
 
 ### Key Features
-- 📊 Real-time analytics and KPIs dashboard
-- 👥 User/Guest management
-- 🏨 Hotel and room inventory management
-- 📅 Booking and reservation tracking
-- 💳 Payment and revenue analytics
-- ⭐ Customer reviews and feedback
-- 🎯 Deal & promotion management
-- 🔧 System settings and configuration
-- 📊 Advanced reporting
+
+* Real-time analytics and KPIs dashboard
+* User/Guest management
+* Hotel and room inventory management
+* Booking and reservation tracking
+* Payment and revenue analytics
+* Customer reviews and feedback
+* Deal & promotion management
+* System settings and configuration
+* Advanced reporting
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Aspect | Technology |
-|--------|-----------|
-| **Framework** | React 18.2 |
-| **Language** | TypeScript 5.9 |
-| **Build Tool** | Vite 5+ |
-| **Styling** | Tailwind CSS 4.2 |
-| **Navigation** | React Router v7 |
-| **Animations** | Framer Motion |
-| **Charts** | Recharts |
-| **HTTP Client** | Axios |
-| **Form Handling** | React Hook Form |
+| Aspect               | Technology        |
+| -------------------- | ----------------- |
+| **Framework**        | React 18.2        |
+| **Language**         | TypeScript 5.9    |
+| **Build Tool**       | Vite 5+           |
+| **Styling**          | Tailwind CSS 4.2  |
+| **Navigation**       | React Router v7   |
+| **Animations**       | Framer Motion     |
+| **Charts**           | Recharts          |
+| **HTTP Client**      | Axios             |
+| **Form Handling**    | React Hook Form   |
 | **State Management** | React Context API |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-```
+```text
 Superadmin/
 ├── public/                     # Static assets
 ├── src/
@@ -70,11 +71,12 @@ Superadmin/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js 16+ and npm
-- Git
+
+* Node.js 16+ and npm
+* Git
 
 ### Installation
 
@@ -116,64 +118,72 @@ npm run preview
 
 ---
 
-## 📁 Component Details
+## Component Details
 
 ### Core Components
 
 #### **Sidebar.jsx**
-- Main navigation menu
-- Route links for all admin pages
-- Responsive design
-- Collapsible on mobile
+
+* Main navigation menu
+* Route links for all admin pages
+* Responsive design
+* Collapsible on mobile
 
 **Location:** [src/components/Sidebar.jsx](src/components/Sidebar.jsx)
 
 #### **Topbar.jsx**
-- Header with title and user info
-- System notifications
-- User profile menu
-- Logout functionality
+
+* Header with title and user info
+* System notifications
+* User profile menu
+* Logout functionality
 
 **Location:** [src/components/Topbar.jsx](src/components/Topbar.jsx)
 
 #### **Toggle.jsx**
-- Theme switcher (light/dark mode)
-- Persists theme preference
+
+* Theme switcher (light/dark mode)
+* Persists theme preference
 
 **Location:** [src/components/Toggle.jsx](src/components/Toggle.jsx)
 
 ---
 
-## 📄 Pages
+## Pages
 
 ### Dashboard
-- **File:** [pages/Dashboard.jsx](src/pages/Dashboard.jsx)
-- **Purpose:** Main overview with KPIs and metrics
-- **Data:** Real-time hotel statistics, guest count, revenue
+
+* **File:** [pages/Dashboard.jsx](src/pages/Dashboard.jsx)
+* **Purpose:** Main overview with KPIs and metrics
+* **Data:** Real-time hotel statistics, guest count, revenue
 
 ### Analytics
-- **File:** [pages/Analytics.jsx](src/pages/Analytics.jsx)
-- **Purpose:** Advanced analytics with charts and trends
-- **Features:** Revenue trends, occupancy rates, guest demographics
+
+* **File:** [pages/Analytics.jsx](src/pages/Analytics.jsx)
+* **Purpose:** Advanced analytics with charts and trends
+* **Features:** Revenue trends, occupancy rates, guest demographics
 
 ### Users
-- **File:** [pages/Users.jsx](src/pages/Users.jsx)
-- **Purpose:** Manage guests and staff
-- **Features:** User list, search, edit, delete, roles
+
+* **File:** [pages/Users.jsx](src/pages/Users.jsx)
+* **Purpose:** Manage guests and staff
+* **Features:** User list, search, edit, delete, roles
 
 ### Bookings
-- **File:** [pages/Bookings.jsx](src/pages/Bookings.jsx)
-- **Purpose:** Track all reservations
-- **Features:** Booking list, status, check-in/out
+
+* **File:** [pages/Bookings.jsx](src/pages/Bookings.jsx)
+* **Purpose:** Track all reservations
+* **Features:** Booking list, status, check-in/out
 
 ### Settings
-- **File:** [pages/Settings.jsx](src/pages/Settings.jsx)
-- **Purpose:** System configuration
-- **Features:** Email config, payment settings, hotel settings
+
+* **File:** [pages/Settings.jsx](src/pages/Settings.jsx)
+* **Purpose:** System configuration
+* **Features:** Email config, payment settings, hotel settings
 
 ---
 
-## 🔌 API Integration
+## API Integration
 
 The dashboard communicates with backend services via REST APIs:
 
@@ -188,6 +198,7 @@ const APIs = {
 ```
 
 ### Typical Flow
+
 1. User logs in via Auth Service
 2. JWT token stored in localStorage
 3. Token included in all API requests
@@ -195,14 +206,16 @@ const APIs = {
 
 ---
 
-## 🎨 Theming
+## Theming
 
 Theme configuration is in [src/theme.js](src/theme.js):
-- Color schemes (light/dark)
-- Tailwind CSS configuration
-- Custom color palette
+
+* Color schemes (light/dark)
+* Tailwind CSS configuration
+* Custom color palette
 
 ### Using Theme
+
 ```jsx
 import { useTheme } from './context/ThemeContext';
 
@@ -214,47 +227,53 @@ export default function Component() {
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ### Core
-- **react** (18.2) - UI library
-- **react-dom** (18.2) - React DOM rendering
-- **react-router-dom** (7.0) - Routing
+
+* **react** (18.2) - UI library
+* **react-dom** (18.2) - React DOM rendering
+* **react-router-dom** (7.0) - Routing
 
 ### Styling & UI
-- **tailwindcss** (4.2) - CSS framework
-- **framer-motion** (11.0) - Animations
-- **recharts** (2.5) - Charts library
+
+* **tailwindcss** (4.2) - CSS framework
+* **framer-motion** (11.0) - Animations
+* **recharts** (2.5) - Charts library
 
 ### HTTP & State
-- **axios** (1.6) - HTTP client
-- **react-hook-form** - Form handling
+
+* **axios** (1.6) - HTTP client
+* **react-hook-form** - Form handling
 
 ### Development
-- **typescript** (5.9) - Type safety
-- **vite** (5.0) - Build tool
-- **@vitejs/plugin-react** - React plugin for Vite
+
+* **typescript** (5.9) - Type safety
+* **vite** (5.0) - Build tool
+* **@vitejs/plugin-react** - React plugin for Vite
 
 ---
 
-## 🔐 Security
+## Security
 
-- ✅ Protected routes (authentication required)
-- ✅ JWT token validation
-- ✅ XSS protection via React's built-in sanitization
-- ✅ CSRF protection
-- ✅ Role-based access control
+* Protected routes (authentication required)
+* JWT token validation
+* XSS protection via React's built-in sanitization
+* CSRF protection
+* Role-based access control
 
 ---
 
-## 📱 Responsive Design
+## Responsive Design
 
 Dashboard is fully responsive:
-- Desktop (1024px+)
-- Tablet (768px - 1023px)
-- Mobile (< 768px)
+
+* Desktop (1024px+)
+* Tablet (768px - 1023px)
+* Mobile (< 768px)
 
 Uses Tailwind CSS breakpoints:
+
 ```jsx
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
   {/* Cards that stack on mobile */}
@@ -263,9 +282,10 @@ Uses Tailwind CSS breakpoints:
 
 ---
 
-## 🐛 Debugging
+## Debugging
 
 Enable debug mode:
+
 ```bash
 DEBUG=travallee:* npm run dev
 ```
@@ -274,29 +294,32 @@ Check browser console for logs and network requests.
 
 ---
 
-## 📚 Related Documentation
+## Related Documentation
 
-- [Root README](../README.md) - Project overview
-- [Setup Guide](../docs/SETUP.md) - Installation guide
-- [Architecture](../docs/ARCHITECTURE.md) - System architecture
+* [Root README](../README.md) - Project overview
+* [Setup Guide](../docs/SETUP.md) - Installation guide
+* [Architecture](../docs/ARCHITECTURE.md) - System architecture
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 npm run build
 # Deploy 'dist' folder to Vercel
 ```
 
 ### Docker
+
 ```bash
 docker build -t superadmin:latest .
 docker run -p 5173:5173 superadmin:latest
 ```
 
 ### Manual
+
 ```bash
 npm run build
 npm run preview  # Local preview
@@ -305,20 +328,21 @@ npm run preview  # Local preview
 
 ---
 
-## 💡 Tips & Best Practices
+## Tips & Best Practices
 
-- Use `React DevTools` for debugging
-- Keep components modular and reusable
-- Use TypeScript for type safety
-- Test thoroughly before deployment
-- Monitor performance with DevTools
-- Use environment variables for API URLs
+* Use `React DevTools` for debugging
+* Keep components modular and reusable
+* Use TypeScript for type safety
+* Test thoroughly before deployment
+* Monitor performance with DevTools
+* Use environment variables for API URLs
 
 ---
 
-## 📞 Support & Issues
+## Support & Issues
 
 For issues or improvements:
+
 1. Check [docs](../docs/)
 2. Review existing issues/PRs
 3. Create new issue with details

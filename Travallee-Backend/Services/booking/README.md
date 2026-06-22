@@ -1,68 +1,75 @@
-# 📅 Booking Service
+# Booking Service
 
-The **Booking & Reservation Management Service** handles creating, managing, and tracking hotel reservations. It manages the complete lifecycle of bookings from creation through checkout.
+The **Booking and Reservation Management Service** handles creating, managing, and tracking hotel reservations. It manages the complete booking lifecycle from reservation creation through guest checkout.
 
-## 📋 Overview
+## Overview
 
-Booking Service handles:
-- Booking creation and confirmation
-- Booking modification (dates, rooms)
-- Booking cancellation
-- Check-in/check-out management
-- Booking history and archives
-- Booking status tracking
-- Guest communication
-- Booking analytics
+The Booking Service is responsible for:
 
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| **Framework** | Express.js 5.2 |
-| **Language** | TypeScript 5.9 |
-| **Database** | MongoDB + Mongoose |
-| **Caching** | Redis |
-| **Queue** | BullMQ |
-| **Validation** | Zod |
+* Booking creation and confirmation
+* Booking modification (dates and rooms)
+* Booking cancellation
+* Check-in and check-out management
+* Booking history and archival
+* Booking status tracking
+* Guest communication
+* Booking analytics and reporting
 
 ---
 
-## 📂 Project Structure
+## Tech Stack
 
-```
+| Component            | Technology         |
+| -------------------- | ------------------ |
+| **Framework**        | Express.js 5.2     |
+| **Language**         | TypeScript 5.9     |
+| **Database**         | MongoDB + Mongoose |
+| **Caching**          | Redis              |
+| **Queue Management** | BullMQ             |
+| **Validation**       | Zod                |
+
+---
+
+## Project Structure
+
+```text
 booking/
 ├── src/
-│   ├── app.ts                      # Express app setup
-│   ├── index.ts                    # Server entry point
-│   ├── Controllers/                # Request handlers
-│   │   └── booking.controller.ts   # Booking endpoints
-│   ├── Routes/                     # Route definitions
-│   │   └── booking.routes.ts       # Booking routes
-│   ├── Models/                     # Data models
-│   │   └── Booking.ts              # Booking schema
-│   ├── Services/                   # Business logic
-│   │   ├── booking.service.ts      # Booking operations
-│   │   └── availability.service.ts # Availability checking
-│   ├── Jobs/                       # Background jobs
-│   │   ├── sendConfirmation.job.ts # Send confirmation emails
+│   ├── app.ts
+│   ├── index.ts
+│   ├── Controllers/
+│   │   └── booking.controller.ts
+│   ├── Routes/
+│   │   └── booking.routes.ts
+│   ├── Models/
+│   │   └── Booking.ts
+│   ├── Services/
+│   │   ├── booking.service.ts
+│   │   └── availability.service.ts
+│   ├── Jobs/
+│   │   ├── sendConfirmation.job.ts
 │   │   └── ...
-│   ├── Schemas/                    # Validation schemas
-│   │   └── booking.schema.ts       # Validation
-│   └── Utils/                      # Helpers
+│   ├── Schemas/
+│   │   └── booking.schema.ts
+│   └── Utils/
 │       └── ...
 │
-├── .env.example                    # Environment template
-├── package.json                    # Dependencies
-├── tsconfig.json                   # TypeScript config
-├── Dockerfile                      # Docker configuration
-└── README.md                       # This file
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
+
+### Prerequisites
+
+* Node.js 18+
+* MongoDB
+* Redis
 
 ### Installation
 
@@ -70,6 +77,7 @@ booking/
 cd Travallee-Backend/Services/booking
 
 npm install
+
 cp .env.example .env
 ```
 
@@ -89,132 +97,48 @@ PAYMENT_SERVICE_URL=http://localhost:3002
 NOTIFICATION_SERVICE_URL=http://localhost:6000
 ```
 
-### Start Development
+### Start Development Server
 
 ```bash
 npm run dev
 ```
 
-Runs on: **http://localhost:5002**
+The service runs on:
 
----
-
-## 🔌 API Endpoints
-
-### Create Booking
-
-```
-POST /api/bookings
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "hotelId": "60d5ec49c1234567890abcde",
-  "roomId": "60d5ec49c1234567890abcdf",
-  "checkInDate": "2024-05-20T15:00:00Z",
-  "checkOutDate": "2024-05-25T11:00:00Z",
-  "guests": {
-    "adults": 2,
-    "children": 1
-  },
-  "specialRequests": "Late checkout if available"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "60d5ec49c1234567890abce0",
-    "bookingNumber": "BK-2024-001",
-    "status": "confirmed",
-    "totalPrice": 750,
-    "confirmationDetails": { ... }
-  }
-}
-```
-
-### Get Booking Details
-
-```
-GET /api/bookings/:bookingId
-Authorization: Bearer <token>
-```
-
-### Get User's Bookings
-
-```
-GET /api/bookings/user/me
-Authorization: Bearer <token>
-Query Parameters:
-  - status: confirmed|cancelled|completed
-  - page: number
-  - limit: number
-```
-
-### Modify Booking
-
-```
-PATCH /api/bookings/:bookingId
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "checkInDate": "2024-05-21T15:00:00Z",
-  "checkOutDate": "2024-05-26T11:00:00Z"
-}
-```
-
-### Cancel Booking
-
-```
-DELETE /api/bookings/:bookingId
-Authorization: Bearer <token>
-
-{
-  "reason": "Personal emergency"
-}
-```
-
-### Check-in
-
-```
-POST /api/bookings/:bookingId/check-in
-Authorization: Bearer <token>
-```
-
-### Check-out
-
-```
-POST /api/bookings/:bookingId/check-out
-Authorization: Bearer <token>
-```
-
-### Get Available Rooms
-
-```
-GET /api/bookings/availability
-Query Parameters:
-  - hotelId: string
-  - checkIn: date (YYYY-MM-DD)
-  - checkOut: date (YYYY-MM-DD)
-  - guests: number
+```text
+http://localhost:5002
 ```
 
 ---
 
-## 📁 Data Models
+## API Endpoints
 
-### Booking Model
+### Booking Management
+
+| Method | Endpoint                             | Description                 |
+| ------ | ------------------------------------ | --------------------------- |
+| POST   | `/api/bookings`                      | Create a booking            |
+| GET    | `/api/bookings/:bookingId`           | Get booking details         |
+| GET    | `/api/bookings/user/me`              | Get current user's bookings |
+| PATCH  | `/api/bookings/:bookingId`           | Modify a booking            |
+| DELETE | `/api/bookings/:bookingId`           | Cancel a booking            |
+| POST   | `/api/bookings/:bookingId/check-in`  | Check in guest              |
+| POST   | `/api/bookings/:bookingId/check-out` | Check out guest             |
+| GET    | `/api/bookings/availability`         | Check room availability     |
+
+---
+
+## Data Model
+
+### Booking Interface
 
 ```typescript
 interface IBooking {
   _id: ObjectId;
-  bookingNumber: string;           // Unique booking reference
-  userId: ObjectId;                 // Guest (ref to User)
-  hotelId: ObjectId;                // Hotel (ref to Hotel)
-  roomId: ObjectId;                 // Room (ref to Room)
+  bookingNumber: string;
+  userId: ObjectId;
+  hotelId: ObjectId;
+  roomId: ObjectId;
   checkInDate: Date;
   checkOutDate: Date;
   numberOfNights: number;
@@ -222,12 +146,20 @@ interface IBooking {
     adults: number;
     children: number;
   };
-  basePrice: number;                // Price per night
-  totalPrice: number;               // Total booking cost
+  basePrice: number;
+  totalPrice: number;
   taxAmount: number;
   discountAmount: number;
-  status: 'pending' | 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled';
-  paymentStatus: 'pending' | 'completed' | 'refunded';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'checked-in'
+    | 'checked-out'
+    | 'cancelled';
+  paymentStatus:
+    | 'pending'
+    | 'completed'
+    | 'refunded';
   specialRequests?: string;
   cancellationReason?: string;
   cancellationDate?: Date;
@@ -240,35 +172,26 @@ interface IBooking {
 
 ---
 
-## 🔄 Booking Lifecycle
+## Booking Lifecycle
 
-```
-1. CREATE BOOKING
-   ↓
-2. PAYMENT PROCESSING
-   ↓
-3. PAYMENT CONFIRMED
-   ↓
-4. BOOKING CONFIRMED (emails sent)
-   ↓
-5. CHECK-IN DATE ARRIVES
-   ↓
-6. GUEST CHECKS IN
-   ↓
-7. GUEST STAYS
-   ↓
-8. CHECK-OUT DATE
-   ↓
-9. GUEST CHECKS OUT
-   ↓
-10. BOOKING COMPLETED
+```text
+1. Create Booking
+2. Process Payment
+3. Confirm Payment
+4. Confirm Booking
+5. Guest Check-In
+6. Guest Stay
+7. Guest Check-Out
+8. Complete Booking
 ```
 
 ---
 
-## ✅ Availability Checking
+## Availability Management
 
-### Algorithm
+### Availability Check
+
+The service verifies room availability before confirming a reservation by checking for overlapping bookings within the requested date range.
 
 ```typescript
 async function checkAvailability(
@@ -276,132 +199,145 @@ async function checkAvailability(
   checkIn: Date,
   checkOut: Date
 ): Promise<boolean> {
-  // Query existing bookings for this room
   const existingBookings = await Booking.find({
     roomId,
     status: { $in: ['confirmed', 'checked-in'] },
     checkOutDate: { $gt: checkIn },
     checkInDate: { $lt: checkOut }
   });
-  
-  // No overlapping bookings = available
+
   return existingBookings.length === 0;
 }
 ```
 
 ---
 
-## 💰 Price Calculation
+## Pricing and Billing
 
-### Total Price Formula
+### Price Calculation
 
-```
-Total = (BasePrice × NumberOfNights) + Tax - Discount
-
-Where:
-- BasePrice = Room's nightly rate
-- NumberOfNights = Difference between checkout and checkin
-- Tax = Percentage-based or fixed amount
-- Discount = Promotional discount if applicable
+```text
+Total Price =
+(Base Price × Number of Nights)
++ Taxes
+- Discounts
 ```
 
-### Price Adjustments
+### Supported Pricing Adjustments
 
-- **Seasonal Rates** - Prices vary by season
-- **Early Bird Discount** - Discount for early bookings
-- **Group Discount** - Discount for multiple rooms
-- **Loyalty Discount** - Loyalty program discounts
+* Seasonal pricing
+* Early booking discounts
+* Group booking discounts
+* Loyalty program discounts
+* Promotional offers
 
 ---
 
-## 📨 Email Notifications
+## Notifications
+
+The service can trigger the following booking-related notifications:
 
 ### Confirmation Email
-- Sent immediately after booking
-- Contains booking details
-- Includes booking confirmation number
+
+Sent immediately after booking confirmation and includes:
+
+* Booking reference number
+* Reservation details
+* Guest information
 
 ### Reminder Email
-- Sent 24 hours before check-in
-- Contains hotel address and check-in instructions
+
+Sent before check-in and includes:
+
+* Hotel information
+* Check-in instructions
+* Reservation summary
 
 ### Receipt Email
-- Sent after check-out
-- Contains invoice and total charges
-- Includes feedback request
+
+Sent after checkout and includes:
+
+* Invoice
+* Total charges
+* Feedback request
 
 ### Cancellation Email
-- Sent when booking is cancelled
-- Contains refund information
+
+Sent when a booking is cancelled and includes:
+
+* Cancellation details
+* Refund information
 
 ---
 
-## 🔀 Background Jobs
+## Background Jobs
 
-Using BullMQ for asynchronous tasks:
+BullMQ is used for asynchronous processing.
 
-### Send Confirmation Job
+### Confirmation Email Job
+
 ```typescript
 await bookingQueue.add('sendConfirmation', {
   bookingId: booking._id,
   guestEmail: guest.email
-}, { delay: 1000 }); // Execute after 1 second
+});
 ```
 
-### Send Reminder Job
+### Reminder Email Job
+
 ```typescript
-// Scheduled: 24 hours before check-in
 await bookingQueue.add('sendReminder', {
   bookingId: booking._id
-}, { delay: 24 * 60 * 60 * 1000 });
+});
 ```
 
-### Auto Check-out Job
+### Automatic Checkout Job
+
 ```typescript
-// Auto check-out if not done manually
 await bookingQueue.add('autoCheckout', {
   bookingId: booking._id
-}, { delay: checkout_time - now });
+});
 ```
 
 ---
 
-## 💳 Payment Integration
+## Payment Integration
 
-Booking service communicates with Payment Service:
+The Booking Service integrates with the Payment Service to process reservation payments.
 
 ```typescript
-// After booking creation, initiate payment
 const payment = await paymentService.createPayment({
   bookingId: booking._id,
   amount: booking.totalPrice,
-  currency: 'USD',
-  paymentMethod: 'credit_card'
+  currency: 'Nepali',
+  paymentMethod: 'Esewa, Khalti'
 });
 ```
 
 ### Payment Statuses
 
-- **Pending** - Awaiting payment
-- **Completed** - Successfully paid
-- **Failed** - Payment failed
-- **Refunded** - Money returned after cancellation
+* Pending
+* Completed
+* Failed
+* Refunded
 
 ---
 
-## 🔒 Security & Validation
+## Security and Validation
 
-- ✅ Only users can view their own bookings
-- ✅ Hotel admins can view all hotel bookings
-- ✅ Validate dates (checkout > checkin)
-- ✅ Prevent overbooking
-- ✅ Verify room capacity
-- ✅ Validate guest count
-- ✅ Rate limiting on booking creation
+1. Users can access only their own bookings.
+2. Hotel administrators can access hotel-specific bookings.
+3. Check-in and check-out dates are validated.
+4. Overbooking prevention is enforced.
+5. Room capacity validation is applied.
+6. Guest count validation is required.
+7. Rate limiting is applied to booking creation requests.
 
 ---
 
-## 🧪 Testing
+## Testing
+
+Run the test suite:
 
 ```bash
 npm test
@@ -409,22 +345,56 @@ npm test
 
 ---
 
-## 📚 Related Services
+## Related Services
 
-- **Hotel Service** - Room availability & details
-- **Auth Service** - User authentication
-- **Payment Service** - Process payments
-- **Notification Service** - Send emails
+* Auth Service
+* Hotel Service
+* Payment Service
+* Notification Service
 
 ---
 
-## 🚀 Deployment
+## Deployment
+
+### Docker
 
 ```bash
 docker build -t travallee-booking:latest .
-docker run -p 5002:5002 --env-file .env travallee-booking:latest
+
+docker run \
+  -p 5002:5002 \
+  --env-file .env \
+  travallee-booking:latest
+```
+
+### Docker Compose
+
+```bash
+docker-compose up booking
 ```
 
 ---
 
-**Booking Management Service of Travallee**
+## Development Guidelines
+
+1. Follow TypeScript best practices.
+2. Keep services modular and maintainable.
+3. Validate all incoming requests.
+4. Write tests for new features.
+5. Document API changes.
+6. Use environment variables for configuration.
+7. Follow existing project conventions.
+
+---
+
+## Support
+
+1. Review service logs for runtime issues.
+2. Verify MongoDB and Redis connectivity.
+3. Confirm environment variables are configured correctly.
+4. Check integration endpoints for dependent services.
+
+---
+
+
+**Booking and Reservation Management Service for the Travallee Hotel Management System**

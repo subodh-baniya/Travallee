@@ -1,18 +1,19 @@
-# 🔧 Backend - Microservices Architecture
+#  Backend - Microservices Architecture
 
-The backend is organized as a **microservices architecture** where each service runs independently and communicates via REST APIs. All services share common utilities and middleware through the Packages module.
+The backend is organized as a microservices architecture where each service runs independently and communicates via REST APIs. All services share common utilities and middleware through the Packages module.
 
-## 📋 Overview
+##  Overview
 
 The Travallee Backend consists of:
-- **Packages** - Shared utilities, middleware, models, and authentication logic
-- **Services** - Independent microservices for different business domains
+
+**Packages** - Shared utilities, middleware, models, and authentication logic
+**Services** - Independent microservices for different business domains
 
 Each service is containerized with Docker and orchestrated via Docker Compose.
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌────────────────────────────────────────────────────┐
@@ -37,7 +38,7 @@ Each service is containerized with Docker and orchestrated via Docker Compose.
 
 ---
 
-## 📂 Directory Structure
+##  Directory Structure
 
 ```
 Travallee-Backend/
@@ -93,7 +94,7 @@ Travallee-Backend/
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -110,7 +111,7 @@ Travallee-Backend/
 
 ---
 
-## 🔧 Services Overview
+##  Services Overview
 
 ### Auth Service (Port 3000)
 - User registration and login
@@ -184,7 +185,7 @@ Travallee-Backend/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js 18+ and npm
@@ -226,7 +227,7 @@ npm run dev
 
 ---
 
-## 📋 Shared Packages
+##  Shared Packages
 
 Located in [Packages/](Packages/), provides shared code for all services:
 
@@ -267,7 +268,7 @@ app.get('/users/:id', async (req, res) => {
 
 ---
 
-## 🔌 Inter-Service Communication
+##  Inter-Service Communication
 
 Services communicate via REST APIs:
 
@@ -299,7 +300,7 @@ async function checkAvailability(roomId, dates) {
 
 ---
 
-## 🗄️ Database & Caching
+##  Database & Caching
 
 ### MongoDB
 - Primary database for all services
@@ -320,7 +321,7 @@ async function checkAvailability(roomId, dates) {
 
 ---
 
-## 🔐 Authentication & Security
+##  Authentication & Security
 
 ### JWT Flow
 1. User logs in via Auth Service
@@ -341,7 +342,7 @@ async function checkAvailability(roomId, dates) {
 
 ---
 
-## 📦 Environment Variables
+##  Environment Variables
 
 Each service needs a `.env` file:
 
@@ -373,7 +374,7 @@ SMTP_PASS=your_app_password
 
 ---
 
-## 🐳 Docker Setup
+##  Docker Setup
 
 ### Docker Compose Services
 
@@ -424,7 +425,7 @@ docker-compose down
 
 ---
 
-## 📚 API Documentation
+##  API Documentation
 
 ### Base URLs
 ```
@@ -457,7 +458,7 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-## 🚀 Running Services
+##  Running Services
 
 ### Development Mode
 
@@ -481,7 +482,7 @@ npm run watch
 
 ---
 
-## 🐛 Debugging
+##  Debugging
 
 ### Enable Debug Logging
 
@@ -508,7 +509,7 @@ docker-compose logs --tail=100
 
 ---
 
-## 📊 Testing
+##  Testing
 
 ```bash
 # Run unit tests
@@ -523,7 +524,7 @@ npm run test:coverage
 
 ---
 
-## 🔄 Deployment
+##  Deployment
 
 ### Staging
 ```bash
@@ -544,7 +545,7 @@ docker push travallee-auth:prod
 
 ---
 
-## 📚 Related Documentation
+##  Related Documentation
 
 - [Root README](../README.md) - Project overview
 - [Setup Guide](../docs/SETUP.md) - Full setup
@@ -553,7 +554,7 @@ docker push travallee-auth:prod
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 1. Create feature branch: `git checkout -b feature/name`
 2. Follow TypeScript and code standards
@@ -564,13 +565,12 @@ docker push travallee-auth:prod
 
 ---
 
-## 📞 Support
-
-- Check service-specific README files
-- Review API documentation in `/docs`
-- Check Docker logs for errors
-- Verify environment variables
-- Ensure databases are running
+## Support
+Check service-specific README files
+Review API documentation
+Check Docker logs
+Verify environment variables
+Ensure databases are running
 
 ---
 
