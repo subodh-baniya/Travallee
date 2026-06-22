@@ -20,3 +20,37 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+
+  - type: web
+    name: travallee-hotel
+    runtime: docker
+    dockerfilePath: ./Travallee-Backend/Services/Hotel/Dockerfile
+    dockerContext: ./Travallee-Backend/Services/Hotel
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        sync: false
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_USERNAME
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
