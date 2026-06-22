@@ -31,6 +31,7 @@ app.use(express.urlencoded({extended: true, limit: "10mb"}));
 app.use(express.static("public"));
 app.use(cookie());
 app.use(passport.initialize());
+app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
 
 // user routes
 app.use("/api/v1/users", UserRouter);
