@@ -518,4 +518,64 @@ const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => 
   return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History });
 });
 
-export { createBooking, createBookingFromHotel, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel,getHotelIdfromBooking, updateBookingPaymentStatus,getTransactionHistoryOfHotel };
+const updateBooking = asyncHandler(async (req: any, res: any) => {
+  const { bookingId } = req.params;
+  const updateData = req.body;
+
+  if (!bookingId) {
+    return apiError(res, 404, "Booking not found");
+  }
+
+  if (!updateData) {
+    return apiError(res, 400, "Update data not received");
+  }
+
+  try {
+    const updatedBooking = await bookingModel.findByIdAndUpdate(
+      bookingId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBooking) {
+      return apiError(res, 404, "Booking not found", { bookingId });
+    }
+
+    try {
+  await axios.post(
+    `${process.env.HOTEL_SERVICE_URL}/booking-history`,
+    {
+      bookingId: String(updatedBooking._id),
+      hotelId: String(updatedBooking.hotel),
+      status: updatedBooking.status,
+      bookingPayment: updatedBooking.bookingPayment,
+    }
+  );
+} catch (syncError: any) {
+  console.error("Status:", syncError.response?.status);
+  console.error("Data:", syncError.response?.data);
+  console.error("URL:", syncError.config?.url);
+}
+
+    return apiResponse(res, 200, true, "Booking updated successfully", updatedBooking);
+  } catch (error: any) {
+    console.error("Error updating booking:", error);
+
+    if (error.name === "CastError") {
+      return apiError(res, 400, "Invalid booking ID format");
+    }
+
+    if (error.name === "ValidationError") {
+      const formattedErrors = Object.values(error.errors).map((err: any) => ({
+        field: err.path,
+        message: err.message,
+      }));
+      return apiError(res, 400, "Validation Error", formattedErrors);
+    }
+
+    return apiError(res, 500, "Unable to update booking");
+  }
+});
+
+
+export { updateBooking,createBooking, createBookingFromHotel, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel,getHotelIdfromBooking, updateBookingPaymentStatus,getTransactionHistoryOfHotel };

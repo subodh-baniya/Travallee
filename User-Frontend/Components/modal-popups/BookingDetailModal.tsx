@@ -3,6 +3,9 @@ import { useAuth } from "../../Contexts/Authcontext";
 import { motion } from "framer-motion";
 import { useBookings } from "../../Hooks/useBooking";
 import { getBookingHistory } from "../../Services/hotel.api";
+import { updateBooking,type updateBookingPayload } from "../../Services/booking.api";
+import { Toast } from "../modal-popups/Toast";
+import { useToast } from "../../Hooks/useToast";
 
 type StoredBookingEvent = {
   bookingId?: string;
@@ -96,6 +99,9 @@ const statusBadge: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-800 border border-red-200",
 };
 
+const selectClass =
+  "text-[11px] px-2 py-0.5 rounded-full font-medium border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400";
+
 const Field = ({
   icon,
   label,
@@ -122,10 +128,17 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
   const auth = useAuth();
   const hotelId = auth?.hotelId || null;
 
-    const {hotelName} = useBookings(hotelId);
+  const { hotelName } = useBookings(hotelId);
 
   const [booking, setBooking] = useState<StoredBookingEvent | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBookingStatus, setEditBookingStatus] = useState<"CONFIRMED" | "PENDING" | "CANCELLED">("PENDING");
+  const [editPaymentStatus, setEditPaymentStatus] = useState<"PAID" | "NOTPAID">("NOTPAID");
+  const [saving, setSaving] = useState(false);
+
+  const { toast, showToast, clearToast } = useToast();
 
   useEffect(() => {
     const loadBooking = async () => {
@@ -189,7 +202,17 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
     };
 
     void loadBooking();
-  }, [bookingId, hotelId,hotelName]);
+  }, [bookingId, hotelId, hotelName]);
+
+  // Keep edit fields in sync whenever the booking (re)loads
+  useEffect(() => {
+    if (booking) {
+      setEditBookingStatus(
+        (booking.status as "CONFIRMED" | "PENDING" | "CANCELLED") || "PENDING"
+      );
+      setEditPaymentStatus(booking.bookingPayment === "PAID" ? "PAID" : "NOTPAID");
+    }
+  }, [booking]);
 
   const displayName =
     booking?.guestName || booking?.userName || booking?.name || "Guest";
@@ -200,6 +223,48 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
   const amount      = booking?.totalPrice   ?? booking?.amount;
   const payStatus   = booking?.bookingPayment || "NOTPAID";
   const bookStatus  = booking?.status        || "PENDING";
+
+  const startEditing = () => {
+    clearToast();
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditBookingStatus((booking?.status as "CONFIRMED" | "PENDING" | "CANCELLED") || "PENDING");
+    setEditPaymentStatus(booking?.bookingPayment === "PAID" ? "PAID" : "NOTPAID");
+    clearToast();
+  };
+
+  const handleSave = async () => {
+    if (!booking?.bookingId) return;
+    setSaving(true);
+    clearToast();
+
+    try {
+      const payload={
+         status: editBookingStatus,
+        bookingPayment: editPaymentStatus,
+      } as updateBookingPayload;
+
+      await updateBooking(booking.bookingId, payload as any);
+
+      setBooking({
+        ...booking,
+        status: editBookingStatus,
+        bookingPayment: editPaymentStatus,
+      });
+      showToast("success", "Booking updated successfully!");
+      setIsEditing(false);
+    } catch (err: any) {
+      showToast(
+        "error",
+        err?.response?.data?.message || err?.message || "Failed to update booking."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <motion.div
@@ -219,6 +284,8 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
         className="bg-white rounded-2xl border border-slate-200 w-full max-w-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        <Toast toast={toast} />
+
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-slate-100">
           <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-sm font-medium text-blue-700 shrink-0">
@@ -231,16 +298,51 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
             </p>
             {!loading && booking && (
               <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusBadge[bookStatus] ?? statusBadge.PENDING}`}>
-                  {bookStatus.charAt(0) + bookStatus.slice(1).toLowerCase()}
-                </span>
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${paymentBadge[payStatus] ?? paymentBadge.NOTPAID}`}>
-                  {payStatus === "PAID" ? "Paid" : "Unpaid"}
-                </span>
+                {isEditing ? (
+                  <select
+                    value={editBookingStatus}
+                    onChange={(e) =>
+                      setEditBookingStatus(e.target.value as "CONFIRMED" | "PENDING" | "CANCELLED")
+                    }
+                    className={selectClass}
+                  >
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                ) : (
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusBadge[bookStatus] ?? statusBadge.PENDING}`}>
+                    {bookStatus.charAt(0) + bookStatus.slice(1).toLowerCase()}
+                  </span>
+                )}
+
+                {isEditing ? (
+                  <select
+                    value={editPaymentStatus}
+                    onChange={(e) => setEditPaymentStatus(e.target.value as "PAID" | "NOTPAID")}
+                    className={selectClass}
+                  >
+                    <option value="PAID">Paid</option>
+                    <option value="NOTPAID">Unpaid</option>
+                  </select>
+                ) : (
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${paymentBadge[payStatus] ?? paymentBadge.NOTPAID}`}>
+                    {payStatus === "PAID" ? "Paid" : "Unpaid"}
+                  </span>
+                )}
               </div>
             )}
           </div>
 
+          {!loading && booking && !isEditing && (
+            <button
+              onClick={startEditing}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition shrink-0"
+              aria-label="Edit booking"
+            >
+              Edit
+            </button>
+          )}
         </div>
 
         {/* ── Body ────────────────────────────────────────────────────── */}
@@ -296,7 +398,7 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
                 <Field icon="ti-door"        label="Room"           value={booking.roomNumber   || booking.roomId || "-"} />
                 <Field icon="ti-mail"        label="Email"          value={booking.email        || "-"} />
                 <Field icon="ti-credit-card" label="Payment method" value={booking.paymentMethod || "-"} />
-                <Field icon="ti-building"    label="Hotel"          value={hotelName} />
+                <Field icon="ti-building"    label="Hotel"          value={hotelName || "-"} />
                 <Field icon="ti-clock"       label="Received at"    value={formatDateTime(booking.createdAt)} />
               </div>
             </div>
@@ -313,19 +415,40 @@ const BookingDetails = ({ bookingId, onClose }: Props) => {
 
         {/* ── Footer ──────────────────────────────────────────────────── */}
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-          >
-            Close
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-1.5"
-          >
-            <i className="ti ti-printer text-sm" aria-hidden="true" />
-            Print receipt
-          </button>
+          {isEditing ? (
+            <>
+              <button
+                onClick={cancelEditing}
+                disabled={saving}
+                className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-1.5"
+              >
+                <i className="ti ti-printer text-sm" aria-hidden="true" />
+                Print receipt
+              </button>
+            </>
+          )}
         </div>
       </motion.div>
     </motion.div>
