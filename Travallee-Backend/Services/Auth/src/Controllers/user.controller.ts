@@ -8,56 +8,61 @@ import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
-import { createClient } from "redis";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 
+dotenv.config({
+  path:"./.env",
+});
 
-
-const connection1 = new Redis({
-  url: `${process.env.REDIS_URL}`,
-})
 const connection = {
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
 };
 
-const sub = createClient({
- url: `${process.env.REDIS_URL }`,
+if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
+  throw new Error("Missing Redis environment variables: REDIS_HOST, REDIS_PORT, REDIS_PASSWORD");
+}
+
+//@ts-ignore
+const redisClient = new Redis(connection);
+
+redisClient.on("error", (err: Error) => console.error("Redis Client Error:", err));
+redisClient.on("connect", () => console.log("Connected to Redis successfully"));
+
+//@ts-ignore
+const subClient = new Redis(connection);
+
+subClient.on("error", (err: Error) => console.error("Redis Sub Client Error:", err));
+
+subClient.subscribe("newHotelApproved", async (err: Error | null) => {
+  if (err) console.error("Failed to subscribe:", err);
 });
-Promise.all([sub.connect()])
-  .then(() => {
-    console.log("Connected to Redis successfully");
-  })
-  .catch((err) => {
-    console.error("Error connecting to Redis:", err);
-  });
 
-sub.subscribe("newHotelApproved", async (message) => {
-  try {
-    console.log("Received message on newHotelApproved channel:", message);
-    const data = JSON.parse(message);
-    const result = await UserModel.updateOne(
-      { _id: data.userID },
-      {
-        $set: {
-          hotelId: new mongoose.Types.ObjectId(data.hotelId),
-          role: "hotelAdmin",
-        },
-      }
-    );
-    console.log("Updated user with new hotel ID and role:", result);
-
-
-    await UserProfileRedis.del(`user:${data.userID}`);
-  } catch (err: any) {
-    console.error("Error processing new hotel approval message:", err);
+subClient.on("message", async (channel: string, message: string) => {
+  if (channel === "newHotelApproved") {
+    try {
+      console.log("Received message on newHotelApproved channel:", message);
+      const data = JSON.parse(message);
+      const result = await UserModel.updateOne(
+        { _id: data.userID },
+        {
+          $set: {
+            hotelId: new mongoose.Types.ObjectId(data.hotelId),
+            role: "hotelAdmin",
+          },
+        }
+      );
+      console.log("Updated user with new hotel ID and role:", result);
+      await redisClient.del(`user:${data.userID}`);
+    } catch (err: any) {
+      console.error("Error processing new hotel approval message:", err);
+    }
   }
 });
 
-// @ts-ignore
-const registerRedis = new Redis(connection);
-//@ts-ignore
-const UserProfileRedis = new Redis(connection);
 
 const registerEmailQueue = new Queue<RegisterEmailJobData>("Register", {
   connection,
@@ -82,44 +87,29 @@ interface RegisterEmailJobData {
   userId: string;
 }
 
-// logic for user registration, login, logout, profile management, and OTP verification
 const registerUser = asyncHandler(async (req: any, res: any) => {
   try {
     const validate = registerSchema.parse(req.body);
-    const existingUser = await UserModel.findOne({
-      Username: validate.Username,
-    });
-    const existingEmail = await UserModel.findOne({
-      email: validate.email,
-    });
-    if (existingEmail) {
-      return apiError(res, 400, "Email already exists");
-    }
+    const existingUser = await UserModel.findOne({ Username: validate.Username });
+    const existingEmail = await UserModel.findOne({ email: validate.email });
 
-    if (existingUser) {
-      return apiError(res, 400, "Username already exists");
-    }
+    if (existingEmail) return apiError(res, 400, "Email already exists");
+    if (existingUser) return apiError(res, 400, "Username already exists");
 
     const otp = Math.floor(1000 + Math.random() * 9000);
 
-    registerRedis.set(`otp:${validate.email}`, otp, "EX", 10 * 60); // Store OTP in Redis with 10 minutes expiration
+    await redisClient.set(`otp:${validate.email}`, otp, "EX", 10 * 60);
+    await redisClient.set(`pendingUser:${validate.email}`, JSON.stringify(validate), "EX", 10 * 60);
 
     try {
-      otpQueue.add("SendOTP", {
+      await otpQueue.add("SendOTP", {
         email: validate.email,
         Name: validate.Name.toUpperCase(),
         otp,
       });
     } catch (error: any) {
-      console.log("error in processing OTP email:", error);
+      console.log("Error in processing OTP email:", error);
     }
-
-    registerRedis.set(
-      `pendingUser:${validate.email}`,
-      JSON.stringify(validate),
-      "EX",
-      10 * 60,
-    );
 
     return apiResponse(res, 201, true, "User registered successfully", {
       Username: validate.Username,
@@ -136,90 +126,33 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Failed to register user", error);
   }
 });
+
 const verifyOTP = asyncHandler(async (req: any, res: any) => {
   const { email, otp, type } = req.body;
 
-  let userData: any;
-
   try {
     if (type === "delete") {
-      const result = await new Promise<string | null>((resolve, reject) => {
-        registerRedis.get(`deleteOtp:${email}`, (err: any, result: any) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
+      const result = await redisClient.get(`deleteOtp:${email}`);
+      if (!result) return apiError(res, 400, "OTP has expired or is invalid");
+      if (Number(result) !== Number(otp)) return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
 
-      if (!result) {
-        return apiError(res, 400, "OTP has expired or is invalid");
-      }
-
-      if (Number(result) !== Number(otp)) {
-        return apiError(
-          res,
-          400,
-          "Invalid OTP. Please provide the correct OTP.",
-        );
-      }
-
-      await new Promise<void>((resolve, reject) => {
-        registerRedis.del(`deleteOtp:${email}`, (err: any) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-
+      await redisClient.del(`deleteOtp:${email}`);
       await UserModel.findOneAndDelete({ email });
 
       return apiResponse(res, 200, true, "Account deleted successfully");
     }
 
     if (type === "register") {
-      const otpResult = await new Promise<string | null>((resolve, reject) => {
-        registerRedis.get(`otp:${email}`, (err: any, result: any) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
+      const otpResult = await redisClient.get(`otp:${email}`);
+      if (!otpResult) return apiError(res, 400, "OTP has expired or is invalid");
+      if (Number(otpResult) !== Number(otp)) return apiError(res, 400, "Invalid OTP. Please provide the correct OTP.");
 
-      if (!otpResult) {
-        return apiError(res, 400, "OTP has expired or is invalid");
-      }
+      await redisClient.del(`otp:${email}`);
 
-      if (Number(otpResult) !== Number(otp)) {
-        return apiError(
-          res,
-          400,
-          "Invalid OTP. Please provide the correct OTP.",
-        );
-      }
+      const pendingUser = await redisClient.get(`pendingUser:${email}`);
+      if (!pendingUser) return apiError(res, 400, "No pending registration found for this email");
 
-      await new Promise<void>((resolve, reject) => {
-        registerRedis.del(`otp:${email}`, (err: any) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-
-      const pendingUser = await new Promise<string | null>(
-        (resolve, reject) => {
-          registerRedis.get(`pendingUser:${email}`, (err: any, result: any) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        },
-      );
-
-      if (!pendingUser) {
-        return apiError(
-          res,
-          400,
-          "No pending registration found for this email",
-        );
-      }
-
-      userData = JSON.parse(pendingUser);
-
+      const userData = JSON.parse(pendingUser);
       const newUser = new UserModel(userData);
       await newUser.save();
 
@@ -229,20 +162,9 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
         userId: newUser._id.toString(),
       });
 
-      await new Promise<void>((resolve, reject) => {
-        registerRedis.del(`pendingUser:${email}`, (err: any) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
+      await redisClient.del(`pendingUser:${email}`);
 
-      return apiResponse(
-        res,
-        200,
-        true,
-        "User registered successfully",
-        newUser,
-      );
+      return apiResponse(res, 200, true, "User registered successfully", newUser);
     }
 
     return apiError(res, 400, "Invalid type");
@@ -251,56 +173,46 @@ const verifyOTP = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error");
   }
 });
+
 const loginUser = asyncHandler(async (req: any, res: any) => {
   try {
     const validate = loginSchema.parse(req.body);
-    const user = await UserModel.findOne({
-      Username: validate.Username as string,
-    });
-    if (!user) {
-      return apiError(res, 400, "Username don't exist");
-    }
+    const user = await UserModel.findOne({ Username: validate.Username as string });
+
+    if (!user) return apiError(res, 400, "Username doesn't exist");
+
     const isPasswordValid = await user.comparePassword(validate.password);
-    if (!isPasswordValid) {
-      return apiError(res, 400, "Invalid password");
-    }
+    if (!isPasswordValid) return apiError(res, 400, "Invalid password");
+
     if (validate.hotelId) {
-      await UserModel.updateOne(
-        { _id: user._id },
-        { hotelId: validate.hotelId || null },
-      );
+      await UserModel.updateOne({ _id: user._id }, { hotelId: validate.hotelId || null });
     }
+
     if (validate.superAdminKey) {
-      const isSuperAdminKeyValid = await user.compareSuperAdminKey(
-        validate.superAdminKey,
-      );
+      const isSuperAdminKeyValid = await user.compareSuperAdminKey(validate.superAdminKey);
       if (!isSuperAdminKeyValid) {
-        return apiError(
-          res,
-          400,
-          "Invalid super admin key Please provide correct super admin key or Contact support",
-        );
+        return apiError(res, 400, "Invalid super admin key. Please provide the correct key or contact support.");
       }
     }
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    };
-    UserProfileRedis.set(
-      `user:${user._id}`,
-      JSON.stringify(user),
-      "EX",
-      24 * 60 * 60,
-    );
+
     const token = user.generateJWT();
     user.refreshToken = token;
     user.role = req.body.role || user.role;
     await user.save();
+
+    await redisClient.set(`user:${user._id}`, JSON.stringify(user), "EX", 24 * 60 * 60);
+    await redisClient.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3);
+
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+
     res.setHeader("Authorization", `Bearer ${token}`);
     res.cookie("token", token, options);
-    UserProfileRedis.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3);
+
     return apiResponse(res, 200, true, "User logged in successfully", {
       role: user.role,
       token,
@@ -316,93 +228,58 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
         field: err.path.join("."),
         message: err.message,
       }));
-      return apiError(
-        res,
-        400,
-        "Only username and proper password is accepted",
-        errors,
-      );
+      return apiError(res, 400, "Only username and proper password is accepted", errors);
     }
     return apiError(res, 500, "Failed to login user", error);
   }
 });
+
 const logoutUser = asyncHandler(async (req: any, res: any) => {
   const token = req.token;
   res.clearCookie("token");
   res.setHeader("Authorization", "");
-  UserProfileRedis.del(`token:${req.user.id}`);
-  tokenBlacklistRedis.set(
-    `blacklist:${token || ""}`,
-    "true",
-    "EX",
-    60 * 60 * 24 * 10,
-  ); // Blacklist token for 1 hour
+
+  await redisClient.del(`token:${req.user.id}`);
+  tokenBlacklistRedis.set(`blacklist:${token || ""}`, "true", "EX", 60 * 60 * 24 * 10);
 
   return apiResponse(res, 200, true, "User logged out successfully");
 });
+
 const getUserProfile = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
   try {
-    const result = await UserProfileRedis.get(`user:${userId}`);
-
+    const result = await redisClient.get(`user:${userId}`);
     if (result) {
-      const user = JSON.parse(result);
-
-      return apiResponse(
-        res,
-        200,
-        true,
-        "User profile retrieved successfully (from cache)",
-        user,
-      );
+      return apiResponse(res, 200, true, "User profile retrieved successfully (from cache)", JSON.parse(result));
     }
+
     const user = await UserModel.findById(userId).select("-password");
+    if (!user) return apiError(res, 404, "User not found");
 
-    if (!user) {
-      return apiError(res, 404, "User not found");
-    }
-    await UserProfileRedis.set(
-      `user:${userId}`,
-      JSON.stringify(user),
-      "EX",
-      60 * 60 * 24 * 3, // 3 days expiry
-    );
-    return apiResponse(
-      res,
-      200,
-      true,
-      "User profile retrieved successfully",
-      user,
-    );
+    await redisClient.set(`user:${userId}`, JSON.stringify(user), "EX", 60 * 60 * 24 * 3);
+
+    return apiResponse(res, 200, true, "User profile retrieved successfully", user);
   } catch (error: any) {
     console.error("Error retrieving user profile:", error);
-
     return apiError(res, 500, "Internal server error");
   }
 });
+
 const updateUserProfile = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
   const profileImage = req.file;
   const { Name, email, number } = req.body;
+
   if (!Name && !email && !number && !profileImage) {
-    return apiError(
-      res,
-      400,
-      "At least one field (Name, email, number, password) must be provided for update",
-    );
+    return apiError(res, 400, "At least one field must be provided for update");
   }
-  const user = await UserModel.findById(userId).select(
-    "-password -refreshToken",
-  );
-  if (!user) {
-    return apiError(res, 404, "User not found");
-  }
+
+  const user = await UserModel.findById(userId).select("-password -refreshToken");
+  if (!user) return apiError(res, 404, "User not found");
+
   if (profileImage) {
     try {
-      const response = await uploadToCloudinary(
-        profileImage.path,
-        "profile_pictures",
-      );
+      const response = await uploadToCloudinary(profileImage.path, "profile_pictures");
       user.profileimage = response;
     } catch (error: any) {
       console.error("Error uploading profile image to Cloudinary:", error);
@@ -417,33 +294,28 @@ const updateUserProfile = asyncHandler(async (req: any, res: any) => {
   await user.save();
   return apiResponse(res, 200, true, "User profile updated successfully", user);
 });
+
 const deleteAccount = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
   const user = await UserModel.findById(userId);
-  if (!user) {
-    return apiError(res, 404, "User not found");
-  }
+  if (!user) return apiError(res, 404, "User not found");
+
   const otp = Math.floor(1000 + Math.random() * 9000);
-  registerRedis.set(`deleteOtp:${user.email}`, otp, "EX", 10 * 60);
+  await redisClient.set(`deleteOtp:${user.email}`, otp, "EX", 10 * 60);
+
   try {
-    deleteAccountOtpQueue.add("DeleteAccountOTP", {
+    await deleteAccountOtpQueue.add("DeleteAccountOTP", {
       email: user.email,
       Name: user.Name.toUpperCase(),
       otp,
       subject: "OTP for Account Deletion - Travallee",
     });
   } catch (error: any) {
-    console.log("error in processing OTP email for account deletion:", error);
+    console.log("Error in processing OTP email for account deletion:", error);
   }
-  return apiResponse(
-    res,
-    200,
-    true,
-    "OTP sent to email for account deletion verification",
-  );
-});
 
-// not completed baniya ko kaam
+  return apiResponse(res, 200, true, "OTP sent to email for account deletion verification");
+});
 
 const googleAuth = asyncHandler(async (req: any, res: any) => {
   const userProfile = req.user;
@@ -451,53 +323,35 @@ const googleAuth = asyncHandler(async (req: any, res: any) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    sameSite: "strict" as const,
+    maxAge: 24 * 60 * 60 * 1000,
   };
   res.setHeader("Authorization", `Bearer ${token}`);
   res.cookie("token", token, options);
-  return apiResponse(
-    res,
-    200,
-    true,
-    "Google authentication successful",
-    userProfile,
-  );
+  return apiResponse(res, 200, true, "Google authentication successful", userProfile);
 });
 
 const updateHotelUserPassword = asyncHandler(async (req: any, res: any) => {
   const userId = req.user.id;
   const { currentPassword, newPassword } = req.body;
 
-  if (!currentPassword || !newPassword) {
-    return apiError(res, 400, "Current password and new password are required");
-  }
-
-  if (newPassword.length < 8) {
-    return apiError(res, 400, "New password must be at least 8 characters");
-  }
-
-  if (currentPassword === newPassword) {
-    return apiError(res, 400, "New password must be different from current password");
-  }
+  if (!currentPassword || !newPassword) return apiError(res, 400, "Current password and new password are required");
+  if (newPassword.length < 8) return apiError(res, 400, "New password must be at least 8 characters");
+  if (currentPassword === newPassword) return apiError(res, 400, "New password must be different from current password");
 
   try {
     const user = await UserModel.findById(userId);
-    if (!user) {
-      return apiError(res, 404, "User not found");
-    }
+    if (!user) return apiError(res, 404, "User not found");
 
     const isPasswordValid = await user.comparePassword(currentPassword);
-    if (!isPasswordValid) {
-      return apiError(res, 400, "Current password is incorrect");
-    }
+    if (!isPasswordValid) return apiError(res, 400, "Current password is incorrect");
 
-    user.password = newPassword; 
+    user.password = newPassword;
     await user.save();
 
     await Promise.all([
-      UserProfileRedis.del(`user:${userId}`),
-      UserProfileRedis.del(`token:${userId}`),
+      redisClient.del(`user:${userId}`),
+      redisClient.del(`token:${userId}`),
     ]);
 
     return apiResponse(res, 200, true, "Password updated successfully");
@@ -506,7 +360,6 @@ const updateHotelUserPassword = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 500, "Internal server error: Unable to update password");
   }
 });
-
 
 export {
   registerUser,

@@ -15,7 +15,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://travallee-superadmin.netlify.app",
+  "https://travalee.vercel.app",
   "https://travallee-superadmin.onrender.com",
 ];
 
