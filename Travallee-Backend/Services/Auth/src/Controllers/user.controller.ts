@@ -4,7 +4,6 @@ import { apiResponse } from "../config/response/api.response.js";
 import { UserModel } from "../model/User.model.js";
 import { uploadToCloudinary } from "../config/Func/cloudinary.js";
 import { tokenBlacklistRedis } from "../middleware/role.middleware.js";
-
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
@@ -12,13 +11,18 @@ import Redis from "ioredis";
 import { createClient } from "redis";
 import mongoose from "mongoose";
 
+
+
+const connection1 = new Redis({
+  url: `${process.env.REDIS_URL}`,
+})
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
   port: Number(process.env.REDIS_PORT) || 6379,
 };
 
 const sub = createClient({
-  url: `redis://${connection.host}:${connection.port}`,
+ url: `${process.env.REDIS_URL }`,
 });
 Promise.all([sub.connect()])
   .then(() => {
