@@ -77,7 +77,7 @@ export const deleteHotelGalleryImage = (hotelId: string, imageUrl: string) => {
     .then(res => res.data);
 };
 
-export const updateRoomInfo = (roomId: string, data: payload) => {
+export const updateRoomInfo = (roomId: string, data: any) => {
   return hotelClient.post(`/update-room-info/${roomId}`, data)
     .then(res => res.data);
 }

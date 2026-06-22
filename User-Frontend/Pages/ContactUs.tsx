@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+
 
 // Detect platform
 const isReactNative = typeof navigator !== 'undefined' && navigator.product === 'ReactNative';
@@ -12,17 +12,16 @@ const isWeb = !isReactNative;
 let TextComponent: any = 'span';
 let ViewComponent: any = 'div';
 let TouchableComponent: any = 'div';
-let Platform: any = { OS: 'web' };
 let Linking: any = null;
 
 // Only import React Native modules if in React Native environment
 if (isReactNative) {
   try {
+    // @ts-ignore
     const RN = require('react-native');
     TextComponent = RN.Text;
     ViewComponent = RN.View;
     TouchableComponent = RN.TouchableOpacity;
-    Platform = RN.Platform;
     Linking = RN.Linking;
   } catch (error) {
     console.warn('React Native modules not available');
@@ -31,11 +30,7 @@ if (isReactNative) {
 
 const Contact = () => {
   const navigateto = useNavigate();
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    setIsMobile(isReactNative);
-  }, []);
 
   // Function to open Gmail
   const openGmail = (email: string) => {

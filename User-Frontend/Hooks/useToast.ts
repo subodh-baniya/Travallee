@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type ToastType, type ToastState } from "../components/modal-popups/Toast";
+import { type ToastType, type ToastState } from "../Components/modal-popups/Toast";
 
 export const useToast = () => {
   const [toast, setToast] = useState<ToastState | null>(null);
