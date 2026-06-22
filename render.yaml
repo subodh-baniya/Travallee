@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: travallee-auth
+    runtime: docker
+    dockerfilePath: ./Travallee-Backend/Services/Auth/Dockerfile
+    dockerContext: ./Travallee-Backend/Services/Auth
+    plan: free
+    envVars:
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_USERNAME
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
