@@ -2,7 +2,8 @@ import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const InitialNav = () => {
-  const logoSrc = `${import.meta.env.BASE_URL}Logo.png`;
+  
+  const logoSrc = "/logo.png";
 
   const links = [
     { name: "Home", to: "/initialhome/herosection" },
@@ -15,10 +16,9 @@ const InitialNav = () => {
   return (
     <header className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <img src={logoSrc} alt="Travallee logo" className="h-8 w-8 object-contain" />
-          <div className="text-2xl font-bold text-blue-600">Travallee</div>
-        </div>
+  <div className="flex items-center">
+    <img src={logoSrc} alt="Travallee logo" className="h-12 w-85 object-cover rounded-2xl" />
+  </div>
 
         <nav>
           <ul className="flex space-x-6">

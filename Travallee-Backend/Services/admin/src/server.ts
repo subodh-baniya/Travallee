@@ -1,5 +1,6 @@
 import {server} from "./app.js";
 import { connectDB } from "./config/Func/connect.db.js"
+import "./controller/Superadmin/add.controller.js";
 
 
 

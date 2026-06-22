@@ -91,3 +91,21 @@ export interface ChatMessage {
   timestamp: string;
   read: boolean;
 }
+
+
+type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+type RoomType = "STANDARD" | "DELUXE" | "SUITE";
+
+export interface AddRoomFormData {
+  roomNumber: string;
+  roomType: RoomType;
+  suitetype: string;
+  pricePerNight: number | "";
+  capacity: number | "";
+  floorNumber: number | "";
+  status: RoomStatus;
+  amenities: string[];
+  discount: number | "";
+  roomImages: File[];
+  description: string;
+}

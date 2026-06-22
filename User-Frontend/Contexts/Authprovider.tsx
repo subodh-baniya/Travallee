@@ -36,7 +36,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         );
         setUser(res.data.data);
         syncHotelId(res.data.data);
-      } catch {
+      } catch(err) {
+        console.log("initAuth failed:", err);
         setUser(null);
         setHotelId(null);
       } finally {
@@ -55,7 +56,9 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     );
 
     setUser(res.data.data);
+      console.log("login response:", res.data); 
     syncHotelId(res.data.data);
+    setAuthChecked(true);
     return res.data.data;
   };
 
@@ -84,7 +87,6 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setHotelId(null);
   }
 };
-
   return (
     <Authcontext.Provider
       value={{
@@ -98,7 +100,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         isHotelOwner: user?.role=="hotelAdmin",
       }}
     >
-      {children}
+   
+      {authChecked && children}
     </Authcontext.Provider>
   );
 };

@@ -79,13 +79,14 @@ export default function SelectDateScreen() {
     }
   };
 
-  const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests } = useLocalSearchParams<{
+  const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests ,roomNumber } = useLocalSearchParams<{
     roomId?: string;
     hotelId?: string;
     hotelName?: string;
     roomType?: string;
     pricePerNight?: string;
     maxGuests?: string;
+    roomNumber?: string;
   }>();
 
   const actualPrice = pricePerNight ? parseInt(pricePerNight) : realixDiscoverProperty.nightlyPrice;
@@ -164,6 +165,7 @@ export default function SelectDateScreen() {
         checkIn: formatBookingDate(checkIn),
         checkOut: formatBookingDate(checkOut),
         guests: String(guestCount),
+        roomNumber: roomNumber ?? '',
       },
     });
   };

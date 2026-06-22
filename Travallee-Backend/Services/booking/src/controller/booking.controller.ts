@@ -20,6 +20,10 @@ const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingC
   connection,
 });
 
+const PaymentdataQueue = new Queue("paymentDataQueue", {
+  connection,
+});
+
 const pub = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 });
@@ -30,6 +34,215 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
   let validated: any;
   const userId = req.user.id;
   const { email, Name } = req.user;
+
+  try {
+    validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
+    console.log("Validated booking data:", validated);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const formattedErrors = error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      }));
+      return apiError(res, 400, "Validation Error", formattedErrors);
+    }
+    return apiError(res, 400, "Invalid request data");
+  }
+
+  let roomObjectId: mongoose.Types.ObjectId;
+  let hotelObjectId: mongoose.Types.ObjectId;
+
+  try {
+    roomObjectId = new mongoose.Types.ObjectId(validated.roomId);
+    hotelObjectId = new mongoose.Types.ObjectId(validated.hotelId);
+  } catch {
+    return apiError(res, 400, "Invalid room or hotel ID format");
+  }
+
+  const bookedDates = await bookingModel.find({
+    room: roomObjectId,
+    hotel: hotelObjectId,
+    status: { $in: ["PENDING", "CONFIRMED"] },
+    bookingPayment: "PAID",
+    $or: [{ checkIn: { $lt: new Date(validated.checkOut) }, checkOut: { $gt: new Date(validated.checkIn) } }],
+  });
+
+  if (bookedDates.length > 0) {
+    return apiError(res, 400, "Room is not available for the selected dates");
+  }
+
+  const newBooking = {
+    user: validated.userId,
+    Name: validated.Name,
+    hotel: hotelObjectId,
+    room: roomObjectId,
+    guests: validated.guests,
+    checkIn: new Date(validated.checkIn),
+    checkOut: new Date(validated.checkOut),
+    totalPrice: validated.totalPrice,
+    paymentMethod: validated.paymentMethod,
+    bookingPayment: validated.paymentMethod === "COD" ? "NOTPAID" : "PAID",
+    status: validated.paymentMethod === "COD" ? "PENDING" : "CONFIRMED",
+    hotelId: validated.hotelId,
+    roomId: validated.roomId,
+    hotelName: validated.hotelName,
+    roomNumber: validated.roomNumber,
+    email: validated.userEmail,
+  };
+
+  const otp = Math.floor(1000 + Math.random() * 9000);
+  await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
+
+  bookingConfirmationQueue.add("bookingConfirmationOtp", {
+    email: validated.userEmail,
+    userName: validated.userName,
+    bookingId: "",
+    hotelName: validated.hotelName,
+    checkInDate: validated.checkIn,
+    checkOutDate: validated.checkOut,
+    roomNumber: validated.roomNumber,
+    otp,
+  });
+
+  await bookingRedis.set(`booking:${validated.userId}`, JSON.stringify(newBooking), "EX", 15 * 60);
+
+  return apiResponse(res, 201, true, "Otp sent successfully", { otpSent: true, expiresIn: 15 * 60 });
+});
+const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
+  const userId = req.user.id;
+  const { otp } = req.body;
+  const Name = req.user.Name;
+
+  const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
+  if (!storedOtp) {
+    return apiError(res, 400, "OTP has expired. Please try booking again.");
+  }
+
+  if (Number(otp) !== Number(storedOtp)) {
+    return apiError(res, 400, "Invalid OTP. Please try again.");
+  }
+
+  const bookingDataString = await bookingRedis.get(`booking:${userId}`);
+  if (!bookingDataString) {
+    return apiError(res, 400, "Booking data has expired. Please try booking again.");
+  }
+
+  const bookingData = JSON.parse(bookingDataString);
+  const fallbackBookingPayment = bookingData.paymentMethod === "COD" ? "NOTPAID" : "PAID";
+  const fallbackStatus = bookingData.paymentMethod === "COD" ? "PENDING" : "CONFIRMED";
+  const bookingPayment = ["PAID", "NOTPAID"].includes(bookingData.bookingPayment)
+    ? bookingData.bookingPayment
+    : fallbackBookingPayment;
+  const status = ["PENDING", "CONFIRMED", "CANCELLED"].includes(bookingData.status)
+    ? bookingData.status
+    : fallbackStatus;
+
+  const checkInDate = new Date(bookingData.checkIn);
+  const checkOutDate = new Date(bookingData.checkOut);
+
+  const newBooking = new bookingModel({
+    user: userId,
+    Name: Name,
+    hotel: bookingData.hotelId,
+    room: bookingData.roomId,
+    checkIn: bookingData.checkIn,
+    checkOut: bookingData.checkOut,
+    guests: bookingData.guests,
+    totalPrice: bookingData.totalPrice,
+    paymentMethod: bookingData.paymentMethod,
+    bookingPayment,
+    status,
+    hotelName: bookingData.hotelName,
+    roomNumber: bookingData.roomNumber,
+    email: bookingData.email || bookingData.userEmail || req.user.email,
+  });
+
+  await newBooking.save();
+
+  await bookingRedis.del(`booking_otp:${userId}`);
+  await PaymentdataQueue.add("paymentData", {
+    hotelId: bookingData.hotelId,
+    price: bookingData.totalPrice,
+    status,
+  });
+
+  await bookingRedis.del(`booking:${userId}`);
+
+  await pub.publish(
+    "bookingConfirmed",
+    JSON.stringify({
+      userId,
+      hotelId: bookingData.hotelId,
+      roomId: bookingData.roomId,
+      hotelName: bookingData.hotelName,
+      name: bookingData.Name,
+      email: bookingData.userEmail,
+      userName: bookingData.userName,
+      bookingId: newBooking._id,
+      checkInDate: bookingData.checkIn,
+      checkOutDate: bookingData.checkOut,
+      amount: bookingData.totalPrice,
+      paymentMethod: bookingData.paymentMethod,
+      bookingPayment,
+      roomNumber: bookingData.roomNumber,
+      status,
+    }),
+  );
+
+
+  try {
+    await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
+      bookingId: String(newBooking._id),
+      hotelId: bookingData.hotelId,
+      userId,
+      roomId: bookingData.roomId,
+      guestName: bookingData.userName,
+      roomNumber: bookingData.roomNumber,
+      checkinDate: bookingData.checkIn,
+      checkoutDate: bookingData.checkOut,
+      totalPrice: bookingData.totalPrice,
+      paymentMethod: bookingData.paymentMethod,
+      bookingPayment,
+      status,
+      guests: bookingData.guests,
+      email: req.user.email,
+    });
+  } catch (error: any) {
+    console.error("Failed to sync booking history with Hotel service:", error?.message || error);
+  }
+
+  console.log("Published booking confirmation for booking ID:", newBooking._id);
+  return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
+});
+
+
+const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
+  const userId = req.params.userId;
+  try {
+    const bookings = await bookingModel.find({ user: userId });
+    const response = {
+      bookings: bookings.map((booking: any) => ({
+        bookingId: booking._id,
+        hotelId: booking.hotel || "",
+        hotelName: booking.hotelName,
+        roomNumber: booking.roomNumber,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        status: booking.status,
+        bookingPayment: booking.bookingPayment,
+      }))
+    };
+    return apiResponse(res, 200, true, "Booking history retrieved successfully", response);
+  } catch (error: any) {
+    console.error("Error retrieving booking history:", error);
+    return apiError(res, 500, "Unable to retrieve booking history");
+  }
+});
+
+const createBookingFromHotel = asyncHandler(async (req: any, res: any) => {
+  let validated: any;
+  const userId = req.user.id;
+  const { email, Name } = req.body;
 
   try {
     validated = createBookingSchema.parse({ ...req.body, userId, userEmail: email, userName: Name });
@@ -66,184 +279,303 @@ const createBooking = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 400, "Room is not available for the selected dates");
   }
 
-  const newBooking = {
-    user: validated.userId,
-    hotel: hotelObjectId,
-    room: roomObjectId,
-    guests: validated.guests,
-    checkIn: new Date(validated.checkIn),
-    checkOut: new Date(validated.checkOut),
-    totalPrice: validated.totalPrice,
-    paymentMethod: validated.paymentMethod,
-    bookingPayment: validated.paymentMethod === "COD" ? "NOTPAID" : "PAID",
-    status: validated.paymentMethod === "COD" ? "PENDING" : "CONFIRMED",
-    hotelId: validated.hotelId,
-    roomId: validated.roomId,
-    hotelName: validated.hotelName,
-    roomNumber: validated.roomNumber,
-    email: validated.userEmail,
-  };
-
-  const otp = Math.floor(1000 + Math.random() * 9000);
-  await bookingRedis.set(`booking_otp:${validated.userId}`, String(otp), "EX", 15 * 60);
-
-  void bookingConfirmationQueue.add("bookingConfirmationOtp", {
-    email: validated.userEmail,
-    userName: validated.userName,
-    bookingId: "",
-    hotelName: validated.hotelName,
-    checkInDate: validated.checkIn,
-    checkOutDate: validated.checkOut,
-    roomNumber: validated.roomNumber,
-    otp,
-  });
-
-  await bookingRedis.set(`booking:${validated.userId}`, JSON.stringify(newBooking), "EX", 15 * 60);
-
-  return apiResponse(res, 201, true, "Otp sent successfully", { otpSent: true, expiresIn: 15 * 60 });
-});
-
-const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
-  const userId = req.user.id;
-  const name = req.user.Name;
-  const { otp } = req.body;
-
-  const storedOtp = await bookingRedis.get(`booking_otp:${userId}`);
-  if (!storedOtp) {
-    return apiError(res, 400, "OTP has expired. Please try booking again.");
-  }
-
-  if (Number(otp) !== Number(storedOtp)) {
-    return apiError(res, 400, "Invalid OTP. Please try again.");
-  }
-
-  const bookingDataString = await bookingRedis.get(`booking:${userId}`);
-  if (!bookingDataString) {
-    return apiError(res, 400, "Booking data has expired. Please try booking again.");
-  }
-
-  const bookingData = JSON.parse(bookingDataString);
-  const fallbackBookingPayment = bookingData.paymentMethod === "COD" ? "NOTPAID" : "PAID";
-  const fallbackStatus = bookingData.paymentMethod === "COD" ? "PENDING" : "CONFIRMED";
-  const bookingPayment = ["PAID", "NOTPAID"].includes(bookingData.bookingPayment)
-    ? bookingData.bookingPayment
-    : fallbackBookingPayment;
-  const status = ["PENDING", "CONFIRMED", "CANCELLED"].includes(bookingData.status)
-    ? bookingData.status
-    : fallbackStatus;
-
-  const checkInDate = new Date(bookingData.checkIn);
-  const checkOutDate = new Date(bookingData.checkOut);
-  const stayDurationNights = Math.max(
-    1,
-    Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
+  const checkInDate = new Date(validated.checkIn);
+  const checkOutDate = new Date(validated.checkOut);
+  const totalNights = Math.ceil(
+    (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
   );
 
   const newBooking = new bookingModel({
-    user: userId,
-    hotel: bookingData.hotelId,
-    room: bookingData.roomId,
-    checkIn: bookingData.checkIn,
-    checkOut: bookingData.checkOut,
-    guests: bookingData.guests,
-    totalPrice: bookingData.totalPrice,
-    paymentMethod: bookingData.paymentMethod,
-    bookingPayment,
-    status,
-    hotelName: bookingData.hotelName,
-    roomNumber: bookingData.roomNumber,
-    email: bookingData.email || bookingData.userEmail || req.user.email,
+    user: validated.userId,
+    Name: validated.userName,
+    hotel: hotelObjectId,
+    room: roomObjectId,
+    guests: validated.guests,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    totalPrice: validated.totalPrice,
+    totalNights,
+    paymentMethod: validated.paymentMethod,
+    bookingPayment: "PAID",
+    status: "CONFIRMED",
+    hotelName: validated.hotelName,
+    roomNumber: validated.roomNumber,
+    email: validated.userEmail,
   });
 
   await newBooking.save();
-
-  await bookingRedis.del(`booking_otp:${userId}`);
-  await bookingRedis.del(`booking:${userId}`);
 
   await pub.publish(
     "bookingConfirmed",
     JSON.stringify({
       userId,
-      hotelId: bookingData.hotelId,
-      roomId: bookingData.roomId,
-      hotelName: bookingData.hotelName,
-      name,
-      email: bookingData.userEmail,
-      userName: bookingData.userName,
+      hotelId: validated.hotelId,
+      roomId: validated.roomId,
+      name: Name,
+      email: validated.userEmail,
+      userName: validated.userName,
       bookingId: newBooking._id,
-      checkInDate: bookingData.checkIn,
-      checkOutDate: bookingData.checkOut,
-      stayDurationNights,
-      amount: bookingData.totalPrice,
-      paymentMethod: bookingData.paymentMethod,
-      bookingPayment,
-      roomNumber: bookingData.roomNumber,
-      status,
+      checkInDate: validated.checkIn,
+      checkOutDate: validated.checkOut,
+      amount: validated.totalPrice,
+      paymentMethod: validated.paymentMethod,
+      bookingPayment: "PAID",
+      roomNumber: validated.roomNumber,
+      status: "CONFIRMED",
     }),
   );
 
   try {
     await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
       bookingId: String(newBooking._id),
-      hotelId: bookingData.hotelId,
+      hotelId: validated.hotelId,
       userId,
-      roomId: bookingData.roomId,
-      guestName: bookingData.userName,
-      roomNumber: bookingData.roomNumber,
-      checkinDate: bookingData.checkIn,
-      checkoutDate: bookingData.checkOut,
-      totalPrice: bookingData.totalPrice,
-      paymentMethod: bookingData.paymentMethod,
-      bookingPayment,
-      status,
-      guests: bookingData.guests,
-      email: req.user.email,
-      stayDurationNights,
+      hotel: validated.hotelName,
+      roomId: validated.roomId,
+      guestName: validated.userName,
+      roomNumber: validated.roomNumber,
+      checkinDate: validated.checkIn,
+      checkoutDate: validated.checkOut,
+      totalPrice: validated.totalPrice,
+      paymentMethod: validated.paymentMethod,
+      bookingPayment: "PAID",
+      status: "CONFIRMED",
+      guests: validated.guests,
+      email: email,
     });
   } catch (error: any) {
     console.error("Failed to sync booking history with Hotel service:", error?.message || error);
   }
 
-  console.log("Published booking confirmation for booking ID:", newBooking._id);
-  return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
+  return apiResponse(res, 201, true, "Booking confirmed successfully", newBooking);
 });
 
-const esewaSuccess = asyncHandler(async (req: any, res: any) => {
-  try {
-    const { data } = req.query;
-    if (!data) {
-      return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+//admin
+const getGuestStatus = asyncHandler(async (req: any, res: any) => {
+  const { HotelId } = req.params;
+
+  if (!HotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  }
+  if (!mongoose.Types.ObjectId.isValid(HotelId)) {
+    return apiError(res, 400, "Invalid Hotel ID format");
+  }
+
+  const bookings = await bookingModel.find({ hotel: HotelId });
+
+  if (!bookings || bookings.length === 0) {
+    return apiError(res, 404, "No bookings found for this hotel");
+  }
+
+  const now = new Date();
+
+  const responseData = bookings.map((booking: any) => {
+    let status = "UNKNOWN";
+
+    if (booking.checkIn > now) {
+      status = "UPCOMING";
+    } else if (booking.checkOut < now) {
+      status = "CHECKED OUT";
+    } else if (booking.checkIn <= now && booking.checkOut >= now) {
+      status = "CHECKED IN";
     }
 
-    const decoded = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-    const bookingId = decoded.transaction_uuid;
+    return {
+      status,
+      bookingName: booking.Name,
+      bookingTotalNights: booking.totalNights,
+      bookingCheckIn: booking.checkIn,
+      bookingCheckOut: booking.checkOut,
+      totalMoneySpent: booking.totalPrice,
+      bookingPayment: booking.bookingPayment,
+      bookingPaymentMethod: booking.paymentMethod,
+      bookingRoomNumber: booking.roomNumber,
+    };
+  });
 
-    const verifyResponse = await axios.get("https://rc-epay.esewa.com.np/api/epay/transaction/status/", {
-      params: {
-        product_code: decoded.product_code,
-        total_amount: decoded.total_amount,
-        transaction_uuid: bookingId,
+  return apiResponse(res, 200, true, "Guest status retrieved successfully", responseData);
+});
+
+const calculateIncomeHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  }
+  await bookingModel.aggregate([
+    { $match: { hotel: new mongoose.Types.ObjectId(hotelId), bookingPayment: "PAID" } },
+    {
+      $group: {
+        _id: null,
+        totalIncome: { $sum: "$totalPrice" },
       },
-    });
+    },
+  ]).then((result) => {
+    const totalIncome = result[0]?.totalIncome || 0;  
+    return apiResponse(res, 200, true, "Total income calculated successfully", { totalIncome });
+  }).catch((error: any) => {
+    console.error("Error calculating total income:", error);
+    return apiError(res, 500, "Unable to calculate total income");
+  });
+});
+const calculatePendingIncomeHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  } 
+  await bookingModel.aggregate([
+    { $match: { hotel: new mongoose.Types.ObjectId(hotelId), bookingPayment: "NOTPAID" } },
+    { $group: {
+        _id: null,
+        totalPendingIncome: { $sum: "$totalPrice" },
+      },  
+    },
+  ]).then((result) => {
+    const totalPendingIncome = result[0]?.totalPendingIncome || 0;
+    return apiResponse(res, 200, true, "Total pending income calculated successfully", { totalPendingIncome });
+  }).catch((error: any) => {
+    console.error("Error calculating total pending income:", error);
+    return apiError(res, 500, "Unable to calculate total pending income");
+  });
+});
 
-    if (verifyResponse.data.status == "COMPLETE") {
-      await bookingModel.findByIdAndUpdate(bookingId, {
-        status: "CONFIRMED",
-        bookingPayment: "PAID",
-        paymentReferenceId: decoded.ref_id,
-      });
 
-      return res.redirect(`${process.env.FRONTEND_URL}/payment-success`);
+const getHotelIdfromBooking = asyncHandler(async (req: any, res: any) => {
+  const { bookingId } = req.params;
+  if (!bookingId) {
+    return apiError(res, 400, "Booking ID is required in URL parameters");
+  }
+  const booking= await bookingModel.findById(bookingId).select("hotel");
+
+  if (!booking) {
+    return apiError(res, 404, "Booking not found");
+  }
+  return apiResponse(res, 200, true, "Hotel ID retrieved successfully", { hotelId: booking.hotel });
+
+})
+
+const updateBookingPaymentStatus = asyncHandler(async (req: any, res: any) => {
+  const { success,bookingId } = req.body;
+
+  if (!bookingId) {
+    return apiError(res, 400, "Booking ID is required in URL parameters");
+  }
+
+  if (typeof success !== "boolean") {
+    return apiError(res, 400, "Invalid success value. Expected a boolean.");
+  }
+
+  await bookingModel.findByIdAndUpdate(bookingId, {
+    status: success ? "CONFIRMED" : "CANCELLED",
+    bookingPayment: success ? "PAID" : "NOTPAID",
+  });
+
+  return apiResponse(res, 200, true, "Booking payment status updated successfully");
+});
+
+const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required");
+  } 
+  const History = await bookingModel.find({ hotel: new mongoose.Types.ObjectId(hotelId) });
+  if (!History || History.length === 0) {
+    return apiError(res, 404, "Transaction history not found");
+  }
+  if (History.length > 0) {
+    const formattedHistory = History.map((booking) => ({
+      bookingId: booking._id,
+      guestName: booking.Name,
+      roomNumber: booking.roomNumber,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      totalPrice: booking.totalPrice,
+      paymentMethod: booking.paymentMethod,
+      bookingPayment: booking.bookingPayment,
+      status: booking.status,
+    }));
+    return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History: formattedHistory });
+  }
+  
+  return apiResponse(res, 200, true, "Transaction history retrieved successfully", { History });
+});
+
+const updateBooking = asyncHandler(async (req: any, res: any) => {
+  const { bookingId } = req.params;
+  const updateData = req.body;
+
+  if (!bookingId) {
+    return apiError(res, 404, "Booking not found");
+  }
+
+  if (!updateData) {
+    return apiError(res, 400, "Update data not received");
+  }
+
+  try {
+    const updatedBooking = await bookingModel.findByIdAndUpdate(
+      bookingId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBooking) {
+      return apiError(res, 404, "Booking not found", { bookingId });
     }
 
-    await bookingModel.findByIdAndUpdate(bookingId, {
-      status: "CANCELLED",
-    });
+    try {
+  await axios.post(
+    `${process.env.HOTEL_SERVICE_URL}/booking-history`,
+    {
+      bookingId: String(updatedBooking._id),
+      hotelId: String(updatedBooking.hotel),
+      status: updatedBooking.status,
+      bookingPayment: updatedBooking.bookingPayment,
+    }
+  );
+} catch (syncError: any) {
+  console.error("Status:", syncError.response?.status);
+  console.error("Data:", syncError.response?.data);
+  console.error("URL:", syncError.config?.url);
+}
 
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+    return apiResponse(res, 200, true, "Booking updated successfully", updatedBooking);
   } catch (error: any) {
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+    console.error("Error updating booking:", error);
+
+    if (error.name === "CastError") {
+      return apiError(res, 400, "Invalid booking ID format");
+    }
+
+    if (error.name === "ValidationError") {
+      const formattedErrors = Object.values(error.errors).map((err: any) => ({
+        field: err.path,
+        message: err.message,
+      }));
+      return apiError(res, 400, "Validation Error", formattedErrors);
+    }
+
+    return apiError(res, 500, "Unable to update booking");
   }
 });
 
-export { createBooking, esewaSuccess, verifyBookingOtp };
+
+export { updateBooking,createBooking, createBookingFromHotel, verifyBookingOtp, getGuestStatus, getBookingHistoryOfUser, calculateIncomeHotel, calculatePendingIncomeHotel,getHotelIdfromBooking, updateBookingPaymentStatus,getTransactionHistoryOfHotel };

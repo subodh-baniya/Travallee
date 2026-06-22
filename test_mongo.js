@@ -3,19 +3,7 @@ import { MongoClient, ObjectId } from "mongodb";
 
 const url = process.env.MONGO_URI;
 
-// ─── Room _id map (must match seed_rooms.js) ─────────────────────────────────
-// hotelId → [roomId1, roomId2]
-// 9c01 CMT Resort               → a1, a2
-// 9c02 Heritage Palace Hotel    → b1, b2
-// 9c03 Safari Jungle Camp       → c1, c2
-// 9c04 Mountain View Resort     → d1, d2
-// 9c05 Lakeside Retreat         → e1, e2
-// 9c06 Green HAmlet Resort      → f1, f2
-// 9c07 Hotel Pauwa Bharatpur    → 71, 72
-// 9c11 Chitwan Garden Resort    → ab, ac
-// 9c12 Kurintar Retreat         → ad, ae
-// 9c13 Ashish Aama Homestay     → af, b0
-
+// 🔥 HOTELS DATA
 const hotels = [
   {
     userID: "682a1f2b3c4d5e6f7a8b9c01",

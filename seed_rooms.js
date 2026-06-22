@@ -6,7 +6,7 @@ dotenv.config();
 const url = process.env.MONGO_URI;
 
 if (!url) {
-  console.error("❌ Error: MONGO_URI is not defined in your .env file!");
+  console.error(" Error: MONGO_URI is not defined in your .env file!");
   process.exit(1);
 }
 

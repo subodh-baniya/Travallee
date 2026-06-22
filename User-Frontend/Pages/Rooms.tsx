@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRooms, type Room } from "../Hooks/useRooms";
+import { AddRoomModal } from "../components/modal-popups/AddRoomModal"; 
+import { createRoom } from "../Services/hotel.api";
+import { useAuth } from "../Contexts/Authcontext";
+import {RoomDetailModal} from "../Components/modal-popups/RoomDetailModal"
 
 type StatusFilter = "ALL" | "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
 type TypeFilter   = "ALL" | "DELUXE" | "SUITE" | "STANDARD";
@@ -13,16 +17,29 @@ const statusMap: Record<string, string> = {
 
 const Rooms = () => {
   const { rooms, pagination, page, setPage, loading, error, refetch } = useRooms();
-
+  const auth=useAuth()
+  
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [typeFilter, setTypeFilter]     = useState<TypeFilter>("ALL");
   const [search, setSearch]             = useState("");
+  const [showAddRoom, setShowAddRoom]   = useState(false);
+
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const filtered = rooms.filter((room: Room) =>
     (statusFilter === "ALL" || room.status === statusFilter) &&
     (typeFilter   === "ALL" || room.roomType === typeFilter) &&
     room.roomNumber.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (!auth || !auth.hotelId) return null;
+  const hotelId = auth.hotelId;
+
+  const handleAddRoom = async (data: any) => {
+    await createRoom(hotelId, data);
+    console.log("New room data:", data);
+    refetch();
+  };
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
@@ -35,7 +52,10 @@ const Rooms = () => {
             {pagination ? `${pagination.total} total rooms` : "Manage room inventory"}
           </p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+        <button
+          onClick={() => setShowAddRoom(true)}
+          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
+        >
           + Add Room
         </button>
       </div>
@@ -116,6 +136,7 @@ const Rooms = () => {
                   key={room._id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  onClick={() => setSelectedRoom(room)}
                   className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-1 transition"
                 >
                   {/* IMAGE */}
@@ -208,6 +229,19 @@ const Rooms = () => {
           )}
         </>
       )}
+
+      <RoomDetailModal
+        room={selectedRoom ? { ...selectedRoom, hotelId } : null}
+        isOpen={!!selectedRoom}
+        onClose={() => setSelectedRoom(null)}
+      />
+
+      {/* ADD ROOM MODAL */}
+      <AddRoomModal
+        isOpen={showAddRoom}
+        onClose={() => setShowAddRoom(false)}
+        onSubmit={handleAddRoom}
+      />
 
     </div>
   );

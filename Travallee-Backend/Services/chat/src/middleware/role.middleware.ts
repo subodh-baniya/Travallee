@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { apiError } from "../config/response/api.error.js";
+import { apiError } from "../config/response/api.response";
 
 import Redis from "ioredis";
 

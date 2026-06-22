@@ -78,9 +78,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         {!collapsed ? (
           <div className="flex items-center gap-3">
             <img
-              src="/Logo.png"
+              src="/logo-short.png"
               alt="Travallee logo"
-              className="h-8 w-8 object-contain"
+              className="h-12 w-12 object-cover rounded-2xl"
             />
             <div>
               <span className="text-lg font-semibold text-blue-600">
@@ -92,11 +92,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
             </div>
           </div>
         ) : (
-          <div className="w-8 h-8 bg-white flex items-center justify-center rounded-md border border-slate-200 overflow-hidden">
+          <div className="w-8 h-8 bg-white flex items-center justify-center rounded-md  overflow-hidden">
             <img
-              src="/Logo.png"
+              src="/logo-short.png"
               alt="Travallee logo"
-              className="h-6 w-6 object-contain"
+              className="h-12 w-12 object-cover rounded-2xl"
             />
           </div>
         )}

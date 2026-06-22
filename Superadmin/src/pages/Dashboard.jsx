@@ -1,75 +1,133 @@
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Hooks/useAuth";
+import { useState, useEffect } from "react";
+import { getDashboardStats, getRevenue7Days, getRecentActivity, getPendingApprovals } from "../Services/admin.api";
+import CountUp from "../components/CountUp";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import PendingApprovals from "./components/PendingApprovals";
+import RecentActivity from "./components/RecentActivity";
 
-import { theme } from "../theme";
+const cards = [
+  { key: 'totalHotels', title: "Total Hotels", value: 0, sub: "Live on the platform" },
+  { key: 'activeBookings', title: "Active Bookings", value: 0, sub: "All-time booking count" },
+  { key: 'todayRevenue', title: "Today Revenue", value: 0, sub: "Last 24 hours" },
+  { key: 'appUsers', title: "App Users", value: 0, sub: "Registered accounts" },
+];
 
-export default function Dashboard({ setPage }) {
-  const stats = [
-    { label: "Total Users",   val: "12,481", change: "↑ 8.2% this week", cls: "up" },
-    { label: "App Opens",     val: "4,329",  change: "↑ 12% today",       cls: "up" },
-    { label: "Web Sessions",  val: "7,102",  change: "↓ 3.1% today",      cls: "dn" },
-    { label: "Active Ads",    val: "06",     change: "2 pending review",   cls: "up" },
-  ];
+const quickLinks = [
+  { label: "Hotels", path: "/dashboard/hotels/register", note: "Register and manage hotels" },
+  { label: "Bookings", path: "/dashboard/hotels/bookings", note: "See recent reservations" },
+  { label: "Hotel Status", path: "/dashboard/hotels/status", note: "Check live availability" },
+  { label: "Analysis", path: "/dashboard/analysis", note: "View performance insights" },
+];
 
-  const activity = [
-    { color: theme.success, text: "New user registered via App",          time: "2 mins ago" },
-    { color: theme.accent,  text: "Homepage banner updated",              time: "18 mins ago" },
-    { color: theme.accent2, text: 'New "Coming Soon" post published',     time: "1 hr ago" },
-    { color: theme.warning, text: "Ad campaign #4 flagged for review",    time: "3 hrs ago" },
-    { color: theme.danger,  text: "User report: spam account detected",   time: "5 hrs ago" },
-  ];
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const { socketConnected, setsocketConnected } = auth;
+  const { socket } = auth;
+  const [stats, setStats] = useState({});
+  const [revenueData, setRevenueData] = useState([]);
+  const [recent, setRecent] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
-  const quickActions = [
-    { icon: "🌐", bg: "rgba(232,255,71,0.08)", label: "Edit Website",      sub: "Update content & pages",  page: "website" },
-    { icon: "📱", bg: "rgba(124,92,252,0.1)",  label: "Manage App",        sub: "Screens, settings, builds", page: "app" },
-    { icon: "📣", bg: "rgba(245,166,35,0.1)",  label: "Run New Ad",        sub: "Create a promotion",      page: "ads" },
-    { icon: "🚀", bg: "rgba(61,220,132,0.1)",  label: "Announce Feature",  sub: "What's coming next",      page: "coming" },
-  ];
+  useEffect(() => {
+    if (!socket) {
+      console.warn("⚠️ Socket not initialized in Dashboard");
+      return;
+    }
+
+    console.log("✅ Socket available in Dashboard. Connected:", socketConnected);
+    console.log("📡 Socket ID:", socket.id);
+
+    const handleData = (data) => {
+      console.log("🎉 Dashboard received hotel registration data:", data);
+    };
+
+    socket.on("hotelRegistrationsData", handleData);
+    console.log("📡 Registered 'hotelRegistrationsData' listener in Dashboard");
+
+    return () => {
+      socket.off("hotelRegistrationsData", handleData);
+      console.log("🔌 Unregistered 'hotelRegistrationsData' listener in Dashboard");
+    };
+  }, [socket, socketConnected]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await getDashboardStats();
+        setStats(s || {});
+        const rv = await getRevenue7Days();
+        setRevenueData(rv || []);
+        const act = await getRecentActivity();
+        setRecent(act || []);
+        const pend = await getPendingApprovals();
+        setPendingCount((pend || []).length);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
+
+
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    await auth.logout();
+  };
 
   return (
-    <>
-      <div className="stat-grid">
-        {stats.map((s) => (
-          <div className="stat-card" key={s.label}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-val">{s.val}</div>
-            <div className={`stat-change ${s.cls}`}>{s.change}</div>
+    <div className="grid gap-[18px]">
+      {/* Hero section removed */}
+
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        {cards.map((card) => (
+          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]" key={card.key}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-slate-500 mb-2">{card.title}</div>
+                <div className="text-[28px] font-bold text-slate-900 tracking-tight font-mono"><CountUp end={stats[card.key] ?? card.value} /></div>
+                <div className="mt-1 text-xs text-slate-400">{card.sub}</div>
+              </div>
+              <div className="text-sm text-slate-400">{stats[`${card.key}Trend`]>0?`↑ ${stats[`${card.key}Trend`]}%`:`${stats[`${card.key}Trend`]}%`}</div>
+            </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      <div className="two-col">
-       
-        <div className="panel">
-          <div className="panel-hd">
-            <span className="panel-title">Recent Activity</span>
+      <section className="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr] gap-3">
+        <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+          <div className="text-base font-bold text-slate-900 mb-1.5">Revenue (7 days)</div>
+          <div className="text-xs text-slate-500 mb-3.5">Last week</div>
+          <div style={{ height: 180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueData} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis hide />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#0284c7" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          {activity.map((a, i) => (
-            <div className="activity-item" key={i}>
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.color, marginTop: 5, flexShrink: 0 }} />
-              <div>
-                <div className="act-text">{a.text}</div>
-                <div className="act-time">{a.time}</div>
-              </div>
-            </div>
-          ))}
         </div>
 
-        
-        <div className="panel">
-          <div className="panel-hd">
-            <span className="panel-title">Quick Actions</span>
-          </div>
-          {quickActions.map((q) => (
-            <button className="quick-action" key={q.label} onClick={() => setPage(q.page)}>
-              <div className="qa-icon" style={{ background: q.bg }}>{q.icon}</div>
-              <div>
-                <div className="qa-label">{q.label}</div>
-                <div className="qa-sub">{q.sub}</div>
-              </div>
-              <div className="qa-arrow">›</div>
-            </button>
-          ))}
+        <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+          <RecentActivity items={recent} />
         </div>
-      </div>
-    </>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr] gap-3 mt-3">
+        <div>
+          <PendingApprovals />
+        </div>
+        <div>
+          {/* Right column placeholder for additional widgets */}
+          <div className="bg-white rounded-2xl p-4.5 border border-slate-400/14 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
+            <div className="text-base font-bold text-slate-900 mb-2">Platform Health</div>
+            <div className="text-sm text-slate-600">All systems operational · No incidents reported</div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

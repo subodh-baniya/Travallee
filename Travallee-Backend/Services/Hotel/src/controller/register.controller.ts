@@ -1,9 +1,9 @@
 
-import {asyncHandler} from "../config/asynchandler.js"
+import { asyncHandler } from "../config/asynchandler.js"
 import { apiError, apiResponse } from "../config/response/api.response.js";
 import { hotelModel } from "../model/Hotel.model.js"
 import { roomModel } from "../model/Room.model.js"
-import {uploadToCloudinary} from "../config/Func/cloudinary.js"
+import { uploadToCloudinary } from "../config/Func/cloudinary.js"
 import type { HotelInput, RoomInput } from "../validator/hotel.validator.js";
 import {
   createHotelSchema,
@@ -11,15 +11,17 @@ import {
 } from "../validator/hotel.validator.js";
 import mongoose, { mongo } from "mongoose";
 import redis from "ioredis"
-import { Queue } from "bullmq"; 
+import { Queue } from "bullmq";
 import { createClient } from "redis";
 
-const connection ={
+const connection = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
 }
 //@ts-ignore
 const registerHotel = new redis(connection);
+//@ts-ignore
+const hoteldataCache = new redis(connection);
 
 const registerHotelQueue = new Queue("HotelRegistration", {
   connection
@@ -39,7 +41,7 @@ Promise.all([sub.connect(), pub.connect()]).then(() => {
 
 sub.subscribe("bookingHistory", async (message: string) => {
   const bookingData = JSON.parse(message);
-  const {hotelId} = bookingData;
+  const { hotelId } = bookingData;
   console.log("Received booking history update for hotelId:", hotelId, "with data:", bookingData);
   try {
     await hotelModel.findByIdAndUpdate(hotelId, {
@@ -68,7 +70,9 @@ sub.subscribe("bookingHistory", async (message: string) => {
 // register and edit controller always at top please
 
 const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
-  const userID = req.user.id || req.user._id;
+  console.log(req.user);
+  const userID =  req.user._id || req.user.id;
+  console.log("Hotel registration request received for userID:", userID);
   const email = req.user.email;
   const files = req.files || [];
 
@@ -133,23 +137,84 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    const parsedData = createHotelSchema.safeParse(req.body);
+    const parsedData = createHotelSchema.safeParse({...req.body, userID });
+    console.log("Parsed hotel registration data:", parsedData);
     if (!parsedData.success) {
       return apiError(res, 400, "Validation failed", parsedData.error.issues);
     }
     const hotelData: HotelInput = parsedData.data;
+      if (files.length > 0) {
+    try {
+      const hotelImageUrls: string[] = [];
+      const verificationDocUrls: string[] = [];
+
+      for (const file of files) {
+        // Get file path - multer stores it in 'path'
+        const filePath = file.path || file.tempFilePath;
+
+        if (!filePath) {
+          console.error("File path not found", file);
+          continue;
+        }
+
+        // Separate files based on field name
+        if (
+          file.fieldname === "VerificationDocuments" ||
+          file.fieldname === "verificationDocuments"
+        ) {
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "verification_documents",
+          );
+          if (uploadResult) verificationDocUrls.push(uploadResult);
+        } else {
+          const uploadResult = await uploadToCloudinary(
+            filePath,
+            "hotel_images",
+          );
+          if (uploadResult) hotelImageUrls.push(uploadResult);
+        }
+      }
+
+      if (hotelImageUrls.length > 0) {
+        req.body.hotelImages = hotelImageUrls;
+      } else {
+        req.body.hotelImages = [];
+      }
+
+      if (verificationDocUrls.length > 0) {
+        req.body.VerificationDocuments = verificationDocUrls;
+      } else {
+        req.body.VerificationDocuments = [];
+      }
+    } catch (error: any) {
+      console.error("Error uploading files:", error);
+      return apiError(res, 500, "Failed to upload files", {
+        error: error.message,
+      });
+    }
+  } else {
+    // Empty arrays if no files
+    req.body.hotelImages = [];
+    req.body.VerificationDocuments = [];
+  }
     registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 1);// Cache for 1 day
 
-  const emailData = {
-    userID,
-    hotelName: parsedData.data.hotelName,
-    location: parsedData.data.hotelLocation,
-    description: parsedData.data.hotelDescription,
-    contactEmail: email,
-    contactPhone: parsedData.data.contactNumber,
-  };
-    
+    const emailData = {
+      userID,
+      hotelName: parsedData.data.hotelName,
+      location: parsedData.data.hotelLocation,
+      description: parsedData.data.hotelDescription,
+      contactEmail: email,
+      contactPhone: parsedData.data.contactNumber,
+    };
+
     await registerHotelQueue.add("HotelRegistration", emailData);
+    console.log("Published hotel registration data to queue for userID:", userID, "with data:", emailData);
+    console.log( "lolde", parsedData.data);
+    await registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(parsedData.data), "EX", 60 * 60 * 24 * 1); // Cache for 1 day
+    pub.publish("hotelRegistrationsData", JSON.stringify(parsedData.data));
+    console.log("Published hotel registration data to Redis channel for userID:", userID);
 
     return apiResponse(
       res,
@@ -159,17 +224,6 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
       { userID }
     );
 
-
-
-    
-   
-
-
-    
-
-   
-
-    
 
   } catch (error: any) {
     if (error.name === "ValidationError") {
@@ -245,6 +299,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
       if (body.weekendPrice !== undefined) out.weekendPrice = toNumber(body.weekendPrice, undefined);
       out.taxRate = toNumber(body.taxRate, 0);
       out.minStayNights = toNumber(body.minStayNights, 1);
+      out.discount = toNumber(body.discount, 0);
 
       // Arrays: accept JSON string or comma-separated string
       const parseArray = (v: any) => {
@@ -295,6 +350,8 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 
     // Validate room data (after coercion)
     const coerced = coerceRoomBody(req.body);
+
+
     const parsedData = createRoomSchema.safeParse(coerced);
     if (!parsedData.success) {
       const validationErrors = parsedData.error.issues.map((issue) => ({
@@ -326,6 +383,12 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 
     if (!response) {
       return apiError(res, 500, "Failed to save room to database");
+    }
+
+    try {
+      await hoteldataCache.del(`rooms_${hotelId}`);
+    } catch (cacheErr) {
+      console.error("Failed to invalidate rooms cache:", cacheErr);
     }
 
     return apiResponse(res, 201, true, "Room created successfully", response);
@@ -367,7 +430,7 @@ const createroom = asyncHandler(async (req: any, res: any) => {
 });
 
 const HotelData = asyncHandler(async (req: any, res: any) => {
-   console.log("HotelData endpoint hit with params:", req.user);
+  console.log("HotelData endpoint hit with params:", req.user);
   const { hotelId } = req.params;
 
   if (!hotelId) {
@@ -434,30 +497,57 @@ const syncBookingHistory = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
-    const hotel = await hotelModel.findByIdAndUpdate(
-      hotelId,
+    const updateResult = await hotelModel.updateOne(
+      { _id: hotelId, "bookingHistory.bookingId": bookingId },
       {
-        $push: {
-          bookingHistory: {
-            bookingId,
-            userId,
-            roomId,
-            guestName,
-            roomNumber,
-            checkinDate,
-            checkoutDate,
-            totalPrice,
-            stayDurationNights,
-            paymentMethod,
-            bookingPayment,
-            status,
-            guests,
-            email,
+        $set: {
+          "bookingHistory.$.userId": userId,
+          "bookingHistory.$.roomId": roomId,
+          "bookingHistory.$.guestName": guestName,
+          "bookingHistory.$.roomNumber": roomNumber,
+          "bookingHistory.$.checkinDate": checkinDate,
+          "bookingHistory.$.checkoutDate": checkoutDate,
+          "bookingHistory.$.totalPrice": totalPrice,
+          "bookingHistory.$.stayDurationNights": stayDurationNights,
+          "bookingHistory.$.paymentMethod": paymentMethod,
+          "bookingHistory.$.bookingPayment": bookingPayment,
+          "bookingHistory.$.status": status,
+          "bookingHistory.$.guests": guests,
+          "bookingHistory.$.email": email,
+        },
+      }
+    );
+
+    let hotel;
+
+    if (updateResult.matchedCount > 0) {
+      hotel = await hotelModel.findById(hotelId).select("bookingHistory");
+    } else {
+      hotel = await hotelModel.findByIdAndUpdate(
+        hotelId,
+        {
+          $push: {
+            bookingHistory: {
+              bookingId,
+              userId,
+              roomId,
+              guestName,
+              roomNumber,
+              checkinDate,
+              checkoutDate,
+              totalPrice,
+              stayDurationNights,
+              paymentMethod,
+              bookingPayment,
+              status,
+              guests,
+              email,
+            },
           },
         },
-      },
-      { new: true },
-    );
+        { new: true },
+      );
+    }
 
     if (!hotel) {
       return apiError(res, 404, "Hotel not found", { hotelId });
@@ -568,10 +658,21 @@ const RoomData = asyncHandler(async (req: any, res: any) => {
 // app controllers
 const featuredHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("featured_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Featured hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({ isFeatured: true });
     if (hotels.length === 0) {
       return apiError(res, 404, "No featured hotels found");
     }
+    await hoteldataCache.set("featured_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(
       res,
       200,
@@ -739,27 +840,35 @@ const searchRooms = asyncHandler(async (req: any, res: any) => {
 });
 
 const getHotelInfo = asyncHandler(async (req: any, res: any) => {
-  const userId = req.user?.id || req.user?._id;
-  console.log("User from req.user:", req.user);
-  console.log("Fetching hotel information for user ID:", userId);
-  console.log("User ID type:", typeof userId);
 
+  const userId = req.user?.id || req.user?._id;
   if (!userId) {
     return apiError(res, 401, "User not authenticated");
   }
 
+  try {
+    const cachedHotel = await hoteldataCache.get(`hotel_${userId}`);
+    if (cachedHotel) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Hotel information retrieved from cache",
+        JSON.parse(cachedHotel)
+      );
+    }
+  } catch (error) {
+    console.error("Error accessing hotel data cache:", error);
+  }
   const hotelData = await hotelModel.findOne({
     userID: new mongo.ObjectId(userId),
   });
-
-  console.log("Query result:", hotelData);
-
   if (!hotelData) {
-    // Try alternative query for debugging
     const allHotels = await hotelModel.find({});
-    console.log("All hotels in DB:", allHotels);
     return apiError(res, 404, "Hotel not found for this user");
   }
+
+  hoteldataCache.set(`hotel_${hotelData._id}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 3); // Cache for 3 days
 
   apiResponse(
     res,
@@ -771,36 +880,60 @@ const getHotelInfo = asyncHandler(async (req: any, res: any) => {
 });
 
 const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
+  try {
+    const cached = await hoteldataCache.get("high_reviewed_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Highly reviewed hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
+    const hotels = await hotelModel
+      .find({ rating: { $gte: 4.0 } })
+      .select(
+        "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
+      )
+      .sort({ rating: -1, numberOfReviews: -1 });
 
-  const hotels = await hotelModel
-    .find({ rating: { $gte: 4.0 } })
-    .select(
-      "hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured",
-    )
-    .sort({ rating: -1, numberOfReviews: -1 });
-
-  if (hotels.length === 0) {
-    return apiError(res, 404, "No highly reviewed hotels found");
+    if (hotels.length === 0) {
+      return apiError(res, 404, "No highly reviewed hotels found");
+    }
+    await hoteldataCache.set("high_reviewed_hotels", JSON.stringify(hotels), "EX", 60 * 60);
+    return apiResponse(
+      res,
+      200,
+      true,
+      "Highly reviewed hotels retrieved successfully",
+      hotels,
+    );
+  } catch (error: any) {
+    console.error("Error in highReviewedHotels:", error);
+    return apiError(res, 500, "Internal server error: " + error.message);
   }
-
-  return apiResponse(
-    res,
-    200,
-    true,
-    "Highly reviewed hotels retrieved successfully",
-    hotels,
-  );
-
 });
 
 const getAllHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("all_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({}).limit(10);
     if (hotels.length === 0) {
       console.log("No active hotels found in database");
       return apiResponse(res, 200, true, "No hotels available", []);
     }
     console.log(`Retrieved ${hotels.length} hotels`);
+    await hoteldataCache.set("all_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
@@ -810,12 +943,23 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
 
 const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
   try {
+    const cached = await hoteldataCache.get("all_resort_hotels");
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Resort hotels retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const hotels = await hotelModel.find({ propertyType: "Resort", isactive: true }).limit(10);
     if (hotels.length === 0) {
       console.log("No active resorts found in database");
       return apiResponse(res, 200, true, "No resorts available", []);
     }
     console.log(`Retrieved ${hotels.length} resorts`);
+    await hoteldataCache.set("all_resort_hotels", JSON.stringify(hotels), "EX", 60 * 60);
     return apiResponse(res, 200, true, "Resort hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching resorts:", error.message);
@@ -823,86 +967,26 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
   }
 });
 
-// const getHotelDashboard = asyncHandler(async (req: any, res: any) => {
-//   try {
-//     const userId = req.user?.id || req.user?._id;
-
-//     if (!userId) {
-//       return apiError(res, 401, "Unauthorized");
-//     }
-
-//     const hotel = await hotelModel.findOne({ userID: userId });
-
-//     if (!hotel) {
-//       return apiError(res, 404, "Hotel not found");
-//     }
-
-//     const hotelId = hotel._id;
-
-//     const rooms = await roomModel.find({ hotelId });
-
-//     const totalRooms = rooms.length;
-
-//     const occupiedRooms = rooms.filter((r: any) => r.status === "OCCUPIED").length;
-
-//     const availableRooms = rooms.filter((r: any) => r.status === "AVAILABLE").length;
-
-//     const bookings = axios.get(`${process.env.BOOKING_SERVICE_URL}/bookings/hotel/${hotelId}`).then(response => response.data).catch(() => null);
-
-//     const totalRevenue = bookings.reduce(
-//       (sum: number, b: any) => sum + (b.totalPrice || 0),
-//       0
-//     );
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     const todayCheckins = bookings.filter((b: any) =>
-//       new Date(b.checkIn) >= today
-//     );
-
-//     const roomData = rooms.map((r: any) => ({
-//       roomNumber: r.roomNumber,
-//       floorNumber: r.floorNumber || 0,
-//       roomType: r.roomType,
-//       status: r.status,
-//       pricePerNight: r.pricePerNight,
-//     }));
-
-//     const checkins = todayCheckins.map((b: any) => ({
-//       guestName: b.userName || "Guest",
-//       roomNumber: b.roomNumber || "—",
-//       checkInTime: new Date(b.checkIn).toISOString(),
-//     }));
-
-//     return apiResponse(res, 200, true, "Dashboard data", {
-//       stats: {
-//         totalRevenue,
-//         totalRooms,
-//         occupiedRooms,
-//         availableRooms,
-//         todayCheckins: todayCheckins.length,
-//       },
-//       rooms: roomData,
-//       checkins,
-//       hotel: {
-//         _id: hotel._id,
-//         hotelName: hotel.hotelName,
-//         hotelLocation: hotel.hotelLocation,
-//       },
-//     });
-//   } catch (error: any) {
-//     return apiError(res, 500, "Dashboard error", error.message);
-//   }
-// });
 
 const displayRooms = asyncHandler(async (req: any, res: any) => {
   const { hotelId } = req.params;
   try {
+    const cached = await hoteldataCache.get(`rooms_${hotelId}`);
+    if (cached) {
+      return apiResponse(
+        res,
+        200,
+        true,
+        "Rooms retrieved successfully (cached)",
+        JSON.parse(cached),
+      );
+    }
     const rooms = await roomModel.find({ hotelId });
     if (rooms.length === 0) {
       return apiError(res, 404, "No rooms found for this hotel");
-    } return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
+    }
+    await hoteldataCache.set(`rooms_${hotelId}`, JSON.stringify(rooms), "EX", 60 * 60);
+    return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
   } catch (error: any) {
     return apiError(res, 500, "Internal server error: Unable to retrieve rooms. Please try again later.", error.message);
   }
@@ -929,23 +1013,466 @@ const getHotelByLocation = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+const getAllRatings = asyncHandler(async (req: any, res: any) => {
+  const cached =  await hoteldataCache.get(`hotel_${req.params.hotelId}_ratings`);
+  if (cached) {
+   const data = JSON.parse(cached);
+   return apiResponse(res, 200, true, "Ratings retrieved successfully", data);
+  }
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+  try {
+    const hotel = await hotelModel.findById(hotelId).select("ratings");
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+    hoteldataCache.set(`hotel_${hotelId}_ratings`, JSON.stringify(hotel|| []), "EX", 60 * 60 * 24 * 1); // Cache for 1 day
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+    return apiResponse(res, 200, true, "Ratings retrieved successfully", hotel || []);
+  } catch (error: any) {
+    console.error("Error retrieving ratings:", error);
+    return apiError(res, 500, "Unable to retrieve ratings");
+  }
+});
 
-  export {
-    registerHotelRequest,
-    createroom,
-    // deleteRoom,
-    featuredHotels,
-    HotelData,
-    syncBookingHistory,
-    getBookingHistoryByHotelId,
-    RoomData,
-    searchHotels,
-    searchRooms,
-    getHotelInfo,
-    highReviewedHotels,
-    getAllHotels,
-    getAllResortHotels,
-    displayRooms,
-    getHotelByLocation,
-  };
+const getPaymentCredentials = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  const hotel=await hotelModel.findById(hotelId).select("esewa_Merchantid khalti_SecretKey hoteName");
+
+  if (!hotel) {
+    return apiError(res, 404, "Hotel not found");
+  }
+  return apiResponse(res, 200, true, "Payment credentials retrieved successfully", {
+    "esewa_Merchantid": hotel.esewa_Merchantid,
+    "khalti_SecretKey": hotel.khalti_SecretKey,
+    "hotelName": hotel.hotelName,
+  });
+
+});
+
+
+const approveRegistration = asyncHandler(async (req: any, res: any) => {
+  const { userID } = req.body;
+  if (!userID) {
+    return apiError(res, 400, "User ID is required");
+  }
+
+  try {
+    const cachedData = await registerHotel.get(`hotel_registration_${userID}`);
+    if (!cachedData) {
+      return apiError(res, 404, "Registration request not found or expired");
+    }
+
+    const hotelData = JSON.parse(cachedData);
+    hotelData.isactive = true;
+    hotelData.verified = true;
+
+    const newHotel = new hotelModel(hotelData);
+    await newHotel.save();
+    console.log("New hotel created with ID:", newHotel._id);
+
+    await registerHotel.del(`hotel_registration_${userID}`);
+    console.log("Deleted hotel registration for userID:", userID);  
+
+   
+
+    // Clear list caches
+    await hoteldataCache.del("featured_hotels");
+    await hoteldataCache.del("high_reviewed_hotels");
+    await hoteldataCache.del("all_hotels");
+    await hoteldataCache.del("all_resort_hotels");
+
+    pub.publish("newHotelApproved", JSON.stringify({
+      userID,
+      hotelId: newHotel._id,
+    }));
+    console.log("Published new hotel approval to Redis channel for userID:", userID, "hotelId:", newHotel._id);
+
+    return apiResponse(res, 200, true, "Hotel registration approved and created successfully", newHotel);
+  } catch (error: any) {
+    console.error("Error approving hotel registration:", error);
+    return apiError(res, 500, "Internal server error: Unable to approve registration");
+  }
+});
+
+const declineRegistration = asyncHandler(async (req: any, res: any) => {
+  const { userID } = req.body;
+  if (!userID) {
+    return apiError(res, 400, "User ID is required");
+  }
+
+  try {
+    await registerHotel.del(`hotel_registration_${userID}`);
+    return apiResponse(res, 200, true, "Hotel registration declined successfully");
+  } catch (error: any) {
+    console.error("Error declining hotel registration:", error);
+    return apiError(res, 500, "Internal server error: Unable to decline registration");
+  }
+});
+
+
+const updateHotelInfo = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const updateData = req.body;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  try {
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $set: updateData },
+      { new: true, runValidators: true },
+    );
+    if (!updatedHotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    await Promise.all([
+      hoteldataCache.del(`hotel_${hotelId}`),
+      registerHotel.del(`hotel_${hotelId}`),       
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
+      hoteldataCache.del("all_hotels"),
+      hoteldataCache.del("featured_hotels"),
+      hoteldataCache.del("high_reviewed_hotels"),
+      hoteldataCache.del("all_resort_hotels"),
+    ]);
+
+
+    return apiResponse(res, 200, true, "Hotel information updated successfully", updatedHotel);
+  } catch (error: any) {
+    console.error("Error updating hotel information:", error);
+    return apiError(res, 500, "Internal server error: Unable to update hotel information");
+  }
+});
+
+const updateHotelGallery = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const files = req.files || [];
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+
+  if (files.length === 0) {
+    return apiError(res, 400, "No images provided for gallery update");
+  }
+
+  try {
+    const hotel = await hotelModel.findById(hotelId);
+    if (!hotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      const filePath = file.path || file.tempFilePath;
+
+      if (!filePath) {
+        console.error("File path not found", file);
+        continue;
+      }
+
+      const uploadResult = await uploadToCloudinary(filePath, "hotel_images");
+      if (uploadResult) uploadedUrls.push(uploadResult);
+    }
+
+    if (uploadedUrls.length === 0) {
+      return apiError(res, 500, "Failed to upload any images to Cloudinary");
+    }
+
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $push: { hotelImages: { $each: uploadedUrls } } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedHotel) {
+      return apiError(res, 500, "Failed to update hotel gallery");
+    }
+
+    await Promise.all([
+      hoteldataCache.del(`hotel_${hotelId}`),
+      registerHotel.del(`hotel_${hotelId}`),
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
+      hoteldataCache.del("all_hotels"),
+      hoteldataCache.del("featured_hotels"),
+      hoteldataCache.del("high_reviewed_hotels"),
+      hoteldataCache.del("all_resort_hotels"),
+    ]);
+
+    return apiResponse(res, 200, true, "Hotel gallery updated successfully", {
+      hotelId,
+      uploadedCount: uploadedUrls.length,
+      hotelImages: updatedHotel.hotelImages,
+    });
+  } catch (error: any) {
+    console.error("Error updating hotel gallery:", error);
+    return apiError(res, 500, "Internal server error: Unable to update hotel gallery");
+  }
+});
+
+const deleteHotelGalleryImage = asyncHandler(async (req: any, res: any) => {
+  const { hotelId } = req.params;
+  const { imageUrl } = req.body;
+
+  if (!hotelId) {
+    return apiError(res, 400, "Hotel ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+    return apiError(res, 400, "Invalid hotel ID format");
+  }
+  if (!imageUrl) {
+    return apiError(res, 400, "Image URL is required in request body");
+  }
+
+  try {
+    const updatedHotel = await hotelModel.findByIdAndUpdate(
+      hotelId,
+      { $pull: { hotelImages: imageUrl } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedHotel) {
+      return apiError(res, 404, "Hotel not found", { hotelId });
+    }
+
+    await Promise.all([
+      hoteldataCache.del(`hotel_${hotelId}`),
+      registerHotel.del(`hotel_${hotelId}`),
+      hoteldataCache.del(`hotel_user_${updatedHotel.userID}`),
+      hoteldataCache.del("all_hotels"),
+      hoteldataCache.del("featured_hotels"),
+      hoteldataCache.del("high_reviewed_hotels"),
+      hoteldataCache.del("all_resort_hotels"),
+    ]);
+
+    return apiResponse(res, 200, true, "Image deleted successfully", {
+      hotelId,
+      deletedImageUrl: imageUrl,
+      hotelImages: updatedHotel.hotelImages,
+    });
+  } catch (error: any) {
+    console.error("Error deleting hotel gallery image:", error);
+    return apiError(res, 500, "Internal server error: Unable to delete hotel gallery image");
+  }
+});
+
+const deleteRoom = asyncHandler(async (req: any, res: any) => {
+  const {roomId } = req.params;
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  try {    const deletedRoom = await roomModel.findByIdAndDelete(roomId);
+    if (!deletedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+    await hoteldataCache.del(`rooms_${deletedRoom.hotelId}`); 
+    return apiResponse(res, 200, true, "Room deleted successfully", {
+      roomId,
+      hotelId: deletedRoom.hotelId,
+    });
+  } catch (error: any) {
+    console.error("Error deleting room:", error);
+    return apiError(res, 500, "Internal server error: Unable to delete room");
+  }
+
+});
+
+const updateRoomInfo = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+
+  try {
+    const updatedData = { ...req.body };
+    delete updatedData._id;
+    delete updatedData.hotelId;
+    delete updatedData.roomImages;
+    delete updatedData.createdAt;
+    delete updatedData.updatedAt;
+
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $set: updatedData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+    return apiResponse(res, 200, true, "Room updated successfully", {
+      roomId,
+      hotelId: updatedRoom.hotelId,
+      roomData: updatedRoom,
+    });
+  } catch (error: any) {
+    console.error("Error updating room:", error);
+
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.entries(error.errors).map(
+        ([field, err]: any) => ({ field, message: err.message }),
+      );
+      return apiError(res, 400, "Room validation failed", validationErrors);
+    }
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return apiError(res, 409, `Room ${field} already exists. Please use a unique value.`);
+    }
+    if (error instanceof mongoose.Error.CastError) {
+      return apiError(res, 400, "Invalid data format");
+    }
+
+    return apiError(res, 500, "Internal server error: Unable to update room");
+  }
+});
+
+const updateRoomImages = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+  const files = req.files || [];
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  if (files.length === 0) {
+    return apiError(res, 400, "At least one image file is required");
+  }
+
+  try {
+    const room = await roomModel.findById(roomId);
+    if (!room) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    const uploadedUrls: string[] = [];
+    for (const file of files) {
+      const filePath = file.path || file.tempFilePath;
+      if (!filePath) {
+        console.error("File path not found", file);
+        continue;
+      }
+      const uploadResult = await uploadToCloudinary(filePath, "room_images");
+      if (uploadResult) uploadedUrls.push(uploadResult);
+    }
+
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $set: { roomImages: [...(room.roomImages || []), ...uploadedUrls] } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId });
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+    return apiResponse(res, 200, true, "Room images updated successfully", {
+      roomId,
+      hotelId: updatedRoom.hotelId,
+      roomData: updatedRoom,
+    });
+  } catch (error: any) {
+    console.error("Error uploading room images:", error);
+    return apiError(res, 500, "Failed to upload room images", {
+      error: error.message,
+    });
+  }
+});
+
+const deleteRoomImages = asyncHandler(async (req: any, res: any) => {
+  const { roomId } = req.params;
+  const { imageUrl } = req.body; 
+
+  if (!roomId) {
+    return apiError(res, 400, "Room ID is required in URL parameters");
+  }
+  if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    return apiError(res, 400, "Invalid room ID format");
+  }
+  if (!imageUrl) {
+    return apiError(res, 400, "Image URL is required in request body");
+  }
+
+  try {
+    const updatedRoom = await roomModel.findByIdAndUpdate(
+      roomId,
+      { $pull: { roomImages: imageUrl } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRoom) {
+      return apiError(res, 404, "Room not found", { roomId }); 
+    }
+
+    await hoteldataCache.del(`rooms_${updatedRoom.hotelId}`);
+
+    return apiResponse(res, 200, true, "Image deleted successfully", {
+      roomId,
+      deletedImageUrl: imageUrl,
+      roomImages: updatedRoom.roomImages,
+    });
+
+  } catch (error) {
+    return apiError(res, 500, "Failed to delete room image", { error }); 
+  }
+});
+
+export {
+  registerHotelRequest,
+  deleteRoomImages,
+  createroom,
+  deleteRoom,
+  updateRoomImages,
+  updateRoomInfo,
+  featuredHotels,
+  HotelData,
+  syncBookingHistory,
+  getBookingHistoryByHotelId,
+  RoomData,
+  searchHotels,
+  searchRooms,
+  getHotelInfo,
+  highReviewedHotels,
+  getAllHotels,
+  getAllResortHotels,
+  displayRooms,
+  getHotelByLocation,
+  getPaymentCredentials,
+  getAllRatings,
+  updateHotelInfo,
+  updateHotelGallery,
+  approveRegistration,
+  declineRegistration,
+  deleteHotelGalleryImage,
+};
 

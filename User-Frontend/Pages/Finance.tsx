@@ -1,150 +1,134 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { getTotalIncome, getPendingIncome } from "../Services/booking.api";
+import { useAuth } from "../Contexts/Authcontext";
+import { useBookings } from "../Hooks/useBooking";
+import { useEffect, useCallback } from "react";
 
 type Status = "SUCCESS" | "PENDING" | "CANCELLED";
 
-interface Transaction {
-  id: string;
-  amount: number;
-  source: string;
-  status: Status;
-  date: string;
-  isoDate: string;
-  remark: string;
-}
-
-
-const transactions: Transaction[] = [
-  {
-    id: "1",
-    amount: 8400,
-    source: "Room Booking",
-    status: "SUCCESS",
-    date: "March 8, 2026 · 12:50 PM",
-    isoDate: "2026-03-08",
-    remark: "Deluxe Room Payment",
-  },
-  {
-    id: "2",
-    amount: 27000,
-    source: "Suite Booking",
-    status: "SUCCESS",
-    date: "March 8, 2026 · 11:14 AM",
-    isoDate: "2026-03-08",
-    remark: "Suite Payment",
-  },
-  {
-    id: "3",
-    amount: 8100,
-    source: "Room Booking",
-    status: "PENDING",
-    date: "March 7, 2026 · 10:39 AM",
-    isoDate: "2026-03-07",
-    remark: "Pending Payment",
-  },
-  {
-    id: "4",
-    amount: 4200,
-    source: "Room Booking",
-    status: "CANCELLED",
-    date: "March 6, 2026 · 09:10 AM",
-    isoDate: "2026-03-06",
-    remark: "Booking Cancelled",
-  },
-];
-
-
-const statusMap = {
-  SUCCESS: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  PENDING: "bg-amber-50 text-amber-600 border-amber-100",
-  CANCELLED: "bg-rose-50 text-rose-600 border-rose-100",
+const statusMap: Record<Status, string> = {
+  SUCCESS:   "bg-emerald-50 text-emerald-600 border-emerald-100",
+  PENDING:   "bg-amber-50  text-amber-600  border-amber-100",
+  CANCELLED: "bg-rose-50   text-rose-600   border-rose-100",
 };
 
+const getTxnStatus = (b: { status: string; bookingStatus: string }): Status => {
+  if (b.bookingStatus === "CANCELLED") return "CANCELLED";
+  if (b.status === "PAID") return "SUCCESS";
+  return "PENDING";
+};
 
 const Finance = () => {
-  const [filter, setFilter] = useState<"ALL" | Status>("ALL");
+  const auth    = useAuth();
+  const hotelId = auth?.hotelId || null;
+
+  const { bookings, loading, error, refetch } = useBookings(hotelId);
+
+  const [totalIncome,   setTotalIncome]   = useState<number>(0);
+  const [pendingIncome, setPendingIncome] = useState<number>(0);
+  const [incomeLoading, setIncomeLoading] = useState(true);
+  const [incomeError,   setIncomeError]   = useState("");
+
+  const [filter,   setFilter]   = useState<"ALL" | Status>("ALL");
   const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [toDate,   setToDate]   = useState("");
 
-  const filtered = transactions.filter((t) => {
-    const matchStatus = filter === "ALL" || t.status === filter;
+  const fetchIncome = useCallback(async () => {
+    if (!hotelId) return;
+    try {
+      setIncomeLoading(true);
+      setIncomeError("");
+      const [incomeRes, pendingRes] = await Promise.all([
+        getTotalIncome(hotelId),
+        getPendingIncome(hotelId),
+      ]);
+      setTotalIncome(incomeRes.data.data.totalIncome ?? 0);
+      setPendingIncome(pendingRes.data.data.totalPendingIncome ?? 0);
+    } catch (err: unknown) {
+      setIncomeError(err instanceof Error ? err.message : "Failed to load income data");
+    } finally {
+      setIncomeLoading(false);
+    }
+  }, [hotelId]);
 
-    const matchFrom =
-      !fromDate || new Date(t.isoDate) >= new Date(fromDate);
+  useEffect(() => {
+    fetchIncome();
+  }, [fetchIncome]);
 
-    const matchTo =
-      !toDate || new Date(t.isoDate) <= new Date(toDate);
 
-    return matchStatus && matchFrom && matchTo;
+  const inDateRange = (dateStr: string) => {
+    if (!fromDate && !toDate) return true;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return true;
+    if (fromDate && d < new Date(fromDate)) return false;
+    if (toDate && d > new Date(toDate)) return false;
+    return true;
+  };
+
+  const filtered = bookings.filter((b) => {
+    const txnStatus   = getTxnStatus(b);
+    const matchStatus = filter === "ALL" || txnStatus === filter;
+    return matchStatus && inDateRange(b.checkIn);
   });
 
-
-  const totalIncome = filtered
-    .filter((t) => t.status === "SUCCESS")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const pendingIncome = filtered
-    .filter((t) => t.status === "PENDING")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const cancelledLoss = filtered
-    .filter((t) => t.status === "CANCELLED")
-    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900">
-          Finance
-        </h1>
-        <p className="text-xs text-slate-500">
-          Income and transaction records
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">Finance</h1>
+          <p className="text-xs text-slate-500">Income and transaction records</p>
+        </div>
+        <button
+          onClick={() => { fetchIncome(); refetch(); }}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Refresh
+        </button>
       </div>
 
+      {/* ERRORS */}
+      {(error || incomeError) && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-600 text-sm rounded-xl px-4 py-3">
+          {error || incomeError}
+        </div>
+      )}
+
       {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300">
           <p className="text-xs text-slate-500">Total Income</p>
-          <h2 className="text-xl font-semibold text-slate-900 mt-1">
-            Rs. {totalIncome.toLocaleString()}
+          <h2 className="text-2xl font-semibold text-slate-900 mt-2">
+            {incomeLoading ? "—" : `Rs. ${totalIncome.toLocaleString()}`}
           </h2>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300">
           <p className="text-xs text-slate-500">Pending Income</p>
-          <h2 className="text-xl font-semibold text-slate-900 mt-1">
-            Rs. {pendingIncome.toLocaleString()}
+          <h2 className="text-2xl font-semibold text-slate-900 mt-2">
+            {incomeLoading ? "—" : `Rs. ${pendingIncome.toLocaleString()}`}
           </h2>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <p className="text-xs text-slate-500">Cancelled Loss</p>
-          <h2 className="text-xl font-semibold text-rose-600 mt-1">
-            Rs. {cancelledLoss.toLocaleString()}
-          </h2>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300">
           <p className="text-xs text-slate-500">Transactions</p>
-          <h2 className="text-xl font-semibold text-slate-900 mt-1">
+          <h2 className="text-2xl font-semibold text-slate-900 mt-2">
             {filtered.length}
           </h2>
         </div>
-
       </div>
 
       {/* FILTER BAR */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-center">
 
         <div className="flex gap-2">
-          {["ALL", "SUCCESS", "PENDING", "CANCELLED"].map((s) => (
+          {(["ALL", "SUCCESS", "PENDING"] as const).map((s) => (
             <button
               key={s}
-              onClick={() => setFilter(s as any)}
+              onClick={() => setFilter(s)}
               className={`px-3 py-1.5 text-xs rounded-full transition ${
                 filter === s
                   ? "bg-blue-600 text-white"
@@ -171,70 +155,88 @@ const Finance = () => {
           onChange={(e) => setToDate(e.target.value)}
           className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
         />
-
       </div>
 
       {/* TABLE */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
 
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
 
-          <thead className="bg-slate-50 text-slate-500 text-xs">
+          <colgroup>
+            <col className="w-[6%]" />
+            <col className="w-[14%]" />
+            <col className="w-[20%]" />
+            <col className="w-[14%]" />
+            <col className="w-[18%]" />
+            <col className="w-[28%]" />
+          </colgroup>
+
+          <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3">SN</th>
-              <th className="text-left px-4 py-3">Amount</th>
-              <th className="text-left px-4 py-3">Source</th>
-              <th className="text-center px-4 py-3">Status</th>
-              <th className="text-left px-4 py-3">Date</th>
-              <th className="text-left px-4 py-3">Remark</th>
+              <th className="text-left   px-6 py-3.5 font-medium">SN</th>
+              <th className="text-right  px-6 py-3.5 font-medium">Amount</th>
+              <th className="text-left   px-6 py-3.5 font-medium">Guest</th>
+              <th className="text-center px-6 py-3.5 font-medium">Status</th>
+              <th className="text-left   px-6 py-3.5 font-medium">Date</th>
+              <th className="text-left   px-6 py-3.5 font-medium">Remark</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-
-            {filtered.map((t, i) => (
-              <motion.tr
-                key={t.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="hover:bg-slate-50 transition"
-              >
-
-                <td className="px-4 py-3 text-slate-400">
-                  {i + 1}
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="text-center py-12 text-slate-400 text-xs">
+                  Loading transactions...
                 </td>
-
-                <td className={`px-4 py-3 font-medium ${
-                  t.status === "CANCELLED"
-                    ? "text-rose-600"
-                    : "text-slate-900"
-                }`}>
-                  Rs. {t.amount.toLocaleString()}
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-12 text-slate-400 text-xs">
+                  No transactions found.
                 </td>
-
-                <td className="px-4 py-3 text-slate-600">
-                  {t.source}
-                </td>
-
-                <td className="px-4 py-3 text-center">
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full border ${statusMap[t.status]}`}
+              </tr>
+            ) : (
+              filtered.map((b, i) => {
+                const txnStatus = getTxnStatus(b);
+                return (
+                  <motion.tr
+                    key={b.id || i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-slate-50 transition"
                   >
-                    {t.status}
-                  </span>
-                </td>
+                    <td className="px-6 py-4 text-slate-400 align-middle">
+                      {i + 1}
+                    </td>
 
-                <td className="px-4 py-3 text-slate-500 text-xs">
-                  {t.date}
-                </td>
+                    <td className={`px-6 py-4 text-right font-medium whitespace-nowrap align-middle ${
+                      txnStatus === "CANCELLED" ? "text-rose-600" : "text-slate-900"
+                    }`}>
+                      {b.amount}
+                    </td>
 
-                <td className="px-4 py-3 text-slate-500 text-xs">
-                  {t.remark}
-                </td>
+                    <td className="px-6 py-4 align-middle">
+                      <div className="font-medium text-slate-800 truncate">{b.guest}</div>
+                      <div className="text-[11px] text-slate-400 truncate">{b.email || "-"}</div>
+                    </td>
 
-              </motion.tr>
-            ))}
+                    <td className="px-6 py-4 text-center align-middle">
+                      <span className={`inline-block text-xs px-2.5 py-1 rounded-full border whitespace-nowrap ${statusMap[txnStatus]}`}>
+                        {txnStatus}
+                      </span>
+                    </td>
 
+                    <td className="px-6 py-4 text-slate-500 text-xs whitespace-nowrap align-middle">
+                      {b.checkIn}
+                    </td>
+
+                    <td className="px-6 py-4 text-slate-500 text-xs align-middle truncate">
+                      Room {b.room}
+                    </td>
+                  </motion.tr>
+                );
+              })
+            )}
           </tbody>
 
         </table>

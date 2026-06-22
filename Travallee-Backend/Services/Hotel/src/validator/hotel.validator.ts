@@ -38,6 +38,7 @@ export const createRoomSchema = z.object({
   roomType: z.string().min(1, 'Room type is required'),
   suitetype: z.string().min(1, 'Suite type is required'),
   roomDescription: z.string().min(1, 'Room description is required'),
+  status: z.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE"]).default("AVAILABLE"),
   
   // Capacity & Physical Details
   maxOccupancy: z.number().min(1, 'Max occupancy must be at least 1'),
@@ -52,6 +53,7 @@ export const createRoomSchema = z.object({
   pricePerNight: z.number().positive('Price per night must be greater than 0'),
   weekendPrice: z.number().positive('Weekend price must be greater than 0').optional(),
   taxRate: z.number().min(0).max(100).default(0),
+  discount: z.number().min(0).max(100).default(0),
   
   // Policies
   minStayNights: z.number().min(1).default(1),

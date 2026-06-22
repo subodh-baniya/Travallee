@@ -24,7 +24,6 @@ const VerifyOTP = () => {
       return;
     }
 
-    // validate OTP - must be 4 digits
     if (!/^\d{4}$/.test(otp)) {
       setError("OTP must be a 4-digit code");
       return;
@@ -46,16 +45,14 @@ const VerifyOTP = () => {
       const user = resp.data.data;
       const role = user?.role || "user";
 
-      // success: show message then prompt
+
       setSuccess(resp.data.message || "OTP verified — account created.");
 
       if (role === "hotelAdmin" || role === "hoteladmin") {
-        // hotel admin -> redirect to hotel admin dashboard
         navigate("/dashboard");
         return;
       }
 
-      // regular user -> show explicit modal-like prompt (inline)
       setShowPostOptions(true);
     } catch (err: unknown) {
       const e = err as AxiosError<{ message?: string }>;
@@ -157,7 +154,6 @@ const VerifyOTP = () => {
                 setError("");
                 setSuccess("");
                 await axios.post(`${import.meta.env.VITE_AUTH_API_BASE_URL}/register`, {
-                  // re-send by re-calling register with same data; backend stores pending and sends OTP
                   Username: "",
                   Name: "",
                   email,

@@ -15,14 +15,12 @@ import Publicroute from "./Publicroute"
 import HotelOwnerRoute from "./HotelOwnerRoute"
 import Overview from "../Pages/Overview"
 import Bookings from "../Pages/Bookings"
-import BookingDetails from "../Pages/BookingDetails"
 import Rooms from "../Pages/Rooms"
 import Pricing from "../Pages/Pricing"
 import Guests from "../Pages/Guests"
 import Payments from "../Pages/Payments"
 import Reports from "../Pages/Reports"
 import Settings from "../Pages/Settings" 
-import RoomDetails from "../Pages/RoomDetails"
 import Finance from "../Pages/Finance"
 import ReviewsPage from "../Pages/Review"
 import RegisterHotel from "../Pages/Registerhotel"
@@ -57,14 +55,12 @@ const router=createBrowserRouter(
              <Route index element={<Navigate to="overview" replace />}/>
           <Route path="overview" element={<Overview/>} />
           <Route path="bookings" element={<Bookings/>} />
-          <Route path="bookings/:bookingId" element={<BookingDetails/>} />
           <Route path="rooms" element={<Rooms/>} />
           <Route path="pricing" element={<Pricing/>} />
           <Route path="guests" element={<Guests/>} />
           <Route path="payments" element={<Payments/>} />
           <Route path="reports" element={<Reports/>} />
           <Route path="settings" element={<Settings/>} />
-          <Route path="room-details" element={<RoomDetails/>} />
            <Route path="reviews" element={<ReviewsPage/>} />
             <Route path="finance" element={<Finance/>} />
             <Route path="messages" element={<ChatPage/>} />

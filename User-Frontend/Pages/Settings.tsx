@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FaHotel,
   FaPhoneAlt,
@@ -11,46 +11,52 @@ import {
   FaSpa,
   FaSwimmingPool,
   FaFileAlt,
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaTrash,
+  FaCloudUploadAlt,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { getHotelById, getRooms } from "../Services/hotel.api";
-import { hotelClient } from "../Services/httpclient/hotel.client";
+import { getHotelById, updateHotelInfo, updateHotelGallery, deleteHotelGalleryImage } from "../Services/hotel.api";
 import { useAuth } from "../Contexts/Authcontext";
+import { Toast } from "../Components/modal-popups/Toast";
+import { ImagePreviewModal } from "../Components/modal-popups/ImagePreviewModal";
+import { useToast } from "../Hooks/useToast";
+import axios from "axios";
+
 
 interface HotelSettings {
   _id?: string;
   hotelName: string;
-  owner: string;
-  contact: string;
-  location: string;
+  ownerName: string;
+  contactNumber: string;
+  hotelLocation: string;
   propertyType: string;
-  pricePerNight: string;
-  checkIn: string;
-  checkOut: string;
-  description: string;
+  checkinTime: string;
+  checkoutTime: string;
+  hotelDescription: string;
   facilities: string[];
   images: string[];
   documents: string[];
-  rating?: number;
-  numberOfReviews?: number;
+  esewa_Merchantid?: string;
+  khalti_SecretKey?: string;
 }
 
-interface HotelRoom {
-  _id?: string;
-  roomNumber?: string;
-  roomType?: string;
-  suitetype?: string;
-  roomDescription?: string;
-  capacity?: number;
-  maxOccupancy?: number;
-  pricePerNight?: number;
-  basePrice?: number;
-  roomImages?: string[];
-  amenities?: string[];
-  bedType?: string;
-  floorNumber?: number;
-  status?: string;
-}
+// ─── Constants ────────────────────────────────────────────────
+
+const PROPERTY_TYPES = [
+  "Hotel",
+  "Resort",
+  "Guesthouse",
+  "Hostel",
+  "Apartment",
+  "Villa",
+  "Boutique Hotel",
+];
 
 const facilityIcons: Record<string, React.ReactNode> = {
   "Free WiFi": <FaWifi />,
@@ -59,294 +65,145 @@ const facilityIcons: Record<string, React.ReactNode> = {
   "Swimming Pool": <FaSwimmingPool />,
 };
 
+const emptyHotel: HotelSettings = {
+  hotelName: "",
+  ownerName: "",
+  contactNumber: "",
+  hotelLocation: "",
+  propertyType: "",
+  checkinTime: "",
+  checkoutTime: "",
+  hotelDescription: "",
+  facilities: [],
+  images: [],
+  documents: [],
+  esewa_Merchantid: "",
+  khalti_SecretKey: "",
+};
+
+
+// ─── Shared UI ────────────────────────────────────────────────
+
+const SectionCard: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className = "",
+}) => (
+  <div className={`bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${className}`}>
+    {children}
+  </div>
+);
+
+const SectionHeader: React.FC<{
+  icon?: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}> = ({ icon, title, subtitle, action }) => (
+  <div className="flex items-start justify-between gap-4 px-7 pt-7 pb-6 border-b border-slate-100">
+    <div className="flex items-center gap-3.5">
+      {icon && (
+        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-blue-600 text-sm">
+          {icon}
+        </span>
+      )}
+      <div>
+        <h2 className="text-base font-semibold text-slate-800 leading-tight">{title}</h2>
+        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+      </div>
+    </div>
+    {action}
+  </div>
+);
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
+    {children}
+  </label>
+);
+
+const inputBase =
+  "w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-all duration-150";
+const inputEditable =
+  "border-slate-200 bg-white text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100/60";
+const inputReadonly =
+  "border-transparent bg-slate-50 text-slate-600 cursor-default select-none";
+const fieldInput = (editable: boolean) =>
+  `${inputBase} ${editable ? inputEditable : inputReadonly}`;
+
+const inputBaseLg =
+  "w-full rounded-xl border px-5 py-3.5 text-base outline-none transition-all duration-150";
+const fieldInputLg = (editable: boolean) =>
+  `${inputBaseLg} ${editable ? inputEditable : inputReadonly}`;
+
+
 const SettingsPage: React.FC = () => {
   const auth = useAuth();
-  const navigate = useNavigate();
   const hotelId = auth?.hotelId;
 
-  const [settings, setSettings] = useState<HotelSettings | null>(null);
-  const [rooms, setRooms] = useState<HotelRoom[]>([]);
+  const [settings, setSettings] = useState<HotelSettings>(emptyHotel);
+  const [formData, setFormData] = useState<HotelSettings>(emptyHotel);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [facilityInput, setFacilityInput] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [newRoomNumber, setNewRoomNumber] = useState("");
-  const [newRoomType, setNewRoomType] = useState("");
-  const [newBasePrice, setNewBasePrice] = useState("");
-  const [newCapacity, setNewCapacity] = useState("");
-  const [newAmenities, setNewAmenities] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newFloor, setNewFloor] = useState("");
-  const [creatingRoom, setCreatingRoom] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [createSuccess, setCreateSuccess] = useState("");
-  const [newSuiteType, setNewSuiteType] = useState("");
-  const [newMaxOccupancy, setNewMaxOccupancy] = useState("");
-  const [newBedType, setNewBedType] = useState("");
-  const [newRoomSize, setNewRoomSize] = useState("");
-  const [newViewType, setNewViewType] = useState("none");
-  const [newPricePerNight, setNewPricePerNight] = useState("");
-  const [newWeekendPrice, setNewWeekendPrice] = useState("");
-  const [newTaxRate, setNewTaxRate] = useState("");
-  const [newMinStayNights, setNewMinStayNights] = useState("");
-  const [newCancellationPolicy, setNewCancellationPolicy] = useState("");
-  const [newSpecialFeatures, setNewSpecialFeatures] = useState("");
-  const [newRoomImages, setNewRoomImages] = useState<File[]>([]);
-  const [newRoomImagePreviews, setNewRoomImagePreviews] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [newIsAccessible, setNewIsAccessible] = useState(false);
-  const [newHasBathtub, setNewHasBathtub] = useState(false);
-  const [newHasShower, setNewHasShower] = useState(false);
-  const [newHasBalcony, setNewHasBalcony] = useState(false);
-  const [newHasAC, setNewHasAC] = useState(true);
-  const [newHasHeating, setNewHasHeating] = useState(false);
-  const [newHasWifi, setNewHasWifi] = useState(true);
-  const [newIsActive, setNewIsActive] = useState(true);
-  const [newIsFeatured, setNewIsFeatured] = useState(false);
-  const [newRating, setNewRating] = useState("0");
-  const [newNumberOfReviews, setNewNumberOfReviews] = useState("0");
-  const [showCreateDrawer, setShowCreateDrawer] = useState(false);
 
-  const createRoomSubmit = async () => {
-    setCreateError("");
-    setCreateSuccess("");
-    if (!hotelId) {
-      setCreateError("No hotel id available");
-      return;
-    }
-    if (!newRoomNumber) {
-      setCreateError("Room number is required");
-      return;
-    }
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
-    // validate required fields per Room.model.ts
-    if (!newRoomNumber || !newRoomType || !newSuiteType || !newDescription || !newMaxOccupancy || !newCapacity || !newBedType || !newBasePrice || !newPricePerNight || !newCancellationPolicy || !newAmenities) {
-      setCreateError("Please fill all required fields marked with *");
-      return;
-    }
-    if (!newRoomImages || newRoomImages.length === 0) {
-      setCreateError("Please upload at least one room image");
-      return;
-    }
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
-    setCreatingRoom(true);
-    try {
-      // include auth token if available (backend requires authenticate middleware)
-      const token = auth?.user?.token;
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+  const [showEsewaKey, setShowEsewaKey] = useState(false);
+  const [showKhaltiKey, setShowKhaltiKey] = useState(false);
 
-      // If user attached local File objects, send multipart/form-data (server will upload files)
-      if (newRoomImages && newRoomImages.length > 0) {
-        const fd = new FormData();
-        fd.append("hotelId", String(hotelId));
-        fd.append("roomNumber", newRoomNumber);
-        if (newRoomType) fd.append("roomType", newRoomType);
-        if (newSuiteType) fd.append("suitetype", newSuiteType);
-        if (newBasePrice) fd.append("basePrice", String(Number(newBasePrice) || 0));
-        if (newPricePerNight) fd.append("pricePerNight", String(Number(newPricePerNight) || 0));
-        if (newWeekendPrice) fd.append("weekendPrice", String(Number(newWeekendPrice) || 0));
-        if (newCapacity) fd.append("capacity", String(Number(newCapacity) || 1));
-        if (newMaxOccupancy) fd.append("maxOccupancy", String(Number(newMaxOccupancy) || 1));
-        if (newRoomSize) fd.append("roomSize", String(Number(newRoomSize) || 0));
-        if (newBedType) fd.append("bedType", newBedType);
-        if (newFloor) fd.append("floorNumber", String(Number(newFloor) || 0));
-        if (newViewType) fd.append("viewType", newViewType);
-        if (newDescription) fd.append("roomDescription", newDescription);
-        if (newCancellationPolicy) fd.append("cancellationPolicy", newCancellationPolicy);
-        if (newMinStayNights) fd.append("minStayNights", String(Number(newMinStayNights) || 1));
-        if (newTaxRate) fd.append("taxRate", String(Number(newTaxRate) || 0));
-        if (newSpecialFeatures) fd.append("specialFeatures", JSON.stringify(newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean)));
-        if (newAmenities) fd.append("amenities", JSON.stringify(newAmenities.split(",").map(s => s.trim()).filter(Boolean)));
+  const { toast: pageToast, showToast: showPageToast, clearToast: clearPageToast } = useToast();
+  const { toast: imageToast, showToast: showImageToast } = useToast();
+  const { toast: passwordToast, showToast: showPasswordToast, clearToast: clearPasswordToast } = useToast();
 
-        // booleans
-        fd.append("isAccessible", String(newIsAccessible));
-        fd.append("hasBathtub", String(newHasBathtub));
-        fd.append("hasShower", String(newHasShower));
-        fd.append("hasBalcony", String(newHasBalcony));
-        fd.append("hasAC", String(newHasAC));
-        fd.append("hasHeating", String(newHasHeating));
-        fd.append("hasWifi", String(newHasWifi));
-        fd.append("isActive", String(newIsActive));
-        fd.append("isFeatured", String(newIsFeatured));
-        fd.append("rating", String(Number(newRating) || 0));
-        fd.append("numberOfReviews", String(Number(newNumberOfReviews) || 0));
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
-        // images (multiple files)
-        newRoomImages.forEach((file) => {
-          fd.append("roomImages", file);
-        });
-
-        // Debug: log FormData entries so we can compare with Postman
-        try {
-          for (const entry of fd.entries()) {
-            console.log("FormData entry:", entry[0], entry[1]);
-          }
-        } catch (logErr) {
-          console.warn("Failed to enumerate FormData entries:", logErr);
-        }
-
-        await hotelClient.post(`/room/${hotelId}`, fd, {
-          headers,
-          withCredentials: true,
-        });
-      } else {
-        // Build JSON payload aligned with backend createRoomSchema
-        const payload: any = {
-          hotelId,
-          roomNumber: String(newRoomNumber || ""),
-          roomType: String(newRoomType || ""),
-          suitetype: String(newSuiteType || ""),
-          roomDescription: String(newDescription || ""),
-
-          // numeric fields
-          maxOccupancy: Number(newMaxOccupancy) || Number(newCapacity) || 1,
-          capacity: Number(newCapacity) || 1,
-          roomSize: newRoomSize ? Number(newRoomSize) : undefined,
-          bedType: String(newBedType || ""),
-          floorNumber: Number(newFloor) || 0,
-          viewType: newViewType || "none",
-
-          // pricing
-          basePrice: Number(newBasePrice) || 0,
-          pricePerNight: Number(newPricePerNight) || Number(newBasePrice) || 0,
-          weekendPrice: newWeekendPrice ? Number(newWeekendPrice) : undefined,
-          taxRate: Number(newTaxRate) || 0,
-
-          // policies
-          minStayNights: Number(newMinStayNights) || 1,
-          cancellationPolicy: String(newCancellationPolicy || ""),
-
-          // arrays
-          amenities: newAmenities ? newAmenities.split(",").map(s => s.trim()).filter(Boolean) : [],
-          specialFeatures: newSpecialFeatures ? newSpecialFeatures.split(",").map(s => s.trim()).filter(Boolean) : [],
-
-          // images: prefer server-uploaded URLs; fallback to previews (note: preview blobs are not permanent URLs)
-          roomImages: (newRoomImagePreviews && newRoomImagePreviews.length > 0)
-            ? newRoomImagePreviews.filter(p => typeof p === 'string')
-            : [],
-
-          // booleans and flags
-          isAccessible: Boolean(newIsAccessible),
-          hasBathtub: Boolean(newHasBathtub),
-          hasShower: Boolean(newHasShower),
-          hasBalcony: Boolean(newHasBalcony),
-          hasAC: Boolean(newHasAC),
-          hasHeating: Boolean(newHasHeating),
-          hasWifi: Boolean(newHasWifi),
-
-          // status/rating defaults
-          isActive: Boolean(newIsActive),
-          isFeatured: Boolean(newIsFeatured),
-          rating: Number(newRating) || 0,
-          numberOfReviews: Number(newNumberOfReviews) || 0,
-        };
-
-        console.log("JSON payload:", payload);
-
-        await hotelClient.post(`/room/${hotelId}`, payload, {
-          headers,
-          withCredentials: true,
-        });
-      }
-      setCreateSuccess("Room created successfully");
-      setNewRoomNumber("");
-      setNewRoomType("");
-      setNewBasePrice("");
-      setNewCapacity("");
-      setNewAmenities("");
-      setNewDescription("");
-      setNewFloor("");
-
-      try {
-        const roomRes = await getRooms(hotelId);
-        const roomPayload = roomRes?.data ?? roomRes;
-        const roomList = Array.isArray(roomPayload?.rooms)
-          ? roomPayload.rooms
-          : Array.isArray(roomPayload)
-            ? roomPayload
-            : Array.isArray(roomPayload?.data)
-              ? roomPayload.data
-              : [];
-        setRooms(roomList);
-      } catch (e) {
-        // ignore refresh errors
-      }
-    } catch (err: any) {
-      console.error("Create room error:", err);
-      const resp = err?.response?.data;
-      if (resp) {
-        // Prefer validation array or data payload if present
-        if (Array.isArray(resp) && resp.length > 0) {
-          setCreateError(JSON.stringify(resp, null, 2));
-        } else if (resp?.data) {
-          setCreateError(typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data, null, 2));
-        } else if (resp?.errors) {
-          setCreateError(JSON.stringify(resp.errors, null, 2));
-        } else if (resp?.message || resp?.msg) {
-          setCreateError(String(resp.message || resp.msg));
-        } else {
-          setCreateError(JSON.stringify(resp, null, 2));
-        }
-      } else {
-        setCreateError(String(err));
-      }
-    } finally {
-      setCreatingRoom(false);
-      setShowCreateDrawer(false);
-    }
-  };
 
   useEffect(() => {
     const fetchHotel = async () => {
       if (!hotelId) {
-        setError("No hotel id found in auth context.");
+        showPageToast("error", "No hotel ID found in auth context.");
         return;
       }
-
       setLoading(true);
-      setError("");
-
       try {
         const res = await getHotelById(hotelId);
         const hotel = res?.data ?? res;
-
-        try {
-          const roomRes = await getRooms(hotelId);
-          const roomPayload = roomRes?.data ?? roomRes;
-          const roomList = Array.isArray(roomPayload?.rooms)
-            ? roomPayload.rooms
-            : Array.isArray(roomPayload)
-              ? roomPayload
-              : Array.isArray(roomPayload?.data)
-                ? roomPayload.data
-                : [];
-
-          setRooms(roomList);
-        } catch (roomError) {
-          console.error("Failed to fetch hotel rooms:", roomError);
-          setRooms([]);
-        }
-
-        setSettings({
+        console.log("Fetched hotel data:", hotel);
+        const mapped: HotelSettings = {
           _id: hotel?._id,
-          hotelName: hotel?.hotelName || "Untitled hotel",
-          owner: hotel?.ownerName || "Unknown owner",
-          contact: hotel?.contactNumber || "Not provided",
-          location: hotel?.hotelLocation || "Not provided",
-          propertyType: hotel?.propertyType || "Not provided",
-          pricePerNight: hotel?.pricePerNight ? `Rs. ${hotel.pricePerNight}` : "Not provided",
-          checkIn: hotel?.checkinTime || "Not provided",
-          checkOut: hotel?.checkoutTime || "Not provided",
-          description: hotel?.hotelDescription || "No description available.",
+          hotelName: hotel?.hotelName || "",
+          ownerName: hotel?.ownerName || "",
+          contactNumber: hotel?.contactNumber || "",
+          hotelLocation: hotel?.hotelLocation || "",
+          propertyType: hotel?.propertyType || "",
+          checkinTime: hotel?.checkinTime || "",
+          checkoutTime: hotel?.checkoutTime || "",
+          hotelDescription: hotel?.hotelDescription || "",
           facilities: Array.isArray(hotel?.facilities) ? hotel.facilities : [],
           images: Array.isArray(hotel?.hotelImages) ? hotel.hotelImages : [],
-          documents: Array.isArray(hotel?.VerificationDocuments) ? hotel.VerificationDocuments : [],
-          rating: hotel?.rating,
-          numberOfReviews: hotel?.numberOfReviews,
-        });
-      } catch (fetchError) {
-        console.error("Failed to fetch hotel settings:", fetchError);
-        setError("Unable to load hotel details right now.");
+          documents: Array.isArray(hotel?.VerificationDocuments)
+            ? hotel.VerificationDocuments
+            : [],
+          esewa_Merchantid: hotel?.esewa_Merchantid || "",
+          khalti_SecretKey: hotel?.khalti_SecretKey || "",
+        };
+        setSettings(mapped);
+        setFormData(mapped);
+      } catch (e) {
+        console.error(e);
+        showPageToast("error", "Unable to load hotel details. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -355,722 +212,702 @@ const SettingsPage: React.FC = () => {
     fetchHotel();
   }, [hotelId]);
 
-  const stats = useMemo(() => {
-    const rating = settings?.rating ?? 0;
-    const reviews = settings?.numberOfReviews ?? 0;
-    return {
-      rating: rating.toFixed(1),
-      reviews,
-      occupancy: reviews > 0 ? Math.min(100, 50 + Math.round(reviews / 2)) : 0,
-    };
-  }, [settings]);
+
+  const display = isEditing ? formData : settings;
+
+  const handleField = (field: keyof HotelSettings, value: any) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const startEdit = () => {
+    setFormData(settings);
+    setIsEditing(true);
+    clearPageToast();
+  };
+
+  const cancelEdit = () => {
+    setFormData(settings);
+    setFacilityInput("");
+    setIsEditing(false);
+    clearPageToast();
+  };
+
+  const addFacility = () => {
+    const value = facilityInput.trim();
+    if (!value || formData.facilities.includes(value)) { setFacilityInput(""); return; }
+    handleField("facilities", [...formData.facilities, value]);
+    setFacilityInput("");
+  };
+
+  const removeFacility = (index: number) =>
+    handleField("facilities", formData.facilities.filter((_, i) => i !== index));
+
+
+  const saveDetails = async () => {
+    if (!hotelId) return;
+    setSaving(true);
+    clearPageToast();
+    try {
+      const payload = {
+        hotelName: formData.hotelName,
+        ownerName: formData.ownerName,
+        contactNumber: formData.contactNumber,
+        hotelLocation: formData.hotelLocation,
+        propertyType: formData.propertyType,
+        checkinTime: formData.checkinTime,
+        checkoutTime: formData.checkoutTime,
+        hotelDescription: formData.hotelDescription,
+        facilities: formData.facilities,
+        esewa_Merchantid: formData.esewa_Merchantid,
+        khalti_SecretKey: formData.khalti_SecretKey,
+      };
+
+      await updateHotelInfo(hotelId, payload);
+
+      setSettings(formData);
+      setIsEditing(false);
+      showPageToast("success", "Hotel details saved successfully.");
+    } catch (err: any) {
+      showPageToast(
+        "error",
+        err?.response?.data?.message || "Failed to save hotel details."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
+  const handleSelectImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setPendingImageFiles((p) => [...p, ...files]);
+    setPendingImagePreviews((p) => [...p, ...previews]);
+  };
+
+  const removePendingImage = (index: number) => {
+    URL.revokeObjectURL(pendingImagePreviews[index]);
+    setPendingImageFiles((p) => p.filter((_, i) => i !== index));
+    setPendingImagePreviews((p) => p.filter((_, i) => i !== index));
+  };
+
+  const uploadPendingImages = async () => {
+    if (!hotelId || !pendingImageFiles.length) return;
+    setUploadingImages(true);
+    try {
+      const fd = new FormData();
+      pendingImageFiles.forEach((f) => fd.append("hotelImages", f));
+
+      const res = await updateHotelGallery(hotelId, fd);
+
+      const updatedImages: string[] =
+        res?.data?.hotelImages ?? res?.hotelImages ?? [...settings.images];
+
+      setSettings((p) => ({ ...p, images: updatedImages }));
+      setFormData((p) => ({ ...p, images: updatedImages }));
+
+      pendingImagePreviews.forEach((u) => URL.revokeObjectURL(u));
+      setPendingImageFiles([]);
+      setPendingImagePreviews([]);
+      showImageToast("success", "Images uploaded successfully.");
+    } catch (err: any) {
+      showImageToast("error", err?.response?.data?.message || "Failed to upload images.");
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const deleteExistingImage = async (imageUrl: string) => {
+    if (!hotelId) return;
+    setDeletingImage(imageUrl);
+    try {
+      const res = await deleteHotelGalleryImage(hotelId, imageUrl);
+
+      const updatedImages: string[] =
+        res?.data?.hotelImages ?? res?.hotelImages ?? settings.images.filter((img) => img !== imageUrl);
+
+      setSettings((p) => ({ ...p, images: updatedImages }));
+      setFormData((p) => ({ ...p, images: updatedImages }));
+      showImageToast("success", "Image removed.");
+    } catch (err: any) {
+      showImageToast("error", err?.response?.data?.message || "Failed to delete image.");
+    } finally {
+      setDeletingImage(null);
+    }
+  };
+
+
+  const handleChangePassword = async () => {
+    clearPasswordToast();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showPasswordToast("error", "All fields are required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      showPasswordToast("error", "New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showPasswordToast("error", "Passwords do not match.");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      showPasswordToast("error", "New password must be different from current password.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_AUTH_API_BASE_URL}/update-hotel-user-password`,
+        { currentPassword, newPassword },
+        { withCredentials: true }
+      );
+      showPasswordToast("success", "Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      showPasswordToast("error", err?.response?.data?.message || "Failed to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 space-y-6">
+    <div className="min-h-screen bg-[#f8f9fb] px-4 py-8 sm:px-6 md:px-10">
+      <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* HEADER */}
-
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 shadow-sm">
-
-        <div>
-          <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-2">
-            <FaHotel />
-            Hotel Settings
-          </div>
-
-          <h1 className="text-3xl font-bold text-slate-900">
-            {settings?.hotelName || "Loading hotel..."}
-          </h1>
-
-          <p className="text-sm text-slate-500 mt-2">
-            View hotel information, facilities, pricing, and property details from the authenticated hotel record.
-          </p>
+        {/* Page Toast */}
+        <div className="relative h-0">
+          <Toast toast={pageToast} />
         </div>
 
-        <div className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
-          {hotelId ? `Hotel ID: ${hotelId}` : "No hotel id available"}
-        </div>
-
-      </div>
-
-      {loading && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-slate-600">
-          Loading hotel details...
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-sm text-red-600">
-          {error}
-        </div>
-      )}
-
-            
-
-      {/* STATS */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Average Rating
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.rating}
-          </div>
-
-          <div className="text-sm text-emerald-600 mt-1">
-            Live from hotel record
-          </div>
-
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Total Reviews
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.reviews}
-          </div>
-
-          <div className="text-sm text-slate-500 mt-1">
-            Guest feedback collected
-          </div>
-
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-
-          <div className="text-sm text-slate-500">
-            Occupancy Rate
-          </div>
-
-          <div className="text-3xl font-bold text-slate-900 mt-2">
-            {stats.occupancy}%
-          </div>
-
-          <div className="text-sm text-emerald-600 mt-1">
-            Derived from current review volume
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* MAIN GRID */}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        {/* LEFT */}
-
-        <div className="xl:col-span-2 space-y-6">
-
-          {/* BASIC INFO */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">
-              Basic Information
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-5">
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Hotel Name
-                </label>
-
-                <input
-                  value={settings?.hotelName || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Owner Name
-                </label>
-
-                <input
-                  value={settings?.owner || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Contact
-                </label>
-
-                <div className="relative mt-2">
-
-                  <FaPhoneAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
-
-                  <input
-                    value={settings?.contact || ""}
-                    readOnly
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                  />
-
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500">
-                  Property Type
-                </label>
-
-                <input
-                  value={settings?.propertyType || ""}
-                  readOnly
-                  className="w-full mt-2 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-
-                <label className="text-xs font-medium text-slate-500">
-                  Location
-                </label>
-
-                <div className="relative mt-2">
-
-                  <FaMapMarkerAlt className="absolute top-4 left-4 text-slate-400 text-sm" />
-
-                  <input
-                    value={settings?.location || ""}
-                    readOnly
-                    className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                  />
-
-                </div>
-
-              </div>
-
+        {/* ── Page Header */}
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] px-7 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div>
+            <div className="flex items-center gap-2 text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1.5">
+              <FaHotel />
+              Hotel Settings
             </div>
-
+            {loading ? (
+              <div className="h-7 w-48 bg-slate-100 rounded-lg animate-pulse" />
+            ) : (
+              <h1 className="text-2xl font-bold text-slate-800 leading-tight">
+                {settings.hotelName || "Your Hotel"}
+              </h1>
+            )}
+            <p className="text-xs text-slate-400 mt-1.5">
+              Manage your profile, gallery, documents and account security.
+            </p>
           </div>
 
-          {/* Create room drawer (right side) */}
-          <div
-            aria-hidden={!showCreateDrawer}
-            className={`fixed inset-y-0 right-0 z-50 w-96 bg-white border-l border-slate-200 shadow-2xl transform transition-transform duration-350 ${showCreateDrawer ? 'translate-x-0' : 'translate-x-full'}`}
-            style={{ display: 'flex', flexDirection: 'column', maxHeight: '100vh' }}
-          >
-            <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="font-semibold text-lg">Quick Add Room</div>
-              <button onClick={() => setShowCreateDrawer(false)} className="text-sm text-slate-500">Close</button>
-            </div>
-            <div className="p-6 flex-1 flex flex-col relative">
-              <div className="space-y-4 text-base pb-36" style={{ WebkitOverflowScrolling: 'touch', height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+          <div className="flex items-center gap-3 shrink-0">
+            {!isEditing ? (
+              <button
+                type="button"
+                onClick={startEdit}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm shadow-blue-200"
+              >
+                <FaEdit className="text-xs" />
+                Edit Details
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="flex items-center gap-2 border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                >
+                  <FaTimes className="text-xs" />
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={saveDetails}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <FaSave className="text-xs" />
+                  {saving ? "Saving…" : "Save Changes"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Main Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+          {/* ── LEFT COLUMN */}
+          <div className="xl:col-span-2 space-y-8">
+
+            {/* Basic Info */}
+            <SectionCard>
+              <SectionHeader icon={<FaHotel />} title="Basic Information" subtitle="Core details visible to guests" />
+              <div className="px-8 py-9 grid md:grid-cols-2 gap-7">
                 <div>
-                  <label className="text-sm font-medium">Room number <span className="text-rose-600">*</span></label>
-                  <input placeholder="101" value={newRoomNumber} onChange={(e) => setNewRoomNumber(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  <FieldLabel>Hotel Name</FieldLabel>
+                  <input
+                    value={display.hotelName}
+                    readOnly={!isEditing}
+                    onChange={(e) => handleField("hotelName", e.target.value)}
+                    className={fieldInputLg(isEditing)}
+                    placeholder="e.g. The Grand Himalaya"
+                  />
                 </div>
-
                 <div>
-                  <label className="text-sm font-medium">Room type <span className="text-rose-600">*</span></label>
-                  <input placeholder="deluxe" value={newRoomType} onChange={(e) => setNewRoomType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  <FieldLabel>Owner Name</FieldLabel>
+                  <input
+                    value={display.ownerName}
+                    readOnly={!isEditing}
+                    onChange={(e) => handleField("ownerName", e.target.value)}
+                    className={fieldInputLg(isEditing)}
+                    placeholder="Full name"
+                  />
                 </div>
-
                 <div>
-                  <label className="text-sm font-medium">Suite type <span className="text-rose-600">*</span></label>
-                  <input placeholder="junior" value={newSuiteType} onChange={(e) => setNewSuiteType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Base price <span className="text-rose-600">*</span></label>
-                    <input placeholder="150" value={newBasePrice} onChange={(e) => setNewBasePrice(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Price per night <span className="text-rose-600">*</span></label>
-                    <input placeholder="150" value={newPricePerNight} onChange={(e) => setNewPricePerNight(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
+                  <FieldLabel>Contact Number</FieldLabel>
+                  <div className="relative">
+                    <FaPhoneAlt className="absolute top-1/2 -translate-y-1/2 left-5 text-slate-300 text-sm pointer-events-none" />
+                    <input
+                      value={display.contactNumber}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("contactNumber", e.target.value)}
+                      className={`${fieldInputLg(isEditing)} pl-12`}
+                      placeholder="+977 98XXXXXXXX"
+                    />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Capacity <span className="text-rose-600">*</span></label>
-                    <input placeholder="2" value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Max occupancy <span className="text-rose-600">*</span></label>
-                    <input placeholder="2" value={newMaxOccupancy} onChange={(e) => setNewMaxOccupancy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Bed type <span className="text-rose-600">*</span></label>
-                    <input placeholder="queen" value={newBedType} onChange={(e) => setNewBedType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Room size (sqm)</label>
-                    <input placeholder="20" value={newRoomSize} onChange={(e) => setNewRoomSize(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="text-sm font-medium">View type <span className="text-rose-600">*</span></label>
-                  <select value={newViewType} onChange={(e) => setNewViewType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1 bg-white">
-                    <option value="none">none</option>
-                    <option value="city">city</option>
-                    <option value="garden">garden</option>
-                    <option value="beach">beach</option>
-                    <option value="mountain">mountain</option>
-                    <option value="street">street</option>
-                    <option value="pool">pool</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Amenities (comma separated) <span className="text-rose-600">*</span></label>
-                  <input placeholder="wifi,ac,tv" value={newAmenities} onChange={(e) => setNewAmenities(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Special features (comma separated)</label>
-                  <input placeholder="sea view,king bed" value={newSpecialFeatures} onChange={(e) => setNewSpecialFeatures(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Cancellation policy <span className="text-rose-600">*</span></label>
-                  <input placeholder="48 hours free cancellation" value={newCancellationPolicy} onChange={(e) => setNewCancellationPolicy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Tax rate <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newTaxRate} onChange={(e) => setNewTaxRate(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Min stay nights <span className="text-rose-600">*</span></label>
-                    <input placeholder="1" value={newMinStayNights} onChange={(e) => setNewMinStayNights(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Rating <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newRating} onChange={(e) => setNewRating(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Number of reviews <span className="text-rose-600">*</span></label>
-                    <input placeholder="0" value={newNumberOfReviews} onChange={(e) => setNewNumberOfReviews(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Description <span className="text-rose-600">*</span></label>
-                  <textarea placeholder="Spacious room with city view" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-xl px-3 py-3 text-base mt-1" />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Images (at least 1) <span className="text-rose-600">*</span></label>
-                  <div className="mt-2 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm"
+                  <FieldLabel>Property Type</FieldLabel>
+                  {isEditing ? (
+                    <select
+                      value={display.propertyType}
+                      onChange={(e) => handleField("propertyType", e.target.value)}
+                      className={`${inputBaseLg} ${inputEditable} bg-white`}
                     >
-                      Choose images
-                    </button>
-                    <div className="text-sm text-slate-500">{newRoomImages.length} selected</div>
-                  </div>
-                  <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    // revoke previous urls
-                    newRoomImagePreviews.forEach(url => URL.revokeObjectURL(url));
-                    const previews = files.map(f => URL.createObjectURL(f));
-                    setNewRoomImages(files);
-                    setNewRoomImagePreviews(previews);
-                  }} className="hidden" />
-
-                  {newRoomImagePreviews.length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {newRoomImagePreviews.map((src, idx) => (
-                        <div key={src} className="relative">
-                          <img src={src} alt={`preview-${idx}`} className="h-20 w-full object-cover rounded-md border" />
-                          <button type="button" onClick={() => {
-                            // remove one
-                            const updatedFiles = newRoomImages.filter((_, i) => i !== idx);
-                            const updatedPreviews = newRoomImagePreviews.filter((_, i) => i !== idx);
-                            // revoke removed url
-                            URL.revokeObjectURL(src);
-                            setNewRoomImages(updatedFiles);
-                            setNewRoomImagePreviews(updatedPreviews);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }} className="absolute -top-1 -right-1 bg-white rounded-full p-1 text-xs border">✕</button>
-                        </div>
+                      <option value="">Select type</option>
+                      {PROPERTY_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
                       ))}
+                    </select>
+                  ) : (
+                    <input value={display.propertyType} readOnly className={fieldInputLg(false)} />
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <FieldLabel>Location</FieldLabel>
+                  <div className="relative">
+                    <FaMapMarkerAlt className="absolute top-1/2 -translate-y-1/2 left-5 text-slate-300 text-sm pointer-events-none" />
+                    <input
+                      value={display.hotelLocation}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("hotelLocation", e.target.value)}
+                      className={`${fieldInputLg(isEditing)} pl-12`}
+                      placeholder="City, District, Nepal"
+                    />
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            {/* Description */}
+            <SectionCard>
+              <SectionHeader title="About the Hotel" subtitle="Write a compelling description for guests" />
+              <div className="px-8 py-9">
+                <textarea
+                  value={display.hotelDescription}
+                  readOnly={!isEditing}
+                  onChange={(e) => handleField("hotelDescription", e.target.value)}
+                  rows={10}
+                  placeholder={isEditing ? "Describe your property, atmosphere, and what makes it unique…" : ""}
+                  className={`${fieldInputLg(isEditing)} resize-none leading-relaxed`}
+                />
+                {isEditing && (
+                  <p className="text-xs text-slate-400 mt-2 text-right">
+                    {display.hotelDescription.length} characters
+                  </p>
+                )}
+              </div>
+            </SectionCard>
+
+            {/* Verification Documents */}
+            <SectionCard>
+              <SectionHeader icon={<FaFileAlt />} title="Verification Documents" subtitle="Submitted during registration" />
+              <div className="px-8 py-9">
+                {settings.documents.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-6">
+                    {settings.documents.map((doc, index) => (
+                      <div
+                        key={index}
+                        className="group overflow-hidden rounded-xl border border-slate-100 cursor-pointer hover:border-blue-200 hover:shadow-sm transition-all"
+                        onClick={() => setPreviewImage(doc)}
+                      >
+                        <img
+                          src={doc}
+                          alt={`Document ${index + 1}`}
+                          className="h-64 w-full object-contain bg-slate-50"
+                        />
+                        <div className="px-5 py-3.5 flex items-center gap-2 border-t border-slate-100 bg-white">
+                          <FaFileAlt className="text-slate-300 text-sm" />
+                          <span className="text-sm text-slate-500 font-medium">Document {index + 1}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-12 text-center">
+                    <FaFileAlt className="text-slate-300 text-2xl" />
+                    <p className="text-sm text-slate-400">No documents submitted</p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+
+          </div>
+
+          {/* ── RIGHT COLUMN */}
+          <div className="space-y-8">
+
+            {/* Check-in / Check-out */}
+            <SectionCard>
+              <SectionHeader icon={<FaClock />} title="Check-in & Check-out" subtitle="Guest arrival and departure times" />
+              <div className="px-7 py-7 grid grid-cols-2 gap-5">
+                <div>
+                  <FieldLabel>Check-in</FieldLabel>
+                  {isEditing ? (
+                    <input
+                      value={display.checkinTime}
+                      onChange={(e) => handleField("checkinTime", e.target.value)}
+                      placeholder="e.g. 12:00 PM"
+                      className={fieldInput(true)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                      <FaClock className="text-slate-300 text-xs shrink-0" />
+                      <span>{display.checkinTime || <span className="text-slate-400 italic">Not set</span>}</span>
                     </div>
                   )}
                 </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="text-sm">Accessible</label>
-                  <input type="checkbox" checked={newIsAccessible} onChange={(e) => setNewIsAccessible(e.target.checked)} />
-
-                  <label className="text-sm">Bathtub</label>
-                  <input type="checkbox" checked={newHasBathtub} onChange={(e) => setNewHasBathtub(e.target.checked)} />
-
-                  <label className="text-sm">Shower</label>
-                  <input type="checkbox" checked={newHasShower} onChange={(e) => setNewHasShower(e.target.checked)} />
-
-                  <label className="text-sm">Balcony</label>
-                  <input type="checkbox" checked={newHasBalcony} onChange={(e) => setNewHasBalcony(e.target.checked)} />
-
-                  <label className="text-sm">AC</label>
-                  <input type="checkbox" checked={newHasAC} onChange={(e) => setNewHasAC(e.target.checked)} />
-
-                  <label className="text-sm">Heating</label>
-                  <input type="checkbox" checked={newHasHeating} onChange={(e) => setNewHasHeating(e.target.checked)} />
-
-                  <label className="text-sm">Wifi</label>
-                  <input type="checkbox" checked={newHasWifi} onChange={(e) => setNewHasWifi(e.target.checked)} />
-
-                  <label className="text-sm">Active</label>
-                  <input type="checkbox" checked={newIsActive} onChange={(e) => setNewIsActive(e.target.checked)} />
-
-                  <label className="text-sm">Featured</label>
-                  <input type="checkbox" checked={newIsFeatured} onChange={(e) => setNewIsFeatured(e.target.checked)} />
+                <div>
+                  <FieldLabel>Check-out</FieldLabel>
+                  {isEditing ? (
+                    <input
+                      value={display.checkoutTime}
+                      onChange={(e) => handleField("checkoutTime", e.target.value)}
+                      placeholder="e.g. 11:00 AM"
+                      className={fieldInput(true)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                      <FaClock className="text-slate-300 text-xs shrink-0" />
+                      <span>{display.checkoutTime || <span className="text-slate-400 italic">Not set</span>}</span>
+                    </div>
+                  )}
                 </div>
-
-                {createError && <div className="text-sm text-red-600">{createError}</div>}
-                {createSuccess && <div className="text-sm text-emerald-600">{createSuccess}</div>}
               </div>
-            </div>
-            {/* footer with persistent actions (fixed inside drawer) */}
-            <div className="border-t p-4 bg-white flex items-center justify-end gap-2 h-20 absolute left-0 right-0 bottom-0" style={{ zIndex: 60 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setNewRoomNumber(''); setNewRoomType(''); setNewSuiteType(''); setNewBasePrice(''); setNewPricePerNight(''); setNewWeekendPrice(''); setNewTaxRate(''); setNewCapacity(''); setNewMaxOccupancy(''); setNewRoomSize(''); setNewBedType(''); setNewAmenities(''); setNewSpecialFeatures(''); setNewFloor(''); setNewMinStayNights(''); setNewDescription(''); setNewViewType('none'); setNewRoomImages([]); setNewIsAccessible(false); setNewHasBathtub(false); setNewHasShower(false); setNewHasBalcony(false); setNewHasHeating(false); setNewHasAC(true); setNewHasWifi(true); setNewIsActive(true); setNewIsFeatured(false); setNewRating('0'); setNewNumberOfReviews('0'); setCreateError(''); setCreateSuccess('');
-                }}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Reset
-              </button>
+            </SectionCard>
 
-              <button
-                type="button"
-                disabled={creatingRoom}
-                onClick={() => void createRoomSubmit()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 text-sm font-semibold shadow"
-              >
-                {creatingRoom ? 'Creating...' : 'Create Room'}
-              </button>
-            </div>
-          </div>
-
-          {showCreateDrawer && <div onClick={() => setShowCreateDrawer(false)} className="fixed inset-0 z-40 bg-black/30"></div>}
-
-          {/* DESCRIPTION */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Hotel Description
-            </h2>
-
-            <textarea
-              value={settings?.description || ""}
-              readOnly
-              rows={6}
-              className="w-full border border-slate-200 rounded-xl px-4 py-4 text-sm outline-none bg-slate-50 text-slate-700 cursor-default resize-none leading-7"
-            />
-
-          </div>
-
-          {/* IMAGES */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <div className="flex items-center gap-2 mb-5">
-
-              <FaImage className="text-blue-600" />
-
-              <h2 className="text-lg font-semibold text-slate-900">
-                Hotel Gallery
-              </h2>
-
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-              {(settings?.images || []).map((img, i) => (
-                <div
-                  key={i}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setPreviewImage(img)}
-                  onKeyDown={(event) => event.key === "Enter" && setPreviewImage(img)}
-                  className="overflow-hidden rounded-2xl border border-slate-200 cursor-pointer"
-                >
-
-                  <img
-                    src={img}
-                    alt={`Hotel image ${i + 1}`}
-                    className="h-52 w-full object-cover hover:scale-105 transition duration-300"
-                  />
-
+            {/* Facilities */}
+            <SectionCard>
+              <SectionHeader title="Facilities" subtitle="Amenities available to guests" />
+              <div className="px-7 py-7 space-y-5">
+                <div className="flex flex-wrap gap-2.5">
+                  {display.facilities.map((facility, i) => (
+                    <div
+                      key={facility + i}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm"
+                    >
+                      <span className="text-blue-500 text-xs">{facilityIcons[facility] || <FaStar />}</span>
+                      <span className="font-medium text-slate-700">{facility}</span>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => removeFacility(i)}
+                          className="text-slate-300 hover:text-rose-500 transition-colors ml-0.5 text-xs"
+                        >
+                          <FaTimes />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {display.facilities.length === 0 && (
+                    <div className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-7 text-center">
+                      <p className="text-xs text-slate-400">No facilities listed yet</p>
+                    </div>
+                  )}
                 </div>
-              ))}
-
-              {(settings?.images || []).length === 0 && (
-                <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                  No hotel images available.
-                </div>
-              )}
-
-            </div>
-
-            {previewImage && (
-              <div
-                className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-                onClick={() => setPreviewImage(null)}
-              >
-                <div
-                  className="max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-                    <span className="text-sm font-medium text-slate-700">Image preview</span>
+                {isEditing && (
+                  <div className="flex items-center gap-3 pt-2">
+                    <input
+                      value={facilityInput}
+                      onChange={(e) => setFacilityInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFacility())}
+                      placeholder="e.g. Free WiFi"
+                      className={`flex-1 ${inputBase} ${inputEditable}`}
+                    />
                     <button
                       type="button"
-                      onClick={() => setPreviewImage(null)}
-                      className="text-sm text-slate-500 hover:text-slate-900"
+                      onClick={addFacility}
+                      className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
                     >
-                      Close
+                      <FaPlus className="text-xs" />
+                      Add
                     </button>
                   </div>
-                  <img src={previewImage} alt="Hotel preview" className="w-full max-h-[80vh] object-contain bg-black" />
+                )}
+              </div>
+            </SectionCard>
+
+            {/* Change Password */}
+            <SectionCard>
+              <SectionHeader icon={<FaLock />} title="Change Password" subtitle="Keep your account secure" />
+              <div className="px-7 py-7 space-y-5">
+
+                {/* Password Toast */}
+                <div className="relative h-0">
+                  <Toast toast={passwordToast} />
+                </div>
+
+                <div>
+                  <FieldLabel>Current Password</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={`${inputBase} ${inputEditable} pr-11`}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showCurrentPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>New Password</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={`${inputBase} ${inputEditable} pr-11`}
+                      placeholder="Min. 8 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showNewPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>Confirm New Password</FieldLabel>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`${inputBase} ${inputEditable}`}
+                    placeholder="Re-enter new password"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={changingPassword}
+                  onClick={handleChangePassword}
+                  className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-blue-200"
+                >
+                  {changingPassword ? "Updating…" : "Update Password"}
+                </button>
+              </div>
+            </SectionCard>
+
+            {/* Payment Credentials */}
+            <SectionCard>
+              <SectionHeader
+                icon={<FaStar />}
+                title="Payment Credentials"
+                subtitle="eSewa and Khalti gateway keys"
+              />
+              <div className="px-7 py-7 space-y-5">
+
+                {/* eSewa */}
+                <div>
+                  <FieldLabel>eSewa Merchant ID</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showEsewaKey ? "text" : "password"}
+                      value={display.esewa_Merchantid || ""}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("esewa_Merchantid", e.target.value)}
+                      placeholder={isEditing ? "Enter eSewa Merchant ID" : ""}
+                      className={`${fieldInput(isEditing)} pr-11`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEsewaKey((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showEsewaKey ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Khalti */}
+                <div>
+                  <FieldLabel>Khalti Secret Key</FieldLabel>
+                  <div className="relative">
+                    <input
+                      type={showKhaltiKey ? "text" : "password"}
+                      value={display.khalti_SecretKey || ""}
+                      readOnly={!isEditing}
+                      onChange={(e) => handleField("khalti_SecretKey", e.target.value)}
+                      placeholder={isEditing ? "Enter Khalti Secret Key" : ""}
+                      className={`${fieldInput(isEditing)} pr-11`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKhaltiKey((s) => !s)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showKhaltiKey ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                    </button>
+                  </div>
+                </div>
+
+                {!isEditing && (
+                  <p className="text-xs text-slate-400">
+                    Keep these keys secure and never share them publicly.
+                  </p>
+                )}
+              </div>
+            </SectionCard>
+
+          </div>
+        </div>
+
+        {/* ── Gallery */}
+        <SectionCard>
+          <SectionHeader
+            icon={<FaImage />}
+            title="Hotel Gallery"
+            subtitle="Photos guests see when browsing"
+            action={
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3.5 py-2 text-xs font-semibold text-blue-700 transition-colors"
+              >
+                <FaCloudUploadAlt />
+                Add Photos
+              </button>
+            }
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleSelectImages}
+            className="hidden"
+          />
+          <div className="px-7 py-7 space-y-6">
+
+            {/* Image Toast */}
+            <div className="relative h-0">
+              <Toast toast={imageToast} />
+            </div>
+
+            {settings.images.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                {settings.images.map((img, i) => (
+                  <div
+                    key={img + i}
+                    className="relative group rounded-xl overflow-hidden border border-slate-100 bg-slate-50"
+                  >
+                    <img
+                      src={img}
+                      alt={`Hotel image ${i + 1}`}
+                      onClick={() => setPreviewImage(img)}
+                      className="h-44 w-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 pointer-events-none rounded-xl" />
+                    <button
+                      type="button"
+                      disabled={deletingImage === img}
+                      onClick={() => deleteExistingImage(img)}
+                      className="absolute top-2 right-2 flex items-center justify-center w-7 h-7 bg-white/95 text-rose-500 hover:text-rose-700 rounded-lg border border-white/50 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40 text-xs"
+                      title="Remove photo"
+                    >
+                      {deletingImage === img ? "…" : <FaTrash />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
+                <FaImage className="text-slate-300 text-3xl" />
+                <div>
+                  <p className="text-sm font-medium text-slate-500">No photos yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Add photos to attract more guests</p>
                 </div>
               </div>
             )}
 
-          </div>
-
-          {/* ROOMS */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Room Details
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                    Open a room to view or edit details in a separate page.
+            {pendingImagePreviews.length > 0 && (
+              <div className="border-t border-slate-100 pt-6 space-y-5">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Ready to upload · {pendingImagePreviews.length} photo{pendingImagePreviews.length > 1 ? "s" : ""}
                 </p>
-              </div>
-
+                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
+                  {pendingImagePreviews.map((src, idx) => (
+                    <div
+                      key={src}
+                      className="relative rounded-xl overflow-hidden border-2 border-dashed border-blue-200 bg-blue-50/30"
+                    >
+                      <img src={src} alt="" className="h-36 w-full object-cover opacity-80" />
+                      <button
+                        type="button"
+                        onClick={() => removePendingImage(idx)}
+                        className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 bg-white rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 text-xs shadow-sm"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  onClick={() => navigate("/dashboard/room-details")}
-                  className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+                  disabled={uploadingImages}
+                  onClick={uploadPendingImages}
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Open all rooms
+                  <FaCloudUploadAlt />
+                  {uploadingImages
+                    ? "Uploading…"
+                    : `Upload ${pendingImagePreviews.length} photo${pendingImagePreviews.length > 1 ? "s" : ""}`}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateDrawer(true)}
-                  className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 hover:bg-rose-100 transition"
-                >
-                  Quick Add Room
-                </button>
-            </div>
-
-              <div className="flex flex-wrap gap-3">
-              {rooms.map((room, index) => (
-                <div
-                  key={room._id || room.roomNumber || index}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        navigate(`/dashboard/room-details?roomId=${room._id || room.roomNumber || index}`);
-                      }
-                    }}
-                    className="min-w-[140px] flex-1 max-w-[180px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-blue-50 transition cursor-pointer"
-                >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">Room</div>
-                        <div className="text-2xl font-bold text-slate-900">{room.roomNumber || "N/A"}</div>
-                      </div>
-
-                      <span className="text-[10px] px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 uppercase">
-                        {room.status || "AVAILABLE"}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 text-xs text-slate-500 line-clamp-2">
-                      {room.roomType || room.suitetype || "Room details"}
-                    </div>
-                </div>
-              ))}
-
-              {rooms.length === 0 && !loading && (
-                  <div className="w-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50">
-                  No room details found for this hotel yet.
-                </div>
-              )}
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* RIGHT */}
-
-        <div className="space-y-6">
-
-          {/* PRICING */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Pricing & Timing
-            </h2>
-
-            <div className="space-y-5">
-
-              <div>
-
-                <div className="text-xs text-slate-500 mb-2">
-                  Price Per Night
-                </div>
-
-                <input
-                  value={settings?.pricePerNight || ""}
-                  readOnly
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none bg-slate-50 text-slate-700 cursor-default"
-                />
-
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <div>
-
-                  <div className="text-xs text-slate-500 mb-2">
-                    Check In
-                  </div>
-
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
-
-                    <FaClock className="text-slate-400" />
-
-                    {settings?.checkIn || "Not provided"}
-
-                  </div>
-
-                </div>
-
-                <div>
-
-                  <div className="text-xs text-slate-500 mb-2">
-                    Check Out
-                  </div>
-
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 bg-slate-50">
-
-                    <FaClock className="text-slate-400" />
-
-                    {settings?.checkOut || "Not provided"}
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
+            )}
           </div>
-
-          {/* FACILITIES */}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-
-            <h2 className="text-lg font-semibold text-slate-900 mb-5">
-              Facilities
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              {(settings?.facilities || []).map((facility, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3"
-                >
-
-                  <div className="text-blue-600">
-                    {facilityIcons[facility] || <FaStar />}
-                  </div>
-
-                  <span className="text-sm font-medium text-slate-700">
-                    {facility}
-                  </span>
-
-                </div>
-              ))}
-
-
-                            {(settings?.facilities || []).length === 0 && (
-                              <div className="col-span-full text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                                No facilities found.
-                              </div>
-                            )}
-            </div>
-
-          </div>
-
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-5">
-              <FaFileAlt className="text-blue-600" />
-              <h2 className="text-lg font-semibold text-slate-900">
-                Verification Documents
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(settings?.documents || []).map((doc, index) => (
-                <div
-                  key={index}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
-                >
-                  <img
-                    src={doc}
-                    alt={`Verification document ${index + 1}`}
-                    className="h-64 w-full object-contain bg-white"
-                  />
-                  <div className="px-4 py-3 text-xs text-slate-500 border-t border-slate-200">
-                    Verification document {index + 1}
-                  </div>
-                </div>
-              ))}
-
-              {(settings?.documents || []).length === 0 && (
-                <div className="text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl p-6 text-center md:col-span-2">
-                  No verification documents available.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        </SectionCard>
 
       </div>
+
+      {/* ── Image Preview Modal */}
+      <ImagePreviewModal src={previewImage} onClose={() => setPreviewImage(null)} />
 
     </div>
   );

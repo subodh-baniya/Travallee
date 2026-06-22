@@ -1,7 +1,7 @@
 import { FaFacebookF, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
 
 const Footer = () => {
-  const logoSrc = "/Logo.png";
+  const logoSrc = "/logo-short.png";
 
   return (
     <footer className="bg-linear-to-r from-blue-800 via-blue-900 to-indigo-900 text-gray-200 pt-12 pb-6">
@@ -10,7 +10,7 @@ const Footer = () => {
         {/* Logo / Brand + CTA */}
         <div className="text-center md:text-left flex flex-col items-center md:items-start">
           <div className="flex items-center gap-3 mb-2">
-            <img src={logoSrc} alt="Travallee logo" className="h-9 w-9 object-contain" />
+            <img src={logoSrc} alt="Travallee logo" className="h-12 w-12 object-cover rounded-2xl" />
             <h2 className="text-3xl font-bold text-white">Travallee</h2>
           </div>
           <p className="text-gray-300 text-sm">

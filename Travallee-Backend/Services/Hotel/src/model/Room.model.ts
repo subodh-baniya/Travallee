@@ -15,10 +15,11 @@ const roomSchema = new mongoose.Schema(
     },
 
     roomType: {
+      enum: ["STANDARD", "DELUXE", "SUITE"],
       type: String,
       required: true,
     },
-
+    
     suitetype: {
       type: String,
       required: true,

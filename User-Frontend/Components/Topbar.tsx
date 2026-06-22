@@ -34,7 +34,7 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   if (!auth) return null;
 
   const { user, logout, hotelId } = auth;
-  const displayName = user?.Name || user?.Username || "User";
+  const displayName = user?.Name || user?.Username || user?.name||"User";
 
   const syncUnreadNotifications = (items: PanelNotification[]) => {
     try {
@@ -82,7 +82,7 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
 
     const socket: Socket = io(import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001", {
       path: "/api/v1/admin/socket.io",
-      query: { HotelId: hotelId },
+      query: { hotelId: hotelId },
       withCredentials: true,
       transports: ["websocket"],
     });
@@ -192,8 +192,8 @@ const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
         </motion.div>
 
         <motion.button
-          onClick={async () => {
-             await logout();
+          onClick={() => {
+             logout();
             window.location.href="/initialhome/herosection"
               }}
           whileHover={{ y: -1 }}

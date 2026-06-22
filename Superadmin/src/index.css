@@ -1,7 +1,24 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #f0f6ff;
+  --color-brand-surface: #ffffff;
+  --color-brand-surface2: #f8faff;
+  --color-brand-border: rgba(99,120,210,0.12);
+  --color-brand-border2: rgba(99,120,210,0.22);
+  --color-brand-accent: #0284c7;
+  --color-brand-accent2: #38bdf8;
+  --color-brand-accentBg: #e0f2fe;
+  --color-brand-accentLight: #bae6fd;
+  --color-brand-text: var(--color-text-primary, #0f172a);
+  --color-brand-muted: var(--color-text-secondary, #64748b);
+  --color-brand-danger: #dc2626;
+  --color-brand-success: #166534;
+  --color-brand-warning: #854d0e;
+
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
 }
 
 body {
