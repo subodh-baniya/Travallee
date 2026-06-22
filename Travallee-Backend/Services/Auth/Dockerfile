@@ -1,17 +1,14 @@
 FROM node:20-alpine
+
 WORKDIR /app
 
+# copy only from current context (Auth folder)
+COPY package.json package-lock.json ./
 
-
-
-# then install the packages in the Auth service
-WORKDIR /app
-COPY Travallee-Backend/Services/Auth/package.json Travallee-Backend/Services/Auth/package-lock.json /app/
 RUN npm install
 
-
-COPY Travallee-Backend/Services/Auth/ /app/
-
+COPY . .
 
 EXPOSE 3000
+
 CMD ["npm", "run", "dev"]
