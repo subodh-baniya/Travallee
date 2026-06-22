@@ -243,6 +243,7 @@ const Contact = () => {
         })}
       </ViewComponent>
 
+
       {/* CTA */}
       <ViewComponent style={{ backgroundColor: '#2563eb', padding: 40, alignItems: 'center' }}>
         <TextComponent style={{ fontSize: 28, fontWeight: 'bold', color: 'white', marginBottom: 10 }}>
