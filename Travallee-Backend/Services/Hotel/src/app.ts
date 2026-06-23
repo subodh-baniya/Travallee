@@ -26,7 +26,6 @@ app.use(cors({
   optionsSuccessStatus: 200,
 }));
 
-app.options("*", cors());
 
 app.use(express.json({ type: "application/json", limit: "10mb", strict: true }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
