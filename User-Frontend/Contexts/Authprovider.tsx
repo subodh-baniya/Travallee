@@ -54,7 +54,6 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
       form,
       { withCredentials: true }
     );
-    localStorage.setItem("token", res.data.data.token);
     setUser(res.data.data);
       console.log("login response:", res.data); 
     syncHotelId(res.data.data);
@@ -72,25 +71,15 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setHotelId(null);
     localStorage.removeItem("hotelId");
-    localStorage.removeItem("token");
   };
 
   const refreshUser = async () => {
   try {
-    const token = localStorage.getItem('token'); 
-
-    if (!token) {
-      setUser(null);
-      setHotelId(null);
-      return;
-    }
 
     const res = await axios.get(
       `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
       {
-        headers: {
-          Authorization: `Bearer ${token}` 
-        }
+        withCredentials: true,
       }
     );
 
