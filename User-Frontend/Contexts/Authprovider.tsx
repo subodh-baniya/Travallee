@@ -77,12 +77,26 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshUser = async () => {
   try {
+    const token = localStorage.getItem('token'); 
+
+    if (!token) {
+      setUser(null);
+      setHotelId(null);
+      return;
+    }
+
     const res = await axios.get(
       `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
-      { withCredentials: true }
+      {
+        headers: {
+          Authorization: `Bearer ${token}` 
+        }
+      }
     );
+
     setUser(res.data.data);
     syncHotelId(res.data.data);
+
   } catch {
     setUser(null);
     setHotelId(null);
