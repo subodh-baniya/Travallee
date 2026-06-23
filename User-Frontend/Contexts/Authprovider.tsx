@@ -29,7 +29,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      try {
+    if(!authChecked) {
+        try {
         const res = await axios.get(
           `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
           { withCredentials: true }
@@ -44,7 +45,8 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         setAuthChecked(true);
       }
     };
-
+    }
+    
     initAuth();
   }, []);
 
