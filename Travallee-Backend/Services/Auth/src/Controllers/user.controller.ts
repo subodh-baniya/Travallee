@@ -200,13 +200,11 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
     user.role = req.body.role || user.role;
     await user.save();
 
-    await redisClient.set(`user:${user._id}`, JSON.stringify(user), "EX", 24 * 60 * 60);
-    await redisClient.set(`token:${user._id}`, token, "EX", 24 * 60 * 60 * 3);
 
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const,
+      secure:true,
+      sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000,
     };
 
