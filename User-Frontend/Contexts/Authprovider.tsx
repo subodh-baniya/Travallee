@@ -54,7 +54,6 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
       form,
       { withCredentials: true }
     );
-
     setUser(res.data.data);
       console.log("login response:", res.data); 
     syncHotelId(res.data.data);
@@ -76,12 +75,17 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshUser = async () => {
   try {
+
     const res = await axios.get(
       `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+      }
     );
+
     setUser(res.data.data);
     syncHotelId(res.data.data);
+
   } catch {
     setUser(null);
     setHotelId(null);

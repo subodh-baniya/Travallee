@@ -499,7 +499,7 @@ const ReportsPage: React.FC = () => {
                   tick={{ fontSize: 11 }}
                   width={60}
                 />
-                <Tooltip formatter={(v: number) => [`Rs. ${v.toLocaleString("en-IN")}`, "Revenue"]} />
+                <Tooltip formatter={(v: any) => [`Rs. ${Number(v).toLocaleString("en-IN")}`, "Revenue"]} />
                 <Bar dataKey="revenue" radius={[8, 8, 0, 0]} fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
@@ -611,7 +611,7 @@ const ReportsPage: React.FC = () => {
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => [`${v}%`, ""]} />
+              <Tooltip formatter={(v: any) => [`${v}%`, ""]} />
             </PieChart>
           </ResponsiveContainer>
 

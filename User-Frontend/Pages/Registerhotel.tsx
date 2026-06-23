@@ -16,6 +16,9 @@ import {
   FaImage,
   FaFileAlt,
   FaPaperPlane,
+  FaTrash,
+  FaIdCard,
+  FaPassport,
 } from "react-icons/fa";
 
 interface HotelForm {
@@ -54,8 +57,22 @@ const RegisterHotel = () => {
   });
 
   const [hotelImages, setHotelImages] = useState<FileList | null>(null);
-  const [docs, setDocs] = useState<FileList | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState<string>("Passport");
+  const [uploadedDocs, setUploadedDocs] = useState<{ type: string; file: File; id: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAddDocument = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const newFile = e.target.files[0];
+      const newDoc = {
+        type: selectedDocType,
+        file: newFile,
+        id: Math.random().toString(36).substring(2, 9),
+      };
+      setUploadedDocs((prev) => [...prev, newDoc]);
+      e.target.value = "";
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -104,11 +121,20 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     }
     Array.from(hotelImages).forEach((file) => fd.append("hotelImages", file));
 
-    if (!docs || docs.length === 0) {
+    if (uploadedDocs.length === 0) {
       alert("Please upload at least one verification document.");
       return;
     }
-    Array.from(docs).forEach((file) => fd.append("VerificationDocuments", file));
+    uploadedDocs.forEach((doc) => {
+      const fileExtension = doc.file.name.substring(doc.file.name.lastIndexOf('.'));
+      const cleanTypeName = doc.type.toLowerCase().replace(/\s+/g, '_');
+      const renamedFile = new File(
+        [doc.file],
+        `${cleanTypeName}${fileExtension}`,
+        { type: doc.file.type }
+      );
+      fd.append("VerificationDocuments", renamedFile);
+    });
 
     await registerHotel(fd);
     await refreshUser();
@@ -159,7 +185,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     form.contactNumber.replace(/\D/g, "").length >= 10 &&
     facilitiesList.length > 0 &&
     Boolean(hotelImages?.length) &&
-    Boolean(docs?.length);
+    uploadedDocs.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -301,10 +327,103 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             </div>
             <div>
               <label className={labelClass}>Verification Documents</label>
-              <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors">
-                <FaFileAlt className="text-slate-400 text-2xl mb-2" />
-                <p className="text-xs text-slate-500 mb-2">Upload legal documents and ID proofs</p>
-                <input type="file" multiple accept="application/pdf,image/*" onChange={(e) => setDocs(e.target.files)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="w-full sm:w-1/2">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                      Document Type
+                    </label>
+                    <select
+                      value={selectedDocType}
+                      onChange={(e) => setSelectedDocType(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-slate-700 font-sans"
+                    >
+                      <option value="Passport">Passport</option>
+                      <option value="Citizenship">Citizenship</option>
+                      <option value="NID Card">NID Card</option>
+                      <option value="Driving License">Driving License</option>
+                    </select>
+                  </div>
+                  <div className="w-full sm:w-1/2 relative">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                      Select File
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        onChange={handleAddDocument}
+                        className="hidden"
+                        id="verification-doc-file-input"
+                      />
+                      <label
+                        htmlFor="verification-doc-file-input"
+                        className="w-full flex items-center justify-center gap-2 border border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 text-blue-700 font-medium rounded-xl px-4 py-2 text-sm cursor-pointer transition-all border-2"
+                      >
+                        <FaFileAlt className="text-blue-500" />
+                        Choose File
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {uploadedDocs.length > 0 ? (
+                  <div className="grid gap-3">
+                    {uploadedDocs.map((doc) => {
+                      const isPDF = doc.file.type === "application/pdf" || doc.file.name.endsWith(".pdf");
+                      return (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600">
+                              {doc.type === "Passport" ? (
+                                <FaPassport className="text-lg" />
+                              ) : doc.type === "Citizenship" || doc.type === "NID Card" ? (
+                                <FaIdCard className="text-lg" />
+                              ) : (
+                                <FaFileAlt className="text-lg" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-slate-800">
+                                  {doc.type}
+                                </span>
+                                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                                  {isPDF ? "PDF" : "Image"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 truncate max-w-[200px] sm:max-w-xs md:max-w-md mt-0.5">
+                                {doc.file.name}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedDocs((prev) => prev.filter((d) => d.id !== doc.id));
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-slate-50/50">
+                    <FaFileAlt className="text-slate-400 text-2xl mb-2" />
+                    <p className="text-xs font-medium text-slate-600">
+                      No documents added yet
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Add Passport, Citizenship, NID Card, or Driving License.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,7 +1,10 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { apiResponse, apiError } from "../config/response/api.response.js";
 import { UserModel } from "../model/User.model.js";
+import dotenv from "dotenv"
+dotenv.config({
+    path: "./.env"
+})
 
 export const passportGoogle = passport.use(
     new GoogleStrategy(
@@ -10,7 +13,7 @@ export const passportGoogle = passport.use(
             clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
             callbackURL: process.env.GOOGLE_CALLBACK_URL as string,
         },
-        
+
         async function (
             accessToken: string,
             refreshToken: string,
@@ -22,7 +25,7 @@ export const passportGoogle = passport.use(
                 Username: profile.displayName,
                 email: profile.emails?.[0].value,
                 Name: profile.displayName,
-                password: "oauth_google_user", 
+                password: "oauth_google_user",
                 role: "user",
             };
             const user = await UserModel.findOne({ googleId: profile.id });

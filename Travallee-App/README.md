@@ -1,21 +1,21 @@
 # Travallee Mobile App
 
-React Native mobile application for the Travallee Hotel Management System. Built with Expo, TypeScript, and React Navigation for seamless hotel booking experience on iOS and Android.
+React Native mobile application for the Travallee Hotel Management System. Built with Expo, TypeScript, and React Navigation for a seamless hotel booking experience on iOS and Android.
 
-## 🎯 Features
+## Features
 
-- 📱 **Native Mobile Experience** - iOS & Android support via Expo
-- 🔐 **Secure Authentication** - JWT-based login
-- 🏨 **Hotel Browsing** - Discover and filter hotels
-- 🔍 **Room Search** - Advanced search with filters
-- 📅 **Booking Management** - Create and manage reservations
-- 💳 **Payment Processing** - Secure payment integration
-- ⭐ **Reviews & Ratings** - Read and post reviews
-- 🔔 **Push Notifications** - Stay updated on bookings
-- 📍 **Location Services** - Find hotels nearby
-- 🌙 **Dark Mode** - Beautiful dark theme support
+- Native Mobile Experience - iOS & Android support via Expo
+- Secure Authentication - JWT-based login
+- Hotel Browsing - Discover and filter hotels
+- Room Search - Advanced search with filters
+- Booking Management - Create and manage reservations
+- Payment Processing - Secure payment integration
+- Reviews & Ratings - Read and post reviews
+- Push Notifications - Stay updated on bookings
+- Location Services - Find hotels nearby
+- Dark Mode - Beautiful dark theme support
 
-## 💻 Technology Stack
+## Technology Stack
 
 - **React Native** - Cross-platform development
 - **Expo** - Managed React Native framework
@@ -24,9 +24,9 @@ React Native mobile application for the Travallee Hotel Management System. Built
 - **AsyncStorage** - Local data persistence
 - **Expo Go** - Fast development preview
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 src/
 ├── app/
 │   ├── _layout.tsx          # Root layout
@@ -64,22 +64,25 @@ src/
 └── assets/                  # Images & icons
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - **Node.js** 18.0.0+
 - **Expo CLI** - `npm install -g expo-cli`
 - **Expo Go App** - Download from App Store / Google Play
 - Same WiFi network as development computer
 
 ### Installation
+
 ```bash
 npm install
 ```
 
 ### Development Setup
 
-#### Option 1: Expo Go (Easiest - Recommended)
+#### Option 1: Expo Go (Recommended)
+
 ```bash
 # Terminal 1: Ensure backend is running
 cd ../Travallee-Backend
@@ -96,18 +99,21 @@ npm start
 ```
 
 Then:
+
 1. Open **Expo Go app** on your physical device
 2. Scan the QR code from terminal
-3. App loads in seconds!
+3. App loads in seconds
 
 #### Option 2: Development Build
+
 ```bash
 npm install
-npm run build:dev          # Build development version
-npm start                   # Run on device
+npm run build:dev
+npm start
 ```
 
 #### Option 3: Android Emulator
+
 ```bash
 npm start
 # When prompted, press 'a'
@@ -115,6 +121,7 @@ npm start
 ```
 
 #### Option 4: iOS Simulator
+
 ```bash
 npm start
 # When prompted, press 'i'
@@ -122,13 +129,14 @@ npm start
 ```
 
 #### Option 5: Web Preview
+
 ```bash
 npm start
 # When prompted, press 'w'
 # Opens in browser at http://localhost:19006
 ```
 
-## 📝 Environment Variables
+## Environment Variables
 
 Create `.env` file in project root:
 
@@ -164,43 +172,46 @@ ipconfig | findstr "IPv4"
 ```
 
 Example:
+
 ```env
 API_BASE_URL=http://192.168.1.100:4000/api/v1
 ```
 
 **For Expo Go on physical device:**
+
 - Update `app.config.js` with your computer's IP
 - Example: `API_URL: "http://192.168.1.100:4000"` (no https)
 
-## 🛠️ Available Scripts
+## Available Scripts
 
 ```bash
 # Development
-npm start               # Start Expo CLI
-npm run android        # Launch Android emulator
-npm run ios            # Launch iOS simulator
-npm run web            # Preview in web browser
+npm start
+npm run android
+npm run ios
+npm run web
 
 # Building
-npm run build          # Build app
-npm run build:dev      # Development build
-npm run build:preview  # Preview build
+npm run build
+npm run build:dev
+npm run build:preview
 
 # Code Quality
-npm run lint           # Run ESLint
-npm run lint:fix       # Fix linting issues
-npm run type-check     # TypeScript validation
+npm run lint
+npm run lint:fix
+npm run type-check
 
 # Database
-npm run reset-project  # Reset to clean state
+npm run reset-project
 
 # Others
-npm run eject          # Eject from Expo (not reversible)
+npm run eject
 ```
 
-## 🔐 Authentication Flow
+## Authentication Flow
 
 ### Login
+
 ```typescript
 1. User enters email/password
 2. Request sent to Auth Service (port 3000)
@@ -210,6 +221,7 @@ npm run eject          # Eject from Expo (not reversible)
 ```
 
 ### Automatic Token Refresh
+
 ```typescript
 // Token stored in secure storage
 await AsyncStorage.setItem('authToken', token);
@@ -222,9 +234,10 @@ const config = {
 };
 ```
 
-## 🌐 Connecting to Backend
+## Connecting to Backend
 
 ### Docker Backend
+
 ```bash
 # Start backend services
 cd ../Travallee-Backend
@@ -242,6 +255,7 @@ API_BASE_URL=http://192.168.X.X:4000/api/v1
 ```
 
 ### Manual Backend Services
+
 ```bash
 # Terminal 1: Auth Service
 cd Travallee-Backend/Services/Auth
@@ -260,7 +274,7 @@ cd Travallee-Backend/Services/admin
 npm install && npm run dev
 ```
 
-## ⚙️ Expo Configuration
+## Expo Configuration
 
 Key settings in `app.config.js`:
 
@@ -282,7 +296,7 @@ Key settings in `app.config.js`:
 }
 ```
 
-## 📦 Key Dependencies
+## Key Dependencies
 
 ```json
 {
@@ -297,17 +311,19 @@ Key settings in `app.config.js`:
 }
 ```
 
-## 🎨 Styling
+## Styling
 
-- **No external UI library** - Everything built from scratch
-- **Responsive design** - Works on phones and tablets
-- **Dark mode support** - Via system preference detection
-- **Custom components** - Fully customizable
+- No external UI library - Everything built from scratch
+- Responsive design - Works on phones and tablets
+- Dark mode support - Via system preference detection
+- Custom components - Fully customizable
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Issue: Can't Connect to Backend
+
 **Solution:**
+
 ```bash
 # 1. Verify backend is running
 docker-compose ps
@@ -322,13 +338,15 @@ API_BASE_URL=http://YOUR_IP:4000/api/v1
 ```
 
 ### Issue: AsyncStorage Read Stalls Navigation
+
 **Solution:** Ensure AsyncStorage reads use proper async/await:
+
 ```typescript
-// ❌ Wrong
+// Wrong
 const token = AsyncStorage.getItem('token');
 if (!token) navigate('login');
 
-// ✅ Correct
+// Correct
 useEffect(() => {
   (async () => {
     const token = await AsyncStorage.getItem('token');
@@ -338,7 +356,9 @@ useEffect(() => {
 ```
 
 ### Issue: Expo Go App Crashes
+
 **Solution:**
+
 ```bash
 # Clear cache and reinstall
 rm -rf node_modules .expo
@@ -349,7 +369,9 @@ npm start
 ```
 
 ### Issue: Changes Not Reflected
+
 **Solution:**
+
 ```bash
 # Hard reload
 npm start
@@ -358,22 +380,27 @@ npm start
 ```
 
 ### Issue: Dependencies Conflict
+
 **Solution:**
+
 ```bash
 npm install
 npm start
-# If still issues: npm install --legacy-peer-deps
+# If still issues:
+npm install --legacy-peer-deps
 ```
 
-## 📱 Device Testing
+## Device Testing
 
 ### Physical Device (Recommended)
+
 1. Ensure phone & computer on same WiFi
-2. Open **Expo Go** app
+2. Open **Expo Go**
 3. Scan QR code from terminal
-4. App launches instantly!
+4. App launches instantly
 
 ### Emulator/Simulator
+
 ```bash
 npm start
 # Press 'i' (iOS) or 'a' (Android)
@@ -381,41 +408,45 @@ npm start
 ```
 
 ### Web Preview
+
 ```bash
 npm start
 # Press 'w'
 # Tests on browser, not native functionality
 ```
 
-## 🚀 Building for Release
+## Building for Release
 
 ### Android APK
+
 ```bash
 eas build --platform android
 ```
 
 ### iOS App
+
 ```bash
 eas build --platform ios
 ```
 
 ### Both Platforms
+
 ```bash
 eas build --platform all
 ```
 
-## 📚 Resources
+## Resources
 
-- [Expo Documentation](https://docs.expo.dev/)
-- [React Native Docs](https://reactnative.dev/docs/getting-started)
-- [React Navigation](https://reactnavigation.org/)
-- [Expo Router Guide](https://docs.expo.dev/routing/introduction/)
-- [AsyncStorage API](https://react-native-async-storage.github.io/async-storage/)
+- Expo Documentation
+- React Native Documentation
+- React Navigation
+- Expo Router Guide
+- AsyncStorage API
 
-## 🤝 Contributing
+## Contributing
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+See `CONTRIBUTING.md` for guidelines.
 
-## 📄 License
+## License
 
 MIT License

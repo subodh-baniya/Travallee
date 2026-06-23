@@ -41,4 +41,5 @@ router.post("/update-hotel-user-password", authenticate, updateHotelUserPassword
 
 
 
+
 export default router;

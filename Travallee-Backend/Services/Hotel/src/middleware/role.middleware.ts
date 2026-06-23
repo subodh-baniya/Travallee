@@ -3,19 +3,26 @@ import { apiError } from "../config/response/api.response.js";
 
 import Redis from "ioredis";
 
+
+const connection = {
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
+};
+
 //@ts-ignore
-export const tokenBlacklistRedis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
+export const tokenBlacklistRedis = new Redis(connection);
 
 
 const authenticate = async (req: any, res: any, next: any) => {
   const authHeader = req.headers?.authorization;
+  console.log("Authorization header:", authHeader);
   const bearerToken = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
     : undefined;
   const token = req.cookies?.token || bearerToken;
+  console.log("Token:", token);
 
   if (!token) {
     return apiError(res, 401, "Unauthorized: No token provided");

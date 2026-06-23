@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRooms, type Room } from "../Hooks/useRooms";
-import { AddRoomModal } from "../components/modal-popups/AddRoomModal"; 
+import { AddRoomModal } from "../Components/modal-popups/AddRoomModal"; 
 import { createRoom } from "../Services/hotel.api";
 import { useAuth } from "../Contexts/Authcontext";
 import {RoomDetailModal} from "../Components/modal-popups/RoomDetailModal"
