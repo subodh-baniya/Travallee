@@ -359,7 +359,7 @@ const SettingsPage: React.FC = () => {
 
     setChangingPassword(true);
     try {
-      await axios.put(
+      await axios.post(
         `${import.meta.env.VITE_AUTH_API_BASE_URL}/update-hotel-user-password`,
         { currentPassword, newPassword },
         { withCredentials: true }
