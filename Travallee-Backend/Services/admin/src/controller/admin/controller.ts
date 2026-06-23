@@ -6,10 +6,10 @@ import { createClient } from "redis";
 import { io } from "../../app.js";
 
 const sub = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 const pub = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 Promise.all([sub.connect(), pub.connect()])
   .then(() => {})
@@ -18,8 +18,10 @@ Promise.all([sub.connect(), pub.connect()])
   });
 
 const connection = {
-  host: process.env.REDIS_HOST as string,
+  host: process.env.REDIS_HOST,
   port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
 };
 // @ts-ignore this is for pub sub model
 const adminData = new redis(connection);
