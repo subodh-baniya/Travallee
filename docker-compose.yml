@@ -38,8 +38,8 @@ services:
 
   bookings:
     build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/booking/Dockerfile
+      context: ./Travallee-Backend/Services/booking/
+      dockerfile: Dockerfile
     ports:
       - "5002:5002"
     env_file:

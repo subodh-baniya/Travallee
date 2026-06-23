@@ -2,11 +2,15 @@ import jwt from "jsonwebtoken";
 import { apiError } from "../config/response/api.response.js";
 import Redis from "ioredis";
 
+const connection = {
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
+};
+
 //@ts-ignore
-export const tokenBlacklistRedis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
+export const tokenBlacklistRedis = new Redis(connection);
 
 
 const authenticate = async (req: any, res: any, next: any) => {

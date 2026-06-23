@@ -10,8 +10,10 @@ import redis from "ioredis";
 import { createClient } from "redis";
 
 const connection = {
-  host: process.env.REDIS_HOST as string,
+  host: process.env.REDIS_HOST,
   port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
 };
 
 // @ts-ignore this is for saving otp and booking data temporarily before confirmation, it will be deleted after confirmation or expiration
@@ -25,7 +27,7 @@ const PaymentdataQueue = new Queue("paymentDataQueue", {
 });
 
 const pub = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 
 pub.connect();
