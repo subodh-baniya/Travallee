@@ -54,7 +54,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
       form,
       { withCredentials: true }
     );
-
+    localStorage.setItem("token", res.data.data.token);
     setUser(res.data.data);
       console.log("login response:", res.data); 
     syncHotelId(res.data.data);
@@ -72,6 +72,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setHotelId(null);
     localStorage.removeItem("hotelId");
+    localStorage.removeItem("token");
   };
 
   const refreshUser = async () => {
