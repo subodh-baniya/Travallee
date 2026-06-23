@@ -17,10 +17,12 @@ export const tokenBlacklistRedis = new Redis(connection);
 
 const authenticate = async (req: any, res: any, next: any) => {
   const authHeader = req.headers?.authorization;
+  console.log("Authorization header:", authHeader);
   const bearerToken = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
     : undefined;
   const token = req.cookies?.token || bearerToken;
+  console.log("Token:", token);
 
   if (!token) {
     return apiError(res, 401, "Unauthorized: No token provided");
