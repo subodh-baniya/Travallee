@@ -9,8 +9,8 @@ services:
       driver: "none"
   auth:
     build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/Auth/Dockerfile
+      context: ./Travallee-Backend/Services/Auth/
+      dockerfile: Dockerfile
     container_name: auth_service
     ports:
       - "3000:3000"
@@ -24,8 +24,8 @@ services:
 
   admin:
     build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/admin/Dockerfile
+      context: ./Travallee-Backend/Services/admin/
+      dockerfile: Dockerfile
     ports:
       - "4001:4001"
     env_file:
@@ -52,8 +52,8 @@ services:
 
   hotel:
     build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/Hotel/Dockerfile
+      context: ./Travallee-Backend/Services/Hotel/
+      dockerfile: Dockerfile
     ports:
       - "3001:3001"
     env_file:
