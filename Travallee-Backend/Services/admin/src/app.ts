@@ -1,11 +1,17 @@
+import dotenv from "dotenv"
 import express from 'express';
 import cors, { type CorsOptions } from 'cors';
 import cookieParser from 'cookie-parser';
 import adminRoutes from './router/router.js';
 import { Server } from "socket.io";
-import http from "http";
-import jwt from "jsonwebtoken";
-import CorsOption from 'cors';
+import http from "http"
+
+
+
+dotenv.config({
+    path:"./.env"
+})
+
 
 
 const app = express();
