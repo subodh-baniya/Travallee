@@ -7,6 +7,7 @@ const Services = () => {
 
   const cards = [
     {
+      
       icon: <FaHotel className="text-4xl text-blue-600 mb-4" />,
       title: "Hotel Listing",
       text: "Register your hotel and showcase rooms, facilities, amenities, and services to travelers searching for accommodation.",
