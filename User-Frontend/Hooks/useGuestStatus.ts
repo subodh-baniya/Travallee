@@ -35,7 +35,7 @@ export const useGuestStatus = () => {
 
       const data = await getGuestStatusByHotelId(hotelId);
       console.log(data.data);
-      setBookings(data.data.data ?? []);
+      setBookings(data.data?.data ?? []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load guest status");
     } finally {

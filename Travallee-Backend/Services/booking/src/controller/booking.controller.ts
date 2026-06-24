@@ -385,7 +385,7 @@ const getGuestStatus = asyncHandler(async (req: any, res: any) => {
   const bookings = await bookingModel.find({ hotel: HotelId });
 
   if (!bookings || bookings.length === 0) {
-    return apiError(res, 404, "No bookings found for this hotel");
+    return apiResponse(res, 200, true,"No bookings found for this hotel");
   }
 
   const now = new Date();
