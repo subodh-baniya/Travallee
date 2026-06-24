@@ -240,14 +240,13 @@ const logoutUser = asyncHandler(async (req: any, res: any) => {
       httpOnly: true,
       secure:true,
       sameSite: "none" as const,
-      maxAge: 24 * 60 * 60 * 1000,
     };
 
   res.clearCookie("token",options);
   res.setHeader("Authorization", "");
 
   await redisClient.del(`token:${req.user.id}`);
-  tokenBlacklistRedis.set(`blacklist:${token || ""}`, "true", "EX", 60 * 60 * 24 * 10);
+ await tokenBlacklistRedis.set(`blacklist:${token || ""}`, "true", "EX", 60 * 60 * 24 * 10);
 
   return apiResponse(res, 200, true, "User logged out successfully");
 });
