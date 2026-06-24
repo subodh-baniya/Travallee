@@ -236,7 +236,14 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
 
 const logoutUser = asyncHandler(async (req: any, res: any) => {
   const token = req.token;
-  res.clearCookie("token");
+   const options = {
+      httpOnly: true,
+      secure:true,
+      sameSite: "none" as const,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+
+  res.clearCookie("token",options);
   res.setHeader("Authorization", "");
 
   await redisClient.del(`token:${req.user.id}`);
