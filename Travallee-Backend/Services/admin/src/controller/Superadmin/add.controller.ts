@@ -1,9 +1,15 @@
+import dotenv from "dotenv"
 import { asyncHandler } from "../../config/asynchandler.js";
 import { createClient } from "redis";
 import { io } from "../../app.js";
 import axios from "axios";
 import { apiResponse, apiError } from "../../config/response/api.response.js";
 import { PendingRegistrationModel } from "../../model/PendingRegistration.js";
+
+
+dotenv.config({
+    path:"./.env"
+})
 
 const connection = {
   host: process.env.REDIS_HOST,
