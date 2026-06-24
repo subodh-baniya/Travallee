@@ -10,9 +10,11 @@ import { getPaymentFailedTemplate } from '../templates/index.js';
 import { getBookingConfirmationTemplate } from '../templates/index.js';
 
 const connection = {
-  host: process.env.REDIS_HOST as string,
-  port: Number(process.env.REDIS_PORT)
-}
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME || "default",
+};
 
 interface RegisterEmailJobData {
   userName: string;

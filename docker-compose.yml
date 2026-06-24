@@ -67,8 +67,8 @@ services:
 
   notifications:
     build:
-      context: .
-      dockerfile: ./Travallee-Backend/Services/notifications/Dockerfile
+      context: ./Travallee-Backend/Services/notifications/
+      dockerfile: Dockerfile
     ports:
       - "6000:6000"
     env_file:
