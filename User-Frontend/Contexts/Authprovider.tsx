@@ -57,6 +57,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
       { withCredentials: true }
     );
     setUser(res.data.data);
+    localStorage.setItem("token", res.data.data.token);
       console.log("login response:", res.data); 
     syncHotelId(res.data.data);
     setAuthChecked(true);
@@ -73,6 +74,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setHotelId(null);
     localStorage.removeItem("hotelId");
+    localStorage.removeItem("token");
   };
 
   const refreshUser = async () => {
@@ -91,6 +93,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
   } catch {
     setUser(null);
     setHotelId(null);
+    localStorage.removeItem("token");
   }
 };
   return (
