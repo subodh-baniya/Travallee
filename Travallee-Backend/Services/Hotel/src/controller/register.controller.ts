@@ -320,7 +320,7 @@ const RoomData = asyncHandler(async (req: any, res: any) => {
     const totalRooms = await roomModel.countDocuments({ hotelId: new mongoose.Types.ObjectId(hotelId) });
     const rooms = await roomModel.find({ hotelId: new mongoose.Types.ObjectId(hotelId) }).limit(limitNum).skip(skip).sort({ floorNumber: 1, roomNumber: 1 });
 
-    if (rooms.length === 0) return apiError(res, 404, "No rooms found for this hotel");
+    if (rooms.length === 0) return apiResponse(res, 200, true,"No rooms found for this hotel");
     return apiResponse(res, 200, true, "Rooms retrieved successfully", { rooms, pagination: { total: totalRooms, currentPage: pageNum, limit: limitNum, totalPages: Math.ceil(totalRooms / limitNum) } });
   } catch (error: any) {
     console.error("Error retrieving rooms:", error);

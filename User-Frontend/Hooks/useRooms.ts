@@ -54,7 +54,7 @@ export const useRooms = () => {
 
       const data = await getRooms(hotelId, page);
       console.log(data)
-      setRooms(data.data.rooms??[]);
+      setRooms(data.data?.rooms??[]);
       setPagination(data.data?.pagination ?? null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load rooms");
