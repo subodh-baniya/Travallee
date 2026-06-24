@@ -17,6 +17,12 @@ app.use(express.json({
 app.use(urlencoded({extended:true}));
 app.use(cookieParser())
 
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "ok"
+    });
+});
+
 import Bookingrouter from "./routes/booking.router.js"
 app.use("/api/v1/booking",Bookingrouter)
 
