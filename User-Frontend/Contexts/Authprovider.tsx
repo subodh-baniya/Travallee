@@ -37,7 +37,7 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
         );
 
         setUser(res.data.data);
-            localStorage.setItem("token", res.data.data.token);
+            localStorage.setItem("token", res.data.data.refreshToken);
         syncHotelId(res.data.data);
       } catch(err) {
         console.log("initAuth failed:", err);
