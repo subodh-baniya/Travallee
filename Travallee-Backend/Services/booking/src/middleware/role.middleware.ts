@@ -14,6 +14,8 @@ export const tokenBlacklistRedis = new Redis(connection);
 
 
 const authenticate = async (req: any, res: any, next: any) => {
+      console.log("COOKIES:", req.cookies);
+  console.log("AUTH HEADER:", req.headers?.authorization);
   const authHeader = req.headers?.authorization;
   const bearerToken = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
