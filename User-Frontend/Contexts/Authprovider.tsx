@@ -35,7 +35,9 @@ export const Authprovider = ({ children }: { children: React.ReactNode }) => {
           `${import.meta.env.VITE_AUTH_API_BASE_URL}/profile`,
           { withCredentials: true }
         );
+
         setUser(res.data.data);
+            localStorage.setItem("token", res.data.data.token);
         syncHotelId(res.data.data);
       } catch(err) {
         console.log("initAuth failed:", err);
