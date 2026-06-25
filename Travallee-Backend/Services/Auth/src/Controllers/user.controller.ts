@@ -98,9 +98,6 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
 
     const otp = Math.floor(1000 + Math.random() * 9000);
 
-    await redisClient.set(`otp:${validate.email}`, otp, "EX", 10 * 60);
-    await redisClient.set(`pendingUser:${validate.email}`, JSON.stringify(validate), "EX", 10 * 60);
-
     try {
       await otpQueue.add("SendOTP", {
         email: validate.email,
@@ -244,10 +241,6 @@ const logoutUser = asyncHandler(async (req: any, res: any) => {
 
   res.clearCookie("token",options);
   res.setHeader("Authorization", "");
-
-  await redisClient.del(`token:${req.user.id}`);
- await tokenBlacklistRedis.set(`blacklist:${token || ""}`, "true", "EX", 60 * 60 * 24 * 10);
-
   return apiResponse(res, 200, true, "User logged out successfully");
 });
 
