@@ -54,3 +54,108 @@ services:
         sync: false
       - key: REDIS_PASSWORD
         sync: false
+
+  - type: web
+    name: travallee-admin
+    runtime: docker
+    dockerfilePath: ./Travallee-Backend/Services/admin/Dockerfile
+    dockerContext: ./Travallee-Backend/Services/admin
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        sync: false
+      - key: PORT
+        value: 4001
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_USERNAME
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false        
+
+  - type: web
+    name: travallee-bookings
+    runtime: docker
+    dockerfilePath: ./Travallee-Backend/Services/bookings/Dockerfile
+    dockerContext: ./Travallee-Backend/Services/bookings
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        sync: false
+      - key: PORT
+        value: 5002
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_USERNAME
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false  
+      - key: HOTEL_SERVICE_URL
+        sync: false         
+
+
+  
+  - type: web
+    name: travallee-notifications
+    runtime: docker
+    dockerfilePath: ./Travallee-Backend/Services/notifications/Dockerfile
+    dockerContext: ./Travallee-Backend/Services/notifications
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        sync: false
+      - key: PORT
+        value: 5002
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_USERNAME
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false 
+      - key: RESEND_API
+        sync: false    
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false              
+

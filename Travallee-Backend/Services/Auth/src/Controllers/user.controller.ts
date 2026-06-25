@@ -233,7 +233,13 @@ const loginUser = asyncHandler(async (req: any, res: any) => {
 
 const logoutUser = asyncHandler(async (req: any, res: any) => {
   const token = req.token;
-  res.clearCookie("token");
+   const options = {
+      httpOnly: true,
+      secure:true,
+      sameSite: "none" as const,
+    };
+
+  res.clearCookie("token",options);
   res.setHeader("Authorization", "");
   return apiResponse(res, 200, true, "User logged out successfully");
 });
