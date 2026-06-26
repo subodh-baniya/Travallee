@@ -41,7 +41,7 @@ app.use(express.static("public"));
 app.use(cookie());
 app.use(passport.initialize());
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
-app.get("/cors-check", (req, res) => res.status(200).json({ v: "options-fix-deployed" }));
+app.get("/cors-check", (req, res) => res.status(200).json({ v: "check" }));
 
 // user routes
 app.use("/api/v1/users", UserRouter);
