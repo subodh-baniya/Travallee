@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import axios, { AxiosError } from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../Contexts/Authcontext";
 
 const VerifyOTP = () => {
   const navigate = useNavigate();
@@ -64,6 +65,13 @@ const VerifyOTP = () => {
 
   const [showPostOptions, setShowPostOptions] = useState(false);
 
+    const auth=useAuth();
+  if(!auth){
+    return;
+  }
+
+  const {logout}=auth;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <motion.div
@@ -72,6 +80,14 @@ const VerifyOTP = () => {
         transition={{ duration: 0.4 }}
         className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg"
       >
+
+            <button
+          onClick={async() => await logout()}
+          className="absolute top-4 left-4 text-sm text-gray-500 hover:text-black flex items-center gap-1 transition"
+        >
+          ← Back
+        </button>
+
         <motion.h2
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
