@@ -82,7 +82,7 @@ const VerifyOTP = () => {
       >
 
             <button
-          onClick={async() => await logout()}
+          onClick={async() => {await logout(); navigate('/login')}}
           className="absolute top-4 left-4 text-sm text-gray-500 hover:text-black flex items-center gap-1 transition"
         >
           ← Back
