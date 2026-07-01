@@ -7,8 +7,9 @@ import type { HotelInput, RoomInput } from "../validator/hotel.validator.js";
 import { createHotelSchema, createRoomSchema } from "../validator/hotel.validator.js";
 import mongoose, { mongo } from "mongoose";
 import { Queue } from "bullmq";
-import { createClient } from "redis";
+import {pub,sub} from "../config/redis.connection.js"
 import dotenv from "dotenv";
+import redisClient from "../config/redis.connection.js";
 
 dotenv.config({ path: "./.env" });
 
@@ -16,25 +17,9 @@ if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PAS
   throw new Error("Missing Redis environment variables: REDIS_HOST, REDIS_PORT, REDIS_PASSWORD");
 }
 
-const redisUrl = `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+const registerHotel = redisClient;
+const hoteldataCache = redisClient;
 
-const registerHotel = createClient({ url: redisUrl });
-const hoteldataCache = createClient({ url: redisUrl });
-const sub = createClient({ url: redisUrl });
-const pub = createClient({ url: redisUrl });
-
-registerHotel.on("error", (err) => console.error("registerHotel error:", err.message));
-hoteldataCache.on("error", (err) => console.error("hoteldataCache error:", err.message));
-sub.on("error", (err) => console.error("sub error:", err.message));
-pub.on("error", (err) => console.error("pub error:", err.message));
-
-Promise.all([
-  registerHotel.connect(),
-  hoteldataCache.connect(),
-  sub.connect(),
-  pub.connect(),
-]).then(() => console.log("All Redis clients connected ✓"))
-  .catch((err) => { throw new Error("Redis connection failed: " + err.message); });
 
 const bullConnection = {
   host: process.env.REDIS_HOST,
@@ -127,7 +112,7 @@ const registerHotelRequest = asyncHandler(async (req: any, res: any) => {
     };
 
     await registerHotelQueue.add("HotelRegistration", emailData);
-    await registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(parsedData.data), { EX: 60 * 60 * 24 });
+    await registerHotel.set(`hotel_registration_${userID}`, JSON.stringify(parsedData.data), "EX", 60 * 60 * 24 );
     await pub.publish("hotelRegistrationsData", JSON.stringify(parsedData.data));
 
     console.log("Hotel registration queued for userID:", userID);
@@ -252,7 +237,7 @@ const HotelData = asyncHandler(async (req: any, res: any) => {
     const hotel = await hotelModel.findById(hotelId);
     if (!hotel) return apiError(res, 404, "Hotel not found", { hotelId });
 
-    await registerHotel.set(`hotel_${hotelId}`, JSON.stringify(hotel), { EX: 60 * 60 * 24 * 3 });
+    await registerHotel.set(`hotel_${hotelId}`, JSON.stringify(hotel), "EX", 60 * 60 * 24 * 3 );
     return apiResponse(res, 200, true, "Hotel data retrieved successfully", hotel);
   } catch (error: any) {
     console.error("Error retrieving hotel data:", error);
@@ -337,7 +322,7 @@ const featuredHotels = asyncHandler(async (req: any, res: any) => {
     const hotels = await hotelModel.find({ isFeatured: true });
     if (hotels.length === 0) return apiError(res, 404, "No featured hotels found");
 
-    await hoteldataCache.set("featured_hotels", JSON.stringify(hotels), { EX: 60 * 60 });
+    await hoteldataCache.set("featured_hotels", JSON.stringify(hotels), "EX", 60 * 60 );
     return apiResponse(res, 200, true, "Featured hotels retrieved successfully", hotels);
   } catch (error) {
     return apiError(res, 500, "Internal server error");
@@ -420,7 +405,7 @@ const getHotelInfo = asyncHandler(async (req: any, res: any) => {
   const hotelData = await hotelModel.findOne({ userID: new mongo.ObjectId(userId) });
   if (!hotelData) return apiError(res, 404, "Hotel not found for this user");
 
-  await hoteldataCache.set(`hotel_${hotelData._id}`, JSON.stringify(hotelData), { EX: 60 * 60 * 24 * 3 });
+  await hoteldataCache.set(`hotel_${hotelData._id}`, JSON.stringify(hotelData), "EX", 60 * 60 * 24 * 3 );
   return apiResponse(res, 200, true, "Hotel information retrieved successfully", hotelData);
 });
 
@@ -432,7 +417,7 @@ const highReviewedHotels = asyncHandler(async (req: any, res: any) => {
     const hotels = await hotelModel.find({ rating: { $gte: 4.0 } }).select("hotelName hotelLocation hotelImages propertyType rating numberOfReviews isFeatured").sort({ rating: -1, numberOfReviews: -1 });
     if (hotels.length === 0) return apiError(res, 404, "No highly reviewed hotels found");
 
-    await hoteldataCache.set("high_reviewed_hotels", JSON.stringify(hotels), { EX: 60 * 60 });
+    await hoteldataCache.set("high_reviewed_hotels", JSON.stringify(hotels), "EX", 60 * 60 );
     return apiResponse(res, 200, true, "Highly reviewed hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error in highReviewedHotels:", error);
@@ -448,7 +433,7 @@ const getAllHotels = asyncHandler(async (req: any, res: any) => {
     const hotels = await hotelModel.find({}).limit(10);
     if (hotels.length === 0) return apiResponse(res, 200, true, "No hotels available", []);
 
-    await hoteldataCache.set("all_hotels", JSON.stringify(hotels), { EX: 60 * 60 });
+    await hoteldataCache.set("all_hotels", JSON.stringify(hotels), "EX", 60 * 60 );
     return apiResponse(res, 200, true, "Hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching hotels:", error.message);
@@ -464,7 +449,7 @@ const getAllResortHotels = asyncHandler(async (req: any, res: any) => {
     const hotels = await hotelModel.find({ propertyType: "Resort", isactive: true }).limit(10);
     if (hotels.length === 0) return apiResponse(res, 200, true, "No resorts available", []);
 
-    await hoteldataCache.set("all_resort_hotels", JSON.stringify(hotels), { EX: 60 * 60 });
+    await hoteldataCache.set("all_resort_hotels", JSON.stringify(hotels), "EX", 60 * 60 );
     return apiResponse(res, 200, true, "Resort hotels retrieved successfully", hotels);
   } catch (error: any) {
     console.error("Error fetching resorts:", error.message);
@@ -481,7 +466,7 @@ const displayRooms = asyncHandler(async (req: any, res: any) => {
     const rooms = await roomModel.find({ hotelId });
     if (rooms.length === 0) return apiError(res, 404, "No rooms found for this hotel");
 
-    await hoteldataCache.set(`rooms_${hotelId}`, JSON.stringify(rooms), { EX: 60 * 60 });
+    await hoteldataCache.set(`rooms_${hotelId}`, JSON.stringify(rooms), "EX", 60 * 60 );
     return apiResponse(res, 200, true, "Rooms retrieved successfully", rooms);
   } catch (error: any) {
     return apiError(res, 500, "Internal server error: Unable to retrieve rooms.", error.message);
@@ -515,7 +500,7 @@ const getAllRatings = asyncHandler(async (req: any, res: any) => {
     const hotel = await hotelModel.findById(hotelId).select("ratings");
     if (!hotel) return apiError(res, 404, "Hotel not found", { hotelId });
 
-    await hoteldataCache.set(`hotel_${hotelId}_ratings`, JSON.stringify(hotel), { EX: 60 * 60 * 24 });
+    await hoteldataCache.set(`hotel_${hotelId}_ratings`, JSON.stringify(hotel), "EX", 60 * 60 * 24 );
     return apiResponse(res, 200, true, "Ratings retrieved successfully", hotel);
   } catch (error: any) {
     console.error("Error retrieving ratings:", error);

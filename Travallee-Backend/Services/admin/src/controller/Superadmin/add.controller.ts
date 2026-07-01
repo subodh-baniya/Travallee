@@ -1,77 +1,56 @@
 import dotenv from "dotenv"
 import { asyncHandler } from "../../config/asynchandler.js";
-import { createClient } from "redis";
 import { io } from "../../app.js";
 import axios from "axios";
 import { apiResponse, apiError } from "../../config/response/api.response.js";
 import { PendingRegistrationModel } from "../../model/PendingRegistration.js";
+import {pub,sub} from "../../config/redis.connection.js";
 
 
 dotenv.config({
     path:"./.env"
 })
 
-const connection = {
-  host: process.env.REDIS_HOST,
-  port: Number(process.env.REDIS_PORT),
-  password: process.env.REDIS_PASSWORD,
-  username: process.env.REDIS_USERNAME || "default",
-};
+sub.subscribe("hotelRegistrationsData", async (message: string) => {
+    try {
+        const data = JSON.parse(message);
 
-const pub = createClient({
-    url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
-
-const sub = createClient({
-    url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
-
-Promise.all([pub.connect(), sub.connect()]).then(() => {
-
-    sub.subscribe("hotelRegistrationsData", async (message: string) => {
         try {
-            const data = JSON.parse(message);
-    
-            try {
-                const pendingRegistration = new PendingRegistrationModel({
-                    userID: data.userID,
-                    ownerName: data.ownerName || data.contactName,
-                    hotelName: data.hotelName,
-                    hotelLocation: data.hotelLocation,
-                    hotelDescription: data.hotelDescription,
-                    contactNumber: data.contactNumber || data.phone,
-                    email: data.email || data.contactEmail,
-                    propertyType: data.propertyType,
-                    hotelImages: data.hotelImages || [],
-                    VerificationDocuments: data.VerificationDocuments || [],
-                    facilities: data.facilities || [],
-                    checkinTime: data.checkinTime,
-                    checkoutTime: data.checkoutTime,
-                    pricePerNight: data.pricePerNight,
-                    starRating: data.starRating || data.rating || 0,
-                    roomCount: data.rooms || 0,
-                    status: "pending",
-                    rawData: data,
-                });
-                
-                await pendingRegistration.save();
-                console.log(" Saved hotel registration to database:", pendingRegistration._id);
-            } catch (dbErr: any) {
-                console.error(" Error saving to database:", dbErr.message);
-            }
-            
-            // Emit to all connected superadmin clients
-            io.to(`superadmin`).emit("hotelRegistrationsData", data);
-            console.log("📡 Emitted hotel registration data to superadmin room");
+            const pendingRegistration = new PendingRegistrationModel({
+                userID: data.userID,
+                ownerName: data.ownerName || data.contactName,
+                hotelName: data.hotelName,
+                hotelLocation: data.hotelLocation,
+                hotelDescription: data.hotelDescription,
+                contactNumber: data.contactNumber || data.phone,
+                email: data.email || data.contactEmail,
+                propertyType: data.propertyType,
+                hotelImages: data.hotelImages || [],
+                VerificationDocuments: data.VerificationDocuments || [],
+                facilities: data.facilities || [],
+                checkinTime: data.checkinTime,
+                checkoutTime: data.checkoutTime,
+                pricePerNight: data.pricePerNight,
+                starRating: data.starRating || data.rating || 0,
+                roomCount: data.rooms || 0,
+                status: "pending",
+                rawData: data,
+            });
+
+            await pendingRegistration.save();
+            console.log(" Saved hotel registration to database:", pendingRegistration._id);
+        } catch (dbErr: any) {
+            console.error(" Error saving to database:", dbErr.message);
         }
-        catch (err: any) {
-            console.error(" Error parsing hotel registration data message:", err);
-        }
-    })
-})
-    .catch((err: any) => {
-        console.error(" Error connecting to Redis in add.controller:", err);
-    });
+
+        // Emit to all connected superadmin clients
+        io.to(`superadmin`).emit("hotelRegistrationsData", data);
+        console.log("📡 Emitted hotel registration data to superadmin room");
+    }
+    catch (err: any) {
+        console.error(" Error parsing hotel registration data message:", err);
+    }
+});
 
 const getNewRegistration = asyncHandler(async (req: any, res: any) => {
     try {

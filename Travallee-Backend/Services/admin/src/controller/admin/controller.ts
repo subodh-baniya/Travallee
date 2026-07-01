@@ -1,11 +1,10 @@
 import dotenv from "dotenv"
 import axios from "axios";
-import redis from "ioredis";
 import { asyncHandler } from "../../config/asynchandler.js";
 import { apiResponse, apiError } from "../../config/response/api.response.js";
-import { createClient } from "redis";
 import { io } from "../../app.js";
-
+import redisClient from "../../config/redis.connection.js";
+import {pub,sub} from "../../config/redis.connection.js"
 
 
 dotenv.config({
@@ -13,33 +12,8 @@ dotenv.config({
 })
 
 
-if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
-  throw new Error("Missing Redis environment variables: REDIS_HOST, REDIS_PORT, REDIS_PASSWORD");
-}
-
-
-const connection = {
-  host: process.env.REDIS_HOST,
-  port: Number(process.env.REDIS_PORT),
-  password: process.env.REDIS_PASSWORD,
-  username: process.env.REDIS_USERNAME || "default",
-};
-
-const sub = createClient({
-  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
-const pub = createClient({
-  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
-Promise.all([sub.connect(), pub.connect()])
-  .then(() => {})
-  .catch((err) => {
-    console.error("Error connecting to Redis:", err);
-  });
-
-
 // @ts-ignore this is for pub sub model
-const adminData = new redis(connection);
+const adminData = redisClient;
 
 sub.subscribe("bookingConfirmed", async (message) => {
   try {

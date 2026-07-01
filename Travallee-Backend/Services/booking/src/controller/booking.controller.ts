@@ -6,18 +6,20 @@ import axios from "axios";
 import { BookingConfirmationJobData, createBookingSchema } from "../schema/bokingschems.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
-import redis from "ioredis";
-import { createClient } from "redis";
+import redisClient from "../config/redis.connection.js"
 
-const connection = {
-  host: process.env.REDIS_HOST,
+import {pub} from "../config/redis.connection.js"
+
+
+
+const connection={
+   host: process.env.REDIS_HOST,
   port: Number(process.env.REDIS_PORT),
   password: process.env.REDIS_PASSWORD,
   username: process.env.REDIS_USERNAME || "default",
-};
-
+}
 // @ts-ignore this is for saving otp and booking data temporarily before confirmation, it will be deleted after confirmation or expiration
-const bookingRedis = new redis(connection);
+const bookingRedis = redisClient
 const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingConfirmationOtp", {
   connection,
 });
@@ -25,12 +27,6 @@ const bookingConfirmationQueue = new Queue<BookingConfirmationJobData>("bookingC
 const PaymentdataQueue = new Queue("paymentDataQueue", {
   connection,
 });
-
-const pub = createClient({
-  url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
-
-pub.connect();
 
 const createBooking = asyncHandler(async (req: any, res: any) => {
   let validated: any;
@@ -130,17 +126,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   }
 
   const bookingData = JSON.parse(bookingDataString);
-  const fallbackBookingPayment = bookingData.paymentMethod === "COD" ? "NOTPAID" : "PAID";
-  const fallbackStatus = bookingData.paymentMethod === "COD" ? "PENDING" : "CONFIRMED";
-  const bookingPayment = ["PAID", "NOTPAID"].includes(bookingData.bookingPayment)
-    ? bookingData.bookingPayment
-    : fallbackBookingPayment;
-  const status = ["PENDING", "CONFIRMED", "CANCELLED"].includes(bookingData.status)
-    ? bookingData.status
-    : fallbackStatus;
-
-  const checkInDate = new Date(bookingData.checkIn);
-  const checkOutDate = new Date(bookingData.checkOut);
+  const isCOD = bookingData.paymentMethod === "COD";
 
   const newBooking = new bookingModel({
     user: userId,
@@ -152,8 +138,8 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     guests: bookingData.guests,
     totalPrice: bookingData.totalPrice,
     paymentMethod: bookingData.paymentMethod,
-    bookingPayment,
-    status,
+    bookingPayment: "NOTPAID",
+    status: "PENDING",
     hotelName: bookingData.hotelName,
     roomNumber: bookingData.roomNumber,
     email: bookingData.email || bookingData.userEmail || req.user.email,
@@ -162,61 +148,77 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
   await newBooking.save();
 
   await bookingRedis.del(`booking_otp:${userId}`);
-  await PaymentdataQueue.add("paymentData", {
-    hotelId: bookingData.hotelId,
-    price: bookingData.totalPrice,
-    status,
-  });
-
   await bookingRedis.del(`booking:${userId}`);
 
-  await pub.publish(
-    "bookingConfirmed",
-    JSON.stringify({
-      userId,
+  if (isCOD) {
+    await PaymentdataQueue.add("paymentData", {
       hotelId: bookingData.hotelId,
-      roomId: bookingData.roomId,
-      hotelName: bookingData.hotelName,
-      name: bookingData.Name,
-      email: bookingData.userEmail,
-      userName: bookingData.userName,
-      bookingId: newBooking._id,
-      checkInDate: bookingData.checkIn,
-      checkOutDate: bookingData.checkOut,
-      amount: bookingData.totalPrice,
-      paymentMethod: bookingData.paymentMethod,
-      bookingPayment,
-      roomNumber: bookingData.roomNumber,
-      status,
-    }),
-  );
-
-
-  try {
-    await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
-      bookingId: String(newBooking._id),
-      hotelId: bookingData.hotelId,
-      userId,
-      roomId: bookingData.roomId,
-      guestName: bookingData.userName,
-      roomNumber: bookingData.roomNumber,
-      checkinDate: bookingData.checkIn,
-      checkoutDate: bookingData.checkOut,
-      totalPrice: bookingData.totalPrice,
-      paymentMethod: bookingData.paymentMethod,
-      bookingPayment,
-      status,
-      guests: bookingData.guests,
-      email: req.user.email,
+      price: bookingData.totalPrice,
+      status: "PENDING",
     });
-  } catch (error: any) {
-    console.error("Failed to sync booking history with Hotel service:", error?.message || error);
+
+    await pub.publish(
+      "bookingConfirmed",
+      JSON.stringify({
+        userId,
+        hotelId: bookingData.hotelId,
+        roomId: bookingData.roomId,
+        hotelName: bookingData.hotelName,
+        name: bookingData.Name,
+        email: bookingData.userEmail,
+        userName: bookingData.userName,
+        bookingId: newBooking._id,
+        checkInDate: bookingData.checkIn,
+        checkOutDate: bookingData.checkOut,
+        amount: bookingData.totalPrice,
+        paymentMethod: bookingData.paymentMethod,
+        bookingPayment: "NOTPAID",
+        roomNumber: bookingData.roomNumber,
+        status: "PENDING",
+      }),
+    );
+
+    try {
+      await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
+        bookingId: String(newBooking._id),
+        hotelId: bookingData.hotelId,
+        userId,
+        roomId: bookingData.roomId,
+        guestName: bookingData.userName,
+        roomNumber: bookingData.roomNumber,
+        checkinDate: bookingData.checkIn,
+        checkoutDate: bookingData.checkOut,
+        totalPrice: bookingData.totalPrice,
+        paymentMethod: bookingData.paymentMethod,
+        bookingPayment: "NOTPAID",
+        status: "PENDING",
+        guests: bookingData.guests,
+        email: req.user.email,
+      });
+    } catch (error: any) {
+      console.error("Failed to sync booking history with Hotel service:", error?.message || error);
+    }
+
+    return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
   }
 
-  console.log("Published booking confirmation for booking ID:", newBooking._id);
-  return apiResponse(res, 200, true, "Booking confirmed successfully", newBooking);
-});
+  try {
+    const paymentRes = await axios.post(`${process.env.PAYMENT_SERVICE_URL}/payment/initiate`, {
+      bookingId: String(newBooking._id),
+      amount: bookingData.totalPrice,
+      method: bookingData.paymentMethod,
+      hotelId: bookingData.hotelId,
+    });
 
+    return apiResponse(res, 200, true, "Booking saved. Proceed to payment.", {
+      bookingId: newBooking._id,
+      payment: paymentRes.data.data,
+    });
+  } catch (error: any) {
+    console.error("Failed to initiate payment:", error?.message || error);
+    return apiError(res, 500, "Booking saved but payment initiation failed. Please contact support.");
+  }
+});
 
 const getBookingHistoryOfUser = asyncHandler(async (req: any, res: any) => {
   const userId = req.params.userId;

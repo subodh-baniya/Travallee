@@ -1,14 +1,11 @@
 import jwt from "jsonwebtoken";
-import { apiError } from "../config/response/api.response";
-
-import Redis from "ioredis";
-
-//@ts-ignore
-export const tokenBlacklistRedis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
+import { apiError } from "../config/response/api.response.js";
+import dotenv from "dotenv";
+dotenv.config({
+  path:"./.env",
 });
 
+import redisClient from "../config/redis.connection.js"
 
 const authenticate = async (req: any, res: any, next: any) => {
   const authHeader = req.headers?.authorization;
@@ -23,7 +20,7 @@ const authenticate = async (req: any, res: any, next: any) => {
 
   try {
     
-    const isBlacklisted = await tokenBlacklistRedis.exists(`blacklist:${token}`);
+    const isBlacklisted = await redisClient.exists(`blacklist:${token}`);
     if (isBlacklisted) {
       return apiError(res, 401, "Token has been revoked. Please login again.");
     }

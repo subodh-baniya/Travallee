@@ -11,7 +11,7 @@ export const initiateEsewa = async (bookingId: string, amount: number, hotelId: 
 
   const message = `total_amount=${amount},transaction_uuid=${bookingId},product_code=${esewa_Merchantid}`;
   const signature = crypto
-    .createHmac("sha256", process.env.ESEWA_SECRET_KEY!)
+    .createHmac("sha256", esewa_Merchantid!)
     .update(message)
     .digest("base64");
 

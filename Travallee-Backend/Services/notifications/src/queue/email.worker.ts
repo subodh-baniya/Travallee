@@ -239,35 +239,35 @@ const HotelRegistrationWorker = new Worker<HotelRegistrationJobData>(
 );
 
 
-const bookingCancellationWorker = new Worker<BookingCancellationJobData>(
-  "BookingCancellation",
-  async (job: Job<BookingCancellationJobData>) => {
-    // Implement booking cancellation email sending logic here
-  },
-  {
-    connection,
-  }
-);
+// const bookingCancellationWorker = new Worker<BookingCancellationJobData>(
+//   "BookingCancellation",
+//   async (job: Job<BookingCancellationJobData>) => {
+//     // Implement booking cancellation email sending logic here
+//   },
+//   {
+//     connection,
+//   }
+// );
 
-const paymentSuccessWorker = new Worker<PaymentSuccessJobData>(
-  "PaymentSuccess",
-  async (job: Job<PaymentSuccessJobData>) => {
-    // Implement payment success email sending logic here
-  },
-  {
-    connection,
-  }
-);
+// const paymentSuccessWorker = new Worker<PaymentSuccessJobData>(
+//   "PaymentSuccess",
+//   async (job: Job<PaymentSuccessJobData>) => {
+//     // Implement payment success email sending logic here
+//   },
+//   {
+//     connection,
+//   }
+// );
 
-const paymentFailedWorker = new Worker<PaymentFailedJobData>(
-  "PaymentFailed",
-  async (job: Job<PaymentFailedJobData>) => {
-    // Implement payment failure email sending logic here
-  },
-  {
-    connection,
-  }
-);
+// const paymentFailedWorker = new Worker<PaymentFailedJobData>(
+//   "PaymentFailed",
+//   async (job: Job<PaymentFailedJobData>) => {
+//     // Implement payment failure email sending logic here
+//   },
+//   {
+//     connection,
+//   }
+// );
 
 
 
