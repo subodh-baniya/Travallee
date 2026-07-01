@@ -3,13 +3,13 @@ import { asyncHandler } from "../config/asynchandler.js";
 import { apiResponse } from "../config/response/api.response.js";
 import { UserModel } from "../model/User.model.js";
 import { uploadToCloudinary } from "../config/Func/cloudinary.js";
-import { tokenBlacklistRedis } from "../middleware/role.middleware.js";
 import { loginSchema, registerSchema } from "../Schema/user.schema.js";
 import { z } from "zod";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import redisClient from "../config/redis.connection.js";
 
 dotenv.config({
   path:"./.env",
@@ -25,12 +25,6 @@ const connection = {
 if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
   throw new Error("Missing Redis environment variables: REDIS_HOST, REDIS_PORT, REDIS_PASSWORD");
 }
-
-//@ts-ignore
-const redisClient = new Redis(connection);
-
-redisClient.on("error", (err: Error) => console.error("Redis Client Error:", err));
-redisClient.on("connect", () => console.log("Connected to Redis successfully"));
 
 //@ts-ignore
 const subClient = new Redis(connection);

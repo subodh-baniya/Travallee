@@ -149,10 +149,14 @@ export default function SelectDateScreen() {
   };
 
   const handleContinueToPayment = () => {
-    if (!roomId || !hotelId || !checkIn || !checkOut) {
-      Alert.alert('Missing information', 'Please select your stay dates first.');
-      return;
-    }
+    if (!checkIn || !checkOut) {
+    Alert.alert('Missing information', 'Please select your stay dates first.');
+    return;
+  }
+  if (!roomId || !hotelId) {
+    Alert.alert('Missing information', 'Room details are missing. Please go back and select a room again.');
+    return;
+  }
     router.push({
       pathname: '/(tabs)/explore/payment',
       params: {
