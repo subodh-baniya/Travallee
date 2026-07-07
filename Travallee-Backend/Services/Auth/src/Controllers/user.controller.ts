@@ -91,6 +91,7 @@ const registerUser = asyncHandler(async (req: any, res: any) => {
     if (existingUser) return apiError(res, 400, "Username already exists");
 
     const otp = Math.floor(1000 + Math.random() * 9000);
+    console.log(`Generated OTP for signup: ${otp}`);
 
     try {
       await otpQueue.add("SendOTP", {
@@ -294,6 +295,7 @@ const deleteAccount = asyncHandler(async (req: any, res: any) => {
   if (!user) return apiError(res, 404, "User not found");
 
   const otp = Math.floor(1000 + Math.random() * 9000);
+  console.log(`Generated OTP for account deletion: ${otp}`);
   await redisClient.set(`deleteOtp:${user.email}`, otp, "EX", 10 * 60);
 
   try {

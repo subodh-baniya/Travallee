@@ -16,6 +16,18 @@ const getHotelId = async (bookingId: string) => {
   return res.data.data.hotelId;
 };
 
+const buildAppRedirectUrl = (path: string, params: Record<string, string> = {}) => {
+  const scheme = process.env.APP_DEEP_LINK_SCHEME;
+  const query = new URLSearchParams(params).toString();
+  const queryString = query ? `?${query}` : "";
+
+  if (scheme) {
+    return `${scheme}://${path}${queryString}`;
+  }
+
+  return `${process.env.FRONTEND_URL}/${path}${queryString}`;
+};
+
 export const initiatePayment = asyncHandler(async (req: any, res: any) => {
   const { bookingId, amount, method, hotelId } = req.body;
 
@@ -24,43 +36,143 @@ export const initiatePayment = asyncHandler(async (req: any, res: any) => {
   }
 
   try {
+    console.log("Payment initiation:", { bookingId, amount, method, hotelId });
+    
     if (method === "ESEWA") {
       const result = await initiateEsewa(bookingId, amount, hotelId);
+      console.log("eSewa initiation success:", result);
       return apiResponse(res, 200, true, "eSewa payment initiated", result);
     }
 
     if (method === "KHALTI") {
       const result = await initiateKhalti(bookingId, amount, hotelId);
+      console.log("Khalti initiation success:", result);
       return apiResponse(res, 200, true, "Khalti payment initiated", result);
     }
 
     return apiError(res, 400, "Invalid payment method");
   } catch (err: any) {
+    console.error("Payment initiation error:", err.message, err.response?.data);
     return apiError(res, 500, err.message || "Payment initiation failed");
   }
 });
 
+
+export const esewaFormPage = asyncHandler(async (req: any, res: any) => {
+  const { bookingId, amount, hotelId } = req.query;
+
+  if (!bookingId || !amount || !hotelId) {
+    return res.status(400).send("Missing required parameters: bookingId, amount, hotelId");
+  }
+
+  try {
+    const result = await initiateEsewa(bookingId as string, Number(amount), hotelId as string);
+    const fields = result.formFields;
+
+    const fieldInputs = Object.entries(fields)
+      .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}" />`)
+      .join("\n      ");
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirecting to eSewa...</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .loader {
+      text-align: center;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #7ED321;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    p { font-size: 14px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="spinner"></div>
+    <p>Redirecting to eSewa...</p>
+  </div>
+  <form id="esewaForm" method="POST" action="${result.redirectUrl}">
+      ${fieldInputs}
+  </form>
+  <script>
+    document.getElementById('esewaForm').submit();
+  </script>
+</body>
+</html>`;
+
+    res.setHeader("Content-Type", "text/html");
+    return res.send(html);
+  } catch (err: any) {
+    return res.status(500).send(`Payment initiation failed: ${err.message}`);
+  }
+});
+
 export const esewaCallback = asyncHandler(async (req: any, res: any) => {
-  const { data } = req.query;
-  if (!data) return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+
+  const safeHeaders = { ...req.headers };
+  delete safeHeaders['cookie'];
+  
+  const data = req.query.data || req.body?.data;
+  
 
   try {
     const decoded = JSON.parse(Buffer.from(data as string, "base64").toString("utf8"));
+    console.log("eSewa callback decoded:", {
+      transaction_uuid: decoded.transaction_uuid,
+      status: decoded.status,
+    });
+    
     const hotelId = await getHotelId(decoded.transaction_uuid);
+    console.log("Retrieved hotelId:", hotelId);
+    
     const { success, bookingId } = await verifyEsewa(data as string, hotelId);
+    console.log("eSewa verification result:", { success, bookingId });
+    
     await updateBooking(bookingId, success);
+    console.log("Booking updated:", { bookingId, success });
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/payment-${success ? "success" : "failure"}?bookingId=${bookingId}`
+      buildAppRedirectUrl("payment-result", {
+        status: success ? "success" : "failure",
+        bookingId,
+      })
     );
-  } catch {
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+  } catch (error: any) {
+    console.error("eSewa callback error:", {
+      message: error.message,
+      response: error.response?.data,
+      stack: error.stack,
+    });
+    return res.redirect(buildAppRedirectUrl("payment-result", { status: "failure" }));
   }
 });
 
 export const khaltiCallback = asyncHandler(async (req: any, res: any) => {
   const { pidx, purchase_order_id } = req.query;
-  if (!pidx || !purchase_order_id) return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+  if (!pidx || !purchase_order_id) {
+    return res.redirect(buildAppRedirectUrl("payment-result", { status: "failure" }));
+  }
 
   try {
     const hotelId = await getHotelId(purchase_order_id as string);
@@ -68,9 +180,12 @@ export const khaltiCallback = asyncHandler(async (req: any, res: any) => {
     await updateBooking(purchase_order_id as string, success);
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/payment-${success ? "success" : "failure"}?bookingId=${purchase_order_id}`
+      buildAppRedirectUrl("payment-result", {
+        status: success ? "success" : "failure",
+        bookingId: purchase_order_id as string,
+      })
     );
   } catch {
-    return res.redirect(`${process.env.FRONTEND_URL}/payment-failure`);
+    return res.redirect(buildAppRedirectUrl("payment-result", { status: "failure" }));
   }
 });

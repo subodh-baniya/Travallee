@@ -16,6 +16,7 @@ import { API_ENDPOINTS_BOOKING } from '@/src/constants/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RealixColors } from '@/src/constants/screens/realix';
 import { useSafeNavigation } from '@/src/hooks/useSafeNavigation';
+import { openKhaltiPayment, openEsewaPayment } from '@/src/services/paymentService';
 import { registerComponentStyleBuilder } from 'react-native-reanimated/lib/typescript/css/native';
 
 const numberRows = [
@@ -94,6 +95,19 @@ export default function PasscodeScreen() {
     try {
       const resp = await apiClient.post(API_ENDPOINTS_BOOKING.VERIFY_OTP, { otp: code });
       if (resp?.data?.success) {
+        const { bookingId: newBookingId, payment } = resp.data.data || {};
+        
+        if (payment) {
+          if (paymentMethod === 'KHALTI' || paymentMethod === 'khalti') {
+            await openKhaltiPayment(payment.redirectUrl);
+            return; // deep link will handle the redirect
+          } else if (paymentMethod === 'ESEWA' || paymentMethod === 'esewa') {
+            const amount = payment.formFields?.total_amount || 0;
+            await openEsewaPayment(newBookingId, amount, hotelId as string);
+            return; // deep link will handle the redirect
+          }
+        }
+
         router.replace({
           pathname: '/(tabs)/explore/success',
           params: { roomId, hotelId, hotelName, roomType, pricePerNight, checkIn, checkOut, guests, paymentMethod, maxGuests },

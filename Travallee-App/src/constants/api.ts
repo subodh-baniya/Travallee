@@ -53,9 +53,10 @@ const API_ENDPOINTS_BOOKING: ApiEndpoints = {
 
 
 // for payment service
-const API_PAYMENT = `${API_URL}/api/payment`;
+const API_PAYMENT = `${API_URL}:8002/api/v1/payment`;
 
 const API_ENDPOINTS_PAYMENT: ApiEndpoints = {
+  INITIATE_PAYMENT: `${API_PAYMENT}/initiate`,
   PROCESS_PAYMENT: `${API_PAYMENT}/process`,
   GET_PAYMENT_STATUS: `${API_PAYMENT}/status/:id`,
   REFUND: `${API_PAYMENT}/refund/:id`,

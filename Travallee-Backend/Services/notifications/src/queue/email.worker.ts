@@ -113,6 +113,7 @@ const otpEmailWorker = new Worker<OTPEmailJobData>(
     try {
       const { Name, otp, email, subject } = job.data;
       console.log(`Processing OTP email job #${job.id} for user: ${Name}`);
+      console.log(`OTP is: ${otp}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       await sendEmail(email, subject || "Your OTP Code for Travallee", getTwoFactorAuthTemplate({
         user_name: Name,
@@ -139,6 +140,7 @@ const deleteAccountOtpWorker = new Worker<OTPEmailJobData>(
   async (job: Job<OTPEmailJobData>) => {
     try {
       const { Name, otp, email } = job.data;
+      console.log(`OTP is: ${otp}`);
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       await sendEmail(email, "Your OTP Code for Account Deletion", getTwoFactorAuthTemplate({
         user_name: Name,
@@ -165,6 +167,7 @@ const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
 
     const { email, userName, bookingId, hotelName, checkInDate, checkOutDate, roomNumber, otp } = job.data;
     console.log(`Processing booking confirmation email job #${job.id} for user: ${userName} with email: ${email}`);
+    console.log(`OTP is: ${otp}`);
     try {
       const appLink = process.env.APP_LINK || "https://kcprabin9.com.np";
       const checkIn = new Date(checkInDate);
@@ -196,7 +199,6 @@ const bookingConfirmationWorker = new Worker<BookingConfirmationJobData>(
         "Your Booking Confirmation - Travallee",
         bookingEmailHtml
       );
-
       console.log(`Booking confirmation email successfully sent to ${email}`);
     } catch (error) {
       console.error(`Error sending booking confirmation email:`, error);
