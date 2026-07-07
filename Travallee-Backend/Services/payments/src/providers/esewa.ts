@@ -51,7 +51,6 @@ export const initiateEsewa = async (bookingId: string, amount: number, hotelId: 
       failureUrl,
     });
 
-    // Convert amount to string to ensure proper formatting
     const amountStr = String(amount);
     const transactionUuid = `${bookingId}-${Date.now()}`;
     const message = `total_amount=${amountStr},transaction_uuid=${transactionUuid},product_code=${esewa_Merchantid}`;
@@ -115,7 +114,6 @@ export const verifyEsewa = async (data: string, hotelId: string) => {
       ref_id: decoded.ref_id,
     });
 
-    // Check if payment was already successful on eSewa side
     if (decoded.status === "COMPLETE") {
       console.log("eSewa marked payment as COMPLETE, skipping verification");
       return {

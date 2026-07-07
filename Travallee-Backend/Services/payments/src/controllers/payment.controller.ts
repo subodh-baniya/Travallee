@@ -16,12 +16,14 @@ const getHotelId = async (bookingId: string) => {
   return res.data.data.hotelId;
 };
 
+
 const buildAppRedirectUrl = (path: string, params: Record<string, string> = {}) => {
   const scheme = process.env.APP_DEEP_LINK_SCHEME;
   const query = new URLSearchParams(params).toString();
   const queryString = query ? `?${query}` : "";
 
   if (scheme) {
+ 
     return `${scheme}://${path}${queryString}`;
   }
 
@@ -128,30 +130,23 @@ export const esewaFormPage = asyncHandler(async (req: any, res: any) => {
   }
 });
 
+
 export const esewaCallback = asyncHandler(async (req: any, res: any) => {
-
-  const safeHeaders = { ...req.headers };
-  delete safeHeaders['cookie'];
-  
   const data = req.query.data || req.body?.data;
-  
-
+ 
+  if (!data) {
+    console.error("eSewa callback: No 'data' parameter found in query or body");
+    return res.redirect(buildAppRedirectUrl("payment-result", { status: "failure", reason: "no_data" }));
+  }
+ 
   try {
     const decoded = JSON.parse(Buffer.from(data as string, "base64").toString("utf8"));
-    console.log("eSewa callback decoded:", {
-      transaction_uuid: decoded.transaction_uuid,
-      status: decoded.status,
-    });
-    
+ 
     const hotelId = await getHotelId(decoded.transaction_uuid);
-    console.log("Retrieved hotelId:", hotelId);
-    
     const { success, bookingId } = await verifyEsewa(data as string, hotelId);
-    console.log("eSewa verification result:", { success, bookingId });
-    
+ 
     await updateBooking(bookingId, success);
-    console.log("Booking updated:", { bookingId, success });
-
+ 
     return res.redirect(
       buildAppRedirectUrl("payment-result", {
         status: success ? "success" : "failure",
@@ -162,11 +157,11 @@ export const esewaCallback = asyncHandler(async (req: any, res: any) => {
     console.error("eSewa callback error:", {
       message: error.message,
       response: error.response?.data,
-      stack: error.stack,
     });
     return res.redirect(buildAppRedirectUrl("payment-result", { status: "failure" }));
   }
 });
+ 
 
 export const khaltiCallback = asyncHandler(async (req: any, res: any) => {
   const { pidx, purchase_order_id } = req.query;

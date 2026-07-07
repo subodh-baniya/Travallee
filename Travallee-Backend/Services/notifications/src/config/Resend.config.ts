@@ -24,9 +24,10 @@ const sendEmail = async (
 
     const resend = new Resend(process.env.RESEND_API);
     const emailSubject = subject || "Welcome to Travallee!";
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "Travallee <onboarding@resend.dev>";
 
     const response = await resend.emails.send({
-      from: "Travallee <hello@kcprabin9.com.np>",
+      from: fromEmail,
       to,
       subject: emailSubject,
       html: html || `<p>Hello ${options?.name || "User"},</p>`,
