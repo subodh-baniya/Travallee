@@ -3,6 +3,13 @@ import { apiError } from "../config/response/api.response.js";
 import redisClient from "../config/redis.connection.js";
 
 const authenticate = async (req: any, res: any, next: any) => {
+  const internalServiceToken = req.headers?.["x-internal-service-token"] || req.headers?.["x-service-token"];
+  if (internalServiceToken && internalServiceToken === process.env.INTERNAL_SERVICE_TOKEN) {
+    req.user = { role: "service", service: true };
+    req.token = internalServiceToken;
+    return next();
+  }
+
   const authHeader = req.headers?.authorization;
   console.log("Authorization header:", authHeader);
   const bearerToken = authHeader?.startsWith("Bearer ")

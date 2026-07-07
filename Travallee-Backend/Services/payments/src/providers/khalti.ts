@@ -1,12 +1,27 @@
 import axios from "axios";
 
+const getHotelServiceHeaders = () => {
+  const token = process.env.INTERNAL_SERVICE_TOKEN;
+
+  if (!token) {
+    throw new Error("INTERNAL_SERVICE_TOKEN environment variable is not set");
+  }
+
+  return {
+    "x-internal-service-token": token,
+  };
+};
+
 export const initiateKhalti = async (bookingId: string, amount: number, hotelId: string) => {
-  const hotelRes = await axios.get(`${process.env.HOTEL_SERVICE_URL}/payment-credentials/${hotelId}`);
+  const hotelRes = await axios.get(`${process.env.HOTEL_SERVICE_URL}/payment-credentials/${hotelId}`, {
+    headers: getHotelServiceHeaders(),
+  });
   const { khalti_SecretKey } = hotelRes.data.data;
 
   if (!khalti_SecretKey) throw new Error("Hotel has not configured Khalti payment");
 
-  const returnUrl = `${process.env.PAYMENT_SERVICE_URL}/payment/khalti/callback`;
+  const baseUrl = process.env.PUBLIC_PAYMENT_SERVICE_URL || process.env.PAYMENT_SERVICE_URL;
+  const returnUrl = `${baseUrl}/payment/khalti/callback`;
 
   const res = await axios.post(
     `${process.env.KHALTI_BASE_URL}/api/v2/epayment/initiate/`,
@@ -27,7 +42,9 @@ export const initiateKhalti = async (bookingId: string, amount: number, hotelId:
 };
 
 export const verifyKhalti = async (pidx: string, hotelId: string) => {
-  const hotelRes = await axios.get(`${process.env.HOTEL_SERVICE_URL}/payment-credentials/${hotelId}`);
+  const hotelRes = await axios.get(`${process.env.HOTEL_SERVICE_URL}/payment-credentials/${hotelId}`, {
+    headers: getHotelServiceHeaders(),
+  });
   const { khalti_SecretKey } = hotelRes.data.data;
 
   const res = await axios.post(

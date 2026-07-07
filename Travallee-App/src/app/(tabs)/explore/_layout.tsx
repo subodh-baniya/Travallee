@@ -22,6 +22,7 @@ export default function ExploreLayout() {
       <Stack.Screen name="payment" />
       <Stack.Screen name="passcode" />
       <Stack.Screen name="success" />
+      <Stack.Screen name="payment-result" />
     </Stack>
   );
 }
