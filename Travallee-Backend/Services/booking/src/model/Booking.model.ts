@@ -77,7 +77,13 @@ const bookingSchema = new mongoose.Schema({
         type:Number,
         required:false
     },
+    expiresAt: {
+        type: Date,
+        required: false,
+    }
 
 }, { timestamps: true })
+
+bookingSchema.index({status:1,bookingPayment:1, expiresAt: 1});
 
 export const bookingModel = mongoose.model("bookings", bookingSchema)

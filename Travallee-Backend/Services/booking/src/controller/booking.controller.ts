@@ -28,6 +28,8 @@ const PaymentdataQueue = new Queue("paymentDataQueue", {
   connection,
 });
 
+const BOOKING_EXPIRY_MS = 30 * 60 * 1000;
+
 const createBooking = asyncHandler(async (req: any, res: any) => {
   let validated: any;
   const userId = req.user.id;
@@ -143,6 +145,7 @@ const verifyBookingOtp = asyncHandler(async (req: any, res: any) => {
     hotelName: bookingData.hotelName,
     roomNumber: bookingData.roomNumber,
     email: bookingData.email || bookingData.userEmail || req.user.email,
+     expiresAt: isCOD ? undefined : new Date(Date.now() + BOOKING_EXPIRY_MS),
   });
 
   await newBooking.save();
