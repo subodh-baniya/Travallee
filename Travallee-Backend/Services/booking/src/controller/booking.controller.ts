@@ -480,7 +480,7 @@ const getHotelIdfromBooking = asyncHandler(async (req: any, res: any) => {
 })
 
 const updateBookingPaymentStatus = asyncHandler(async (req: any, res: any) => {
-  const { success,bookingId } = req.body;
+  const { success, bookingId } = req.body;
 
   if (!bookingId) {
     return apiError(res, 400, "Booking ID is required in URL parameters");
@@ -490,12 +490,41 @@ const updateBookingPaymentStatus = asyncHandler(async (req: any, res: any) => {
     return apiError(res, 400, "Invalid success value. Expected a boolean.");
   }
 
-  await bookingModel.findByIdAndUpdate(bookingId, {
-    status: success ? "CONFIRMED" : "CANCELLED",
-    bookingPayment: success ? "PAID" : "NOTPAID",
-  });
+  const updatedBooking = await bookingModel.findByIdAndUpdate(
+    bookingId,
+    {
+      status: success ? "CONFIRMED" : "CANCELLED",
+      bookingPayment: success ? "PAID" : "NOTPAID",
+    },
+    { new: true }
+  );
 
-  return apiResponse(res, 200, true, "Booking payment status updated successfully");
+  if (!updatedBooking) {
+    return apiError(res, 404, "Booking not found");
+  }
+
+ try {
+    await axios.post(`${process.env.HOTEL_SERVICE_URL}/booking-history`, {
+      bookingId: String(updatedBooking._id),
+      hotelId: String(updatedBooking.hotel),
+      userId: String(updatedBooking.user),
+      guestName: updatedBooking.Name,
+      roomId: updatedBooking.room ? String(updatedBooking.room) : undefined,
+      roomNumber: updatedBooking.roomNumber,
+      checkinDate: updatedBooking.checkIn,
+      checkoutDate: updatedBooking.checkOut,
+      totalPrice: updatedBooking.totalPrice,
+      paymentMethod: updatedBooking.paymentMethod,
+      bookingPayment: updatedBooking.bookingPayment,
+      status: updatedBooking.status,
+      guests: updatedBooking.guests,
+      email: updatedBooking.email,
+    });
+  } catch (error: any) {
+    console.error("Failed to sync booking history with Hotel service:", error?.message || error);
+  }
+
+  return apiResponse(res, 200, true, "Booking payment status updated successfully", updatedBooking);
 });
 
 const getTransactionHistoryOfHotel = asyncHandler(async (req: any, res: any) => {
