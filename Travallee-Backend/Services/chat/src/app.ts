@@ -34,6 +34,64 @@ app.get("/api/v1/chat/history/:room", async (req, res) => {
     }
 });
 
+// REST route to get active chat threads for a hotel
+app.get("/api/v1/chat/threads/:hotelId", async (req, res) => {
+    try {
+        const { hotelId } = req.params;
+        const threads = await chatModel.aggregate([
+            {
+                $match: {
+                    room: { $regex: `^chat_${hotelId}_` }
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: "$room",
+                    latestMessage: { $first: "$message" },
+                    time: { $first: "$createdAt" },
+                    roomName: { $first: "$room" },
+                    senderIdStr: { $first: { $toString: "$sender" } },
+                    senderName: { $first: "$senderName" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    roomName: 1,
+                    latestMessage: 1,
+                    time: 1,
+                    guestId: { $arrayElemAt: [{ $split: ["$roomName", "_"] }, 2] },
+                    guestName: {
+                        $cond: {
+                            if: { $ne: ["$senderIdStr", hotelId] },
+                            then: "$senderName",
+                            else: "Guest"
+                        }
+                    }
+                }
+            },
+            {
+                $sort: { time: -1 }
+            }
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            data: threads
+        });
+    } catch (error: any) {
+        console.error("Error retrieving chat threads:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve chat threads",
+            error: error.message
+        });
+    }
+});
+
 const io = new SocketIOServer(httpServer, {
     cors: {
         origin: "*",
@@ -43,7 +101,8 @@ const io = new SocketIOServer(httpServer, {
 });
 
 const initsocket = async () => {
-    const pubClient = createClient({ url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}` });
+    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+    const pubClient = createClient({ url: redisUrl });
     const subClient = pubClient.duplicate();
 
     await Promise.all([pubClient.connect(), subClient.connect()]);
@@ -77,14 +136,30 @@ const initsocket = async () => {
                 });
                 // Emit saved message with fields like _id and createdAt populated
                 io.to(data.room).emit("receive_message", savedMessage);
+
+                // Also emit to hotel admin's broadcast room so they see new messages without opening the chat
+                const roomParts = data.room.split('_');
+                if (roomParts.length === 3 && roomParts[0] === 'chat') {
+                    const hotelId = roomParts[1];
+                    // Prevent duplicate if admin is already in the specific chat room?
+                    // Frontend handles deduplication.
+                    io.to(`hotel_${hotelId}`).emit("receive_message", savedMessage);
+                }
             } catch (dbErr) {
                 console.error("Failed to save message to database:", dbErr);
-                // Fallback to broadcasting the raw message so the chat UI stays functional
-                io.to(data.room).emit("receive_message", {
+                const tempMsg = {
                     ...data,
                     _id: `temp-${Date.now()}`,
                     createdAt: new Date().toISOString()
-                });
+                };
+                // Fallback to broadcasting the raw message so the chat UI stays functional
+                io.to(data.room).emit("receive_message", tempMsg);
+                
+                const roomParts = data.room.split('_');
+                if (roomParts.length === 3 && roomParts[0] === 'chat') {
+                    const hotelId = roomParts[1];
+                    io.to(`hotel_${hotelId}`).emit("receive_message", tempMsg);
+                }
             }
         });
 

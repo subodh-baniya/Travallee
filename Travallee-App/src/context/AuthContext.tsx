@@ -7,7 +7,7 @@ import { API_ENDPOINTS_AUTH } from '@/src/constants/api';
 import { Socket } from 'socket.io-client';
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   name: string;
   role: string;

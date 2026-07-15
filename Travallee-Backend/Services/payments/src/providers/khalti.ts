@@ -28,7 +28,7 @@ export const initiateKhalti = async (bookingId: string, amount: number, hotelId:
     {
       return_url: returnUrl,
       website_url: process.env.FRONTEND_URL,
-      amount: amount * 100,
+      amount: Math.round(amount * 100),
       purchase_order_id: bookingId,
       purchase_order_name: `Booking ${bookingId}`,
     },

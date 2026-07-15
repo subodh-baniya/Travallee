@@ -95,8 +95,8 @@ export default function InboxChatScreen() {
 
     const messageData = {
       room: roomName,
-      sender: user?.id || 'anonymous_user',
-      senderName: user?.Name || 'Traveller',
+      sender: user?._id || 'anonymous_user',
+      senderName: user?.name || 'Traveller',
       message: inputMessage.trim(),
       messageType: 'text',
     };
@@ -145,7 +145,7 @@ export default function InboxChatScreen() {
             showsVerticalScrollIndicator={false}
           >
             {messages.map((msg, index) => {
-              const isOutgoing = msg.sender === user?.id;
+              const isOutgoing = msg.sender === user?._id;
               return (
                 <View key={msg._id || index} style={[styles.messageRow, isOutgoing ? styles.rowEnd : styles.rowStart]}>
                   <View style={[styles.messageBubble, isOutgoing ? styles.bubbleOutgoing : styles.bubbleIncoming]}>

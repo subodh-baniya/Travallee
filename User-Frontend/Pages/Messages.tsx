@@ -36,11 +36,18 @@ const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [msgInput, setMsgInput] = useState("");
   const socketRef = useRef<Socket | null>(null);
+  // Track the active room in a ref so the "connect" handler (registered once)
+  // always rejoins whichever room is currently open, even after a reconnect.
+  const activeUserIdRef = useRef<string>("");
+
+  useEffect(() => {
+    activeUserIdRef.current = activeUserId;
+  }, [activeUserId]);
 
   // Group unique guests from bookings & active messages history
   const guests: Guest[] = useMemo(() => {
     const unique: Record<string, { userId: string; guest: string; email?: string; preview?: string; time?: string }> = {};
-    
+
     // 1. Load from bookings
     bookings.forEach((b) => {
       if (b.userId && b.userId !== "-" && !unique[b.userId]) {
@@ -130,14 +137,35 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     if (!hotelId) return;
 
+    // Allow fallback to long-polling if the websocket upgrade is blocked by a
+    // proxy (common on Render/Railway) — without this, the socket can fail to
+    // connect at all with no visible error in the UI.
     socketRef.current = io(VITE_CHAT_SERVICE_URL, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
+      reconnection: true,
     });
 
+    // "connect" fires on the initial connection AND after every reconnect.
+    // Rejoining both the hotel broadcast room and the currently open guest
+    // room here is what makes delivery survive a dropped connection — the
+    // previous version only joined the guest room from openChat(), so a
+    // reconnect while a chat was open silently stopped receiving messages.
     socketRef.current.on("connect", () => {
-      console.log("Dashboard connected to chat socket");
-      // Connect to hotel admin broadcast channel on socket connection
+      console.log("Dashboard connected to chat socket:", socketRef.current?.id);
       socketRef.current?.emit("join_room", `hotel_${hotelId}`);
+
+      const currentGuestId = activeUserIdRef.current;
+      if (currentGuestId) {
+        socketRef.current?.emit("join_room", `chat_${hotelId}_${currentGuestId}`);
+      }
+    });
+
+    socketRef.current.on("connect_error", (err) => {
+      console.error("Chat socket connect_error:", err.message);
+    });
+
+    socketRef.current.on("disconnect", (reason) => {
+      console.warn("Chat socket disconnected:", reason);
     });
 
     socketRef.current.on("receive_message", (msg: any) => {

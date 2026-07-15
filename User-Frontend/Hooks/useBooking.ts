@@ -71,7 +71,7 @@ const BOOKING_HISTORY_STORAGE_KEY = "recentBookingHistory";
 const SOCKET_BASE_URL =
   import.meta.env.VITE_API_BASE_URL_ADMIN || "http://localhost:4001";
 const NEW_BOOKING_HIGHLIGHT_MS = 10_000;
-const MAX_BOOKINGS = 30;
+const MAX_BOOKINGS = 150;
 
 
 const formatDisplayDate = (value?: string): string => {
@@ -205,7 +205,7 @@ export const useBookings = (hotelId: string | null): UseBookingsReturn => {
         response.data?.bookingHistory ||
         [];
 
-      console.log(response.data?.data?.bookingHistory)
+      // console.log(response.data?.data?.bookingHistory)
 
       if (!Array.isArray(history)) {
         setBookings([]);

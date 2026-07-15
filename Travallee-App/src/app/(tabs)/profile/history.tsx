@@ -16,6 +16,8 @@ interface UserBooking {
   roomNumber: string;
   checkIn: string;
   checkOut: string;
+  status: string;
+  bookingPayment: string;
 }
 
 const formatDate = (dateString: string) => {
@@ -33,6 +35,31 @@ const getEmoji = (index: number) => {
   return emojis[index % emojis.length];
 };
 
+const getStatusColor = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case 'CONFIRMED':
+      return RealixColors.accent;
+    case 'PENDING':
+      return '#f5a623';
+    case 'CANCELLED':
+      return RealixColors.danger;
+    default:
+      return RealixColors.textMuted;
+  }
+};
+
+const getPaymentColor = (bookingPayment: string) => {
+  switch (bookingPayment?.toUpperCase()) {
+    case 'PAID':
+      return RealixColors.accent;
+    case 'NOTPAID':
+    case 'UNPAID':
+      return RealixColors.danger;
+    default:
+      return RealixColors.textMuted;
+  }
+};
+
 export default function ProfileHistoryScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -41,7 +68,7 @@ export default function ProfileHistoryScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?._id) {
       setLoading(false);
       return;
     }
@@ -50,7 +77,7 @@ export default function ProfileHistoryScreen() {
       try {
         setLoading(true);
         setError(null);
-        const url = `${API_ENDPOINTS_BOOKING.GET_BOOKINGS}/booking-history/${user.id}`;
+        const url = `${API_ENDPOINTS_BOOKING.GET_BOOKINGS}/booking-history/${user._id}`;
         const response = await apiClient.get(url);
         if (response.data?.success) {
           setBookings(response.data?.data?.bookings || []);
@@ -66,7 +93,7 @@ export default function ProfileHistoryScreen() {
     };
 
     fetchHistory();
-  }, [user?.id]);
+  }, [user?._id]);
 
   return (
     <RealixScreen contentContainerStyle={styles.content}>
@@ -102,6 +129,18 @@ export default function ProfileHistoryScreen() {
                 <Text style={styles.dates}>
                   {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
                 </Text>
+                <View style={styles.statusRow}>
+                  <View style={[styles.badge, { borderColor: getStatusColor(booking.status) }]}>
+                    <Text style={[styles.badgeText, { color: getStatusColor(booking.status) }]}>
+                      {booking.status}
+                    </Text>
+                  </View>
+                  <View style={[styles.badge, { borderColor: getPaymentColor(booking.bookingPayment) }]}>
+                    <Text style={[styles.badgeText, { color: getPaymentColor(booking.bookingPayment) }]}>
+                      {booking.bookingPayment}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
             <View style={styles.actionRow}>
@@ -116,7 +155,7 @@ export default function ProfileHistoryScreen() {
               <Pressable
                 style={styles.chatButton}
                 onPress={() => {
-                  const roomName = `chat_${booking.hotelId || booking.hotelName}_${user?.id}`;
+                  const roomName = `chat_${booking.hotelId || booking.hotelName}_${user?._id}`;
                   router.push({
                     pathname: '/(tabs)/notifications/chat',
                     params: { thread: roomName, hotelName: booking.hotelName }
@@ -151,6 +190,14 @@ const styles = StyleSheet.create({
   name: { fontSize: 15, fontWeight: '700', color: RealixColors.textPrimary },
   detail: { fontSize: 12, color: RealixColors.textSecondary },
   dates: { fontSize: 11, color: RealixColors.textMuted },
+  statusRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
+  badge: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: { fontSize: 10, fontWeight: '700' },
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   reviewButton: {
     flexDirection: 'row',
@@ -211,4 +258,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-;
