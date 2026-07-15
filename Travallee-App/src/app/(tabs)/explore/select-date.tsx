@@ -9,11 +9,15 @@ import {
   realixDiscoverProperty,
 } from '@/src/constants/screens/realix';
 
-type DayCell = { day: number; month: 'prev' | 'current' | 'next' };
+type DayCell = { day: number; month: 'prev' | 'current' | 'next'; date: Date };
+type SelectedDate = { day: number; month: number; year: number } | null;
 
 const weekdayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as const;
-const daysInMonth = 31;
-const firstWeekdayOffset = 1;
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Pill badge component
 function Badge({ label }: { label: string }) {
@@ -79,7 +83,7 @@ export default function SelectDateScreen() {
     }
   };
 
-  const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests ,roomNumber } = useLocalSearchParams<{
+  const { roomId, hotelId, hotelName, roomType, pricePerNight, maxGuests, roomNumber } = useLocalSearchParams<{
     roomId?: string;
     hotelId?: string;
     hotelName?: string;
@@ -93,70 +97,134 @@ export default function SelectDateScreen() {
   const maxGuestCount = maxGuests ? parseInt(maxGuests) : 2;
 
   const [guestCount, setGuestCount] = useState(1);
-  const [checkIn, setCheckIn] = useState<number | null>(null);
-  const [checkOut, setCheckOut] = useState<number | null>(null);
 
-  const dayCells = useMemo<DayCell[]>(() => {
-    const prev = Array.from({ length: firstWeekdayOffset }, (_, i) => ({
-      day: 31 - firstWeekdayOffset + i + 1,
-      month: 'prev' as const,
-    }));
-    const curr = Array.from({ length: daysInMonth }, (_, i) => ({
-      day: i + 1,
-      month: 'current' as const,
-    }));
-    const nextCount = 42 - (prev.length + curr.length);
-    const next = Array.from({ length: nextCount }, (_, i) => ({
-      day: i + 1,
-      month: 'next' as const,
-    }));
-    return [...prev, ...curr, ...next];
+  // The month currently displayed in the calendar (always normalized to day 1)
+  const [viewedMonth, setViewedMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const [checkIn, setCheckIn] = useState<SelectedDate>(null);
+  const [checkOut, setCheckOut] = useState<SelectedDate>(null);
+
+  // ── Month navigation ──
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
   }, []);
+  const isViewingCurrentMonth =
+    viewedMonth.getFullYear() === today.getFullYear() && viewedMonth.getMonth() === today.getMonth();
 
-  const inRange = (day: number) =>
-    checkIn !== null && checkOut !== null && day > checkIn && day < checkOut;
-
-  const getMonthYear = () => {
-    const d = new Date();
-    return `${['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()]} ${d.getFullYear()}`;
+  const goToPrevMonth = () => {
+    if (isViewingCurrentMonth) return; // don't allow navigating into the past
+    setViewedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  const goToNextMonth = () => {
+    setViewedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const getMonthShort = () => {
-    const d = new Date();
-    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  // ── Calendar grid for the viewed month ──
+  const dayCells = useMemo<DayCell[]>(() => {
+    const year = viewedMonth.getFullYear();
+    const month = viewedMonth.getMonth();
+
+    const firstOfMonth = new Date(year, month, 1);
+    // JS getDay(): 0 = Sunday..6 = Saturday. Convert to Monday-first offset.
+    const jsWeekday = firstOfMonth.getDay();
+    const firstWeekdayOffset = (jsWeekday + 6) % 7;
+
+    const daysInThisMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const prev: DayCell[] = Array.from({ length: firstWeekdayOffset }, (_, i) => {
+      const day = daysInPrevMonth - firstWeekdayOffset + i + 1;
+      return { day, month: 'prev', date: new Date(year, month - 1, day) };
+    });
+
+    const curr: DayCell[] = Array.from({ length: daysInThisMonth }, (_, i) => ({
+      day: i + 1,
+      month: 'current',
+      date: new Date(year, month, i + 1),
+    }));
+
+    const nextCount = 42 - (prev.length + curr.length);
+    const next: DayCell[] = Array.from({ length: nextCount }, (_, i) => ({
+      day: i + 1,
+      month: 'next',
+      date: new Date(year, month + 1, i + 1),
+    }));
+
+    return [...prev, ...curr, ...next];
+  }, [viewedMonth]);
+
+  // ── Selection helpers ──
+  const toTimestamp = (d: SelectedDate) =>
+    d === null ? null : new Date(d.year, d.month, d.day).setHours(0, 0, 0, 0);
+
+  const sameDate = (a: SelectedDate, cellDate: Date) => {
+    if (a === null) return false;
+    return (
+      a.day === cellDate.getDate() &&
+      a.month === cellDate.getMonth() &&
+      a.year === cellDate.getFullYear()
+    );
   };
 
-  const onSelectDay = (day: number) => {
+  const inRange = (cellDate: Date) => {
+    if (checkIn === null || checkOut === null) return false;
+    const t = new Date(cellDate).setHours(0, 0, 0, 0);
+    return t > toTimestamp(checkIn)! && t < toTimestamp(checkOut)!;
+  };
+
+  const isPastDate = (cellDate: Date) => {
+    return new Date(cellDate).setHours(0, 0, 0, 0) < today.getTime();
+  };
+
+  const getMonthYear = () => `${MONTH_NAMES[viewedMonth.getMonth()]} ${viewedMonth.getFullYear()}`;
+
+  const formatShort = (d: SelectedDate) => (d ? `${d.day} ${MONTH_SHORT[d.month]}` : '—');
+
+  const onSelectDay = (cell: DayCell) => {
+    if (cell.month !== 'current') return;
+    if (isPastDate(cell.date)) return;
+
+    const picked: SelectedDate = {
+      day: cell.date.getDate(),
+      month: cell.date.getMonth(),
+      year: cell.date.getFullYear(),
+    };
+
     if (checkIn === null || (checkIn !== null && checkOut !== null)) {
-      setCheckIn(day);
+      setCheckIn(picked);
       setCheckOut(null);
       return;
     }
-    if (day <= checkIn) {
-      setCheckIn(day);
+    if (toTimestamp(picked)! <= toTimestamp(checkIn)!) {
+      setCheckIn(picked);
       setCheckOut(null);
       return;
     }
-    setCheckOut(day);
+    setCheckOut(picked);
   };
 
   const isSelectionComplete = checkIn !== null && checkOut !== null;
 
-  const formatBookingDate = (day: number): string => {
-    const today = new Date();
-    const date = new Date(today.getFullYear(), today.getMonth(), day);
+  const formatBookingDate = (d: SelectedDate): string => {
+    if (!d) return '';
+    const date = new Date(d.year, d.month, d.day);
     return date.toISOString().split('T')[0];
   };
 
   const handleContinueToPayment = () => {
     if (!checkIn || !checkOut) {
-    Alert.alert('Missing information', 'Please select your stay dates first.');
-    return;
-  }
-  if (!roomId || !hotelId) {
-    Alert.alert('Missing information', 'Room details are missing. Please go back and select a room again.');
-    return;
-  }
+      Alert.alert('Missing information', 'Please select your stay dates first.');
+      return;
+    }
+    if (!roomId || !hotelId) {
+      Alert.alert('Missing information', 'Room details are missing. Please go back and select a room again.');
+      return;
+    }
     router.push({
       pathname: '/(tabs)/explore/payment',
       params: {
@@ -174,15 +242,13 @@ export default function SelectDateScreen() {
     });
   };
 
-  const nights = isSelectionComplete ? checkOut! - checkIn! : 0;
+  const nights = isSelectionComplete
+    ? Math.round((toTimestamp(checkOut)! - toTimestamp(checkIn)!) / 86400000)
+    : 0;
   const roomFee = nights * actualPrice;
   const discount = roomFee * 0.15;
   const tax = (roomFee - discount) * 0.13;
   const total = roomFee - discount + tax;
-
-  // Range edge helpers
-  const isRangeStart = (day: number) => checkIn !== null && checkOut !== null && day === checkIn;
-  const isRangeEnd = (day: number) => checkIn !== null && checkOut !== null && day === checkOut;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -223,7 +289,7 @@ export default function SelectDateScreen() {
             <View>
               <Text style={styles.datePillLabel}>Check In</Text>
               <Text style={[styles.datePillValue, checkIn === null && styles.datePillPlaceholder]}>
-                {checkIn === null ? '—' : `${checkIn} ${getMonthShort()}`}
+                {formatShort(checkIn)}
               </Text>
             </View>
           </View>
@@ -239,7 +305,7 @@ export default function SelectDateScreen() {
             <View>
               <Text style={styles.datePillLabel}>Check Out</Text>
               <Text style={[styles.datePillValue, checkOut === null && styles.datePillPlaceholder]}>
-                {checkOut === null ? '—' : `${checkOut} ${getMonthShort()}`}
+                {formatShort(checkOut)}
               </Text>
             </View>
           </View>
@@ -279,8 +345,16 @@ export default function SelectDateScreen() {
         <View style={styles.calendarCard}>
           {/* Month nav */}
           <View style={styles.calNav}>
-            <Pressable style={styles.navBtn}>
-              <Ionicons name="chevron-back" size={14} color={RealixColors.textMuted} />
+            <Pressable
+              style={[styles.navBtn, isViewingCurrentMonth && styles.navBtnDisabled]}
+              disabled={isViewingCurrentMonth}
+              onPress={goToPrevMonth}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={14}
+                color={isViewingCurrentMonth ? RealixColors.textCaption : RealixColors.textMuted}
+              />
             </Pressable>
             <View style={styles.calNavCenter}>
               <Text style={styles.calMonthTitle}>{getMonthYear()}</Text>
@@ -288,7 +362,7 @@ export default function SelectDateScreen() {
                 <Badge label={`${nights} night${nights !== 1 ? 's' : ''}`} />
               )}
             </View>
-            <Pressable style={styles.navBtn}>
+            <Pressable style={styles.navBtn} onPress={goToNextMonth}>
               <Ionicons name="chevron-forward" size={14} color={RealixColors.textMuted} />
             </Pressable>
           </View>
@@ -304,16 +378,17 @@ export default function SelectDateScreen() {
           <View style={styles.daysGrid}>
             {dayCells.map((cell, idx) => {
               const isCurrent = cell.month === 'current';
-              const isStart = isCurrent && checkIn === cell.day;
-              const isEnd = isCurrent && checkOut === cell.day;
-              const isIn = isCurrent && inRange(cell.day);
-              const rangeEdgeStart = isRangeStart(cell.day) && isCurrent;
-              const rangeEdgeEnd = isRangeEnd(cell.day) && isCurrent;
+              const isPast = isCurrent && isPastDate(cell.date);
+              const isStart = isCurrent && sameDate(checkIn, cell.date);
+              const isEnd = isCurrent && sameDate(checkOut, cell.date);
+              const isIn = isCurrent && inRange(cell.date);
+              const rangeEdgeStart = isStart && checkOut !== null;
+              const rangeEdgeEnd = isEnd && checkIn !== null;
 
               return (
                 <Pressable
-                  key={`${cell.month}-${cell.day}-${idx}`}
-                  disabled={!isCurrent}
+                  key={`${cell.month}-${cell.date.toISOString()}-${idx}`}
+                  disabled={!isCurrent || isPast}
                   style={[
                     styles.dayCell,
                     isIn && styles.dayCellRange,
@@ -321,11 +396,12 @@ export default function SelectDateScreen() {
                     rangeEdgeEnd && styles.dayCellRangeEndEdge,
                     (isStart || isEnd) && styles.dayCellSelected,
                   ]}
-                  onPress={() => onSelectDay(cell.day)}
+                  onPress={() => onSelectDay(cell)}
                 >
                   <Text style={[
                     styles.dayText,
                     !isCurrent && styles.dayTextOther,
+                    isPast && styles.dayTextPast,
                     (isStart || isEnd) && styles.dayTextSelected,
                     isIn && styles.dayTextInRange,
                   ]}>
@@ -369,7 +445,7 @@ export default function SelectDateScreen() {
                 <Text style={styles.summaryType}>{roomType || 'Standard Room'}</Text>
                 <View style={styles.summaryMeta}>
                   <Ionicons name="calendar-outline" size={10} color={RealixColors.textMuted} />
-                  <Text style={styles.summaryMetaText}>{checkIn} – {checkOut} {getMonthShort()}</Text>
+                  <Text style={styles.summaryMetaText}>{formatShort(checkIn)} – {formatShort(checkOut)}</Text>
                   <View style={styles.metaDivider} />
                   <Ionicons name="people-outline" size={10} color={RealixColors.textMuted} />
                   <Text style={styles.summaryMetaText}>{guestCount} guest{guestCount !== 1 ? 's' : ''}</Text>
@@ -602,6 +678,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  navBtnDisabled: { opacity: 0.35 },
   weekRow: { flexDirection: 'row', marginBottom: 6 },
   weekLabel: {
     flex: 1,
@@ -638,6 +715,7 @@ const styles = StyleSheet.create({
   },
   dayText: { fontSize: 12, fontWeight: '500', color: RealixColors.textPrimary },
   dayTextOther: { color: RealixColors.textCaption, fontWeight: '400' },
+  dayTextPast: { color: RealixColors.textCaption, opacity: 0.5 },
   dayTextSelected: { color: '#000', fontWeight: '800' },
   dayTextInRange: { color: RealixColors.accent },
   dayDot: {
